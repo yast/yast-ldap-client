@@ -28,6 +28,7 @@ y2milestone("Ldap auto started");
 import "Ldap";
 import "Wizard";
 import "Summary";
+import "Require";
 include "ldap/wizards.ycp";
 
 
@@ -61,6 +62,12 @@ else if (func == "Reset") {
 }
 /* Change configuration (run AutoSequence) */
 else if (func == "Change") {
+
+	// FIXME: only when client is enabled?
+	Require::RequireAndConflictTarget (["pam_ldap","nss_ldap"], [],
+	    _("<p>To configure and access LDAP services,
+the <b>%1</b> packages must be installed.<br>
+Install these packages now?</p>"));
 	ret = LdapAutoSequence ();
 }
 /* Return actual state */
