@@ -150,6 +150,7 @@ import "Wizard";
 	    }
 	    if (ret == `cancel)
 	    {
+		retval = "";
 		break;
 	    }
 	    if (ret == `ok)
