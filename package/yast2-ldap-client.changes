@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Aug  4 14:13:54 CEST 2003 - jsuchome@suse.de
+
+- added .desktop file
+
+-------------------------------------------------------------------
 Thu Jul 17 15:53:17 CEST 2003 - jsuchome@suse.de
 
 - updated to new PamSettings interface
