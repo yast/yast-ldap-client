@@ -57,8 +57,9 @@ configuration will be modified and the LDAP entry removed.</p>"));
 will be configured accordingly to use LDAP for user authentification.</p>"));
 
 // help text 5/5
-	help_text = help_text + UI(_("<p>If you would like to configure users and
-groups on the LDAP server, push <b>Set up users configuration</b> button and fill the settings.</p>"));
+	help_text = help_text + UI(_("<p>For later configuration of users and
+groups on the LDAP server, click <b>Set up User Configuration</b> and complete the settings.</p>
+"));
 
 	boolean start = Ldap::start;
 	string domain  = Ldap::GetDomain ();
@@ -99,9 +100,7 @@ groups on the LDAP server, push <b>Set up users configuration</b> button and fil
 				     ),
                 `VSpacing (1),
                 // PushButton label
-                `PushButton (`id(`cpu), _("&Set up users configuration..."))
-                // Checkbox label
-//                `CheckBox (`id(`cpu), _("&Set up user configuration"), `opt(`notify))
+                `PushButton (`id(`cpu), _("&Set up User Configuration..."))
                 )
 	);
 

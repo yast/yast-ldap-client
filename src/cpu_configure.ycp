@@ -49,54 +49,59 @@
     }
 
     // help text 1/7 "cpu" is the utility name, not processor!
-	string help_text = _("<p>Here you can configure <i>cpu</i> - the LDAP user management utility, which is used by YaST2 Users module.</p>") +
+	string help_text = _("<p>Here, you can configure <i>cpu</i> -- the LDAP user management utility, which is used by the YaST2 Users module.</p>") +
 
     // help text 2/7
-    _("<p><b>User base</b><br>
-This is the base to which users will be added. Is of the form: <i>ou=People,o=dbaseiv.net,c=US</i>. If you are not sure, use your <b>base DN</b> value.</p>") +
+    _("<p><b>User Base</b><br>
+This is the base to which users will be added. It is in the form: <i>ou=People,o=dbaseiv.net,c=US</i>. If you are not sure, use your <b>base DN</b> value.</p>
+") +
 
     // help text 3/7
-    _("<p><b>Group base</b><br>
-This is the base to which groups will be added. It may be the same as user base but is still required.</p>") +
+    _("<p><b>Group Base</b><br>
+This is the base to which groups will be added. It may be the same as the user base, but is still required.</p>
+") +
 
     // help text 4/7
-    _("<p><b>User object class</b><br>
+    _("<p><b>User Object Class</b><br>
 Object classes to add to user entry. It is in the form:
-<i>person,posixAccount,top,shadowAccount,inetOrgPerson</i>.</p>") +
+<i>person,posixAccount,top,shadowAccount,inetOrgPerson</i>.</p>
+") +
 
     // help text 5/7
-    _("<p><b>User filter</b><br>
-Filter for searching. Default of <i>objectclass=person</i> is fine.</p>") +
+    _("<p><b>User Filter</b><br>
+Filter for searching. Default of <i>objectclass=person</i> is fine.</p>
+") +
 
     // help text 6/7
     _("<p><b>Bind DN</b><br>
-Required to get the acces to LDAP database. Is of the form: <i>cn=Manager,o=dbaseiv.net,c=US</i></p>") +
+Required to get access to the LDAP database. It is in the form: <i>cn=Manager,o=dbaseiv.net,c=US</i></p>
+") +
 
     // help text 7/7
-    _("<p>For more information, see man page of <i>cpu</i> or <i>cpu.cfg</i></p>");
+    _("<p>For more information, see the man page for <i>cpu</i> or <i>cpu.cfg</i>.</p>");
 
     term con = `HVSquash(
         `VBox (
         `VSpacing(1),
         // frame label
-        `Frame (_("LDAP user/group settings"),
+        `Frame (_("LDAP User and Group Settings"),
             `VBox (
                 `VSpacing (0.5),
                 `HSquash(
                     // textentry label
-                    `TextEntry (`id (`userb), _("&User base"),
+                    `TextEntry (`id (`userb), _("&User Base"),
                          user_base)),
                 `HSquash(
                     // textentry label
-                    `TextEntry (`id (`groupb), _("&Group base"),
+                    `TextEntry (`id (`groupb), _("&Group Base"),
                          group_base)),
                 `HSquash(
                     // textentry label
-                    `TextEntry (`id (`userc), _("User &object class:"),
+                    `TextEntry (`id (`userc), _("User &Object Class:"),
                          user_class)),
                 `HSquash(
                     // textentry label
-                    `TextEntry (`id (`userf), _("Default user fi&lter"),
+                    `TextEntry (`id (`userf), _("Default User Fi&lter"),
                          user_filter)),
                 `HSquash(
                     // textentry label
@@ -109,7 +114,7 @@ Required to get the acces to LDAP database. Is of the form: <i>cn=Manager,o=dbas
     Wizard::CreateDialog();
 	Wizard::SetContentsButtons (
 	    // dialog title
-	    _("LDAP user management configuration"), con, help_text,
+	    _("LDAP User Management Configuration"), con, help_text,
 	    UI::BackButtonLabel (), UI::NextButtonLabel ());
     Wizard::ReplaceAbortButton(`Empty ());
 

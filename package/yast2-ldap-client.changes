@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Wed Jan 29 15:02:07 CET 2003 - jsuchome@suse.cz
+
+- merged proofreaded texts
+
+-------------------------------------------------------------------
 Wed Jan 22 14:58:03 CET 2003 - jsuchome@suse.cz
 
 - fix: multiple "ldap" string in /etc/nsswitch.conf
