@@ -2,6 +2,8 @@
 Sat Feb 15 08:24:47 CET 2003 - kukuk@suse.de
 
 - Use "example" instead of "mydomain" as domainname in help text.
+- Add hint, that LDAP server addresses must be resolvealbe without
+  using LDAP. Else we will end in an endless loop.
 
 -------------------------------------------------------------------
 Thu Feb 13 15:20:44 CET 2003 - jsuchome@suse.de
