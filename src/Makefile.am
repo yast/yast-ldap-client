@@ -10,7 +10,7 @@ modules_DATA =	\
 	ldap_client_write.ycp
 
 menu_DATA = \
-	menuentry_ldap_client.ycp
+	menuentry_ldap_client.y2cc
 
 icondir=$(ICONDIR)
 
