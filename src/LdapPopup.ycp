@@ -196,9 +196,9 @@ global define map NewModule (list available, list conflicts) ``{
 
     map descriptions = $[
 	// description of configuration object
-	"userConfiguration": _("Configuration of user management tools"),
+	"userconfiguration": _("Configuration of user management tools"),
 	// description of configuration object
-	"groupConfiguration": _("Configuration of group management tools"),
+	"groupconfiguration": _("Configuration of group management tools"),
     ];
     // label
     term r_buttons = `VBox( `Left(`Label (_("Object Class of New Module"))));
@@ -280,7 +280,7 @@ list of allowed attributes for objects described in the \"defaultObjectClass\"
 entry of the current template.</p>
 ") +
 
-    // help text 3/3 do not translate "homeDirectory"
+    // help text 3/3 do not translate "homedirectory"
     _("<p>You can use special syntax to create attribute
 values from existing ones. The expression <i>%attr_name</i> will be replaced
 with the value of attribute \"attr_name\" (for example, use \"/home/%uid\"

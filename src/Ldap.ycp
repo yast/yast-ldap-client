@@ -136,37 +136,37 @@
      * defaults for adding new config objects and templates
      */
     global map new_objects = $[
-	"userConfiguration"	: $[
-	    "searchFilter"	: ["objectClass=posixAccount"],
-	    "passwordHash"	: ["CRYPT"],
-	    "skelDir"		: ["/etc/skel"],
-	    "minUniqueId"	: ["500"],
-	    "nextUniqueId"	: ["500"],
-	    "maxUniqueId"	: ["60000"],
-	    "minPasswordLength" : ["5"],
-	    "maxPasswordLength" : ["8"],
+	"userconfiguration"	: $[
+	    "searchfilter"	: ["objectclass=posixaccount"],
+	    "passwordhash"	: ["CRYPT"],
+	    "skeldir"		: ["/etc/skel"],
+	    "minuniqueid"	: ["500"],
+	    "nextuniqueid"	: ["500"],
+	    "maxuniqueid"	: ["60000"],
+	    "minpasswordlength" : ["5"],
+	    "maxpasswordlength" : ["8"],
 	],
-	"groupConfiguration"	: $[
-	    "searchFilter"	: ["objectClass=posixGroup"],
-	    "minUniqueId"	: ["500"],
-	    "nextUniqueId"	: ["500"],
-	    "maxUniqueId"	: ["60000"],
+	"groupconfiguration"	: $[
+	    "searchfilter"	: ["objectclass=posixgroup"],
+	    "minuniqueid"	: ["500"],
+	    "nextuniqueid"	: ["500"],
+	    "maxuniqueid"	: ["60000"],
 	],
-	"userTemplate"		: $[
-	    "objectClass"	: [ "top", "objectTemplate", "userTemplate"],
-	    "namingAttribute"	: [ "uid" ],
-//	    "defaultObjectClass":
-//		[ "top", "posixAccount", "shadowAccount", "inetOrgPerson"],
-	    "defaultValue"	: [
-		"homeDirectory=/home/%uid",
-		"loginShell=/bin/bash"
+	"usertemplate"		: $[
+	    "objectclass"	: [ "top", "objecttemplate", "usertemplate"],
+	    "namingattribute"	: [ "uid" ],
+//	    "defaultobjectclass":
+//		[ "top", "posixaccount", "shadowaccount", "inetorgperson"],
+	    "defaultvalue"	: [
+		"homedirectory=/home/%uid",
+		"loginshell=/bin/bash"
 	    ],
 	    "plugin"		: [ "UsersPluginLDAPAll" ]
 	],
-	"groupTemplate"		: $[
-	    "objectClass"	: [ "top", "objectTemplate", "groupTemplate"],
-	    "namingAttribute"	: [ "cn" ],
-//	    "defaultObjectClass": [ "top", "posixGroup", "groupOfNames"]
+	"grouptemplate"		: $[
+	    "objectclass"	: [ "top", "objecttemplate", "grouptemplate"],
+	    "namingattribute"	: [ "cn" ],
+//	    "defaultobjectclass": [ "top", "posixgroup", "groupofnames"]
 	    "plugin"		: [ "UsersPluginLDAPAll" ]
 	]
     ];
@@ -201,12 +201,12 @@
     global list hash_schemas = ["CLEAR", "CRYPT", "SHA", "SSHA", "MD5", "SMD5"];
 
     /**
-     * Available configuration modules (objectClass names)
+     * Available configuration modules (objectclass names)
      * TODO update
      */
     global list<string> available_config_modules = [
-	"userConfiguration",
-	"groupConfiguration"
+	"userconfiguration",
+	"groupconfiguration"
     ];
 
     //----------------------------------------------------------------
@@ -401,8 +401,8 @@
      * @param entry name
      * @param value it is of type [attr1, attr2],
      * in /etc/ldap.conf should be written as "entry attr1 attr2"
-     * @example to write "nss_map_attribute       uniqueMember member", call
-     * WriteLdapConfEntries ("nss_map_attribute", ["uniqueMember", "member"])
+     * @example to write "nss_map_attribute       uniquemember member", call
+     * WriteLdapConfEntries ("nss_map_attribute", ["uniquemember", "member"])
      */
     define void WriteLdapConfEntries (string entry, list<string> value) ``{
 
@@ -474,10 +474,10 @@
 
 	list<string> map_attrs = ReadLdapConfEntries ("nss_map_attribute");
 	foreach (string map_attr, map_attrs, ``{
-	    if (issubstring (map_attr, "uniqueMember"))
+	    if (issubstring (map_attr, "uniquemember"))
 	    {
 		list<string> attr	= splitstring (map_attr, " \t");
-		if (attr[0]:"" == "uniqueMember")
+		if (attr[0]:"" == "uniquemember")
 		    member_attribute	= attr[1]:member_attribute;
 	    }
 	});
@@ -898,16 +898,16 @@ Value of DN is missing or invalid."),
 
     /**
      * For a given object, add all atributes this object is allowed to have
-     * according to its "objectClass" value. Added attributes have empty values.
+     * according to its "objectclass" value. Added attributes have empty values.
      * @param object map describing LDAP entry
      * @return updated map
      */
     global define map AddMissingAttributes (map object) ``{
 
-	foreach (string class, object["objectClass"]:[], ``{
+	foreach (string class, object["objectclass"]:[], ``{
 	    foreach (string attr, (list<string>) GetAllAttributes (class), ``{
-		if (!haskey (object, attr))
-		    object = add (object, attr, []);
+		if (!haskey (object, tolower (attr)))
+		    object = add (object, tolower (attr), []);
 	    });
 	});
 	return object;
@@ -922,10 +922,10 @@ Value of DN is missing or invalid."),
 
 	list schemas = (list)SCR::Read (.ldap.search, $[
 	    "base_dn":  "",
-	    "attrs":    [ "subschemaSubentry" ],
+	    "attrs":    [ "subschemasubentry" ],
 	    "scope":    0, //0:base
 	]);
-	string schema_dn = schemas[0,"subschemaSubentry",0]:"";
+	string schema_dn = schemas[0,"subschemasubentry",0]:"";
 	if (schemas == nil || schema_dn == "")
 	    return LDAPError();
 
@@ -944,8 +944,8 @@ Value of DN is missing or invalid."),
     global define map ConvertDefaultValues (map templ) ``{
 
         map template = add (templ, "default_values", $[]);
-	foreach (string value, templ["defaultValue"]:[], ``{
-	    string at = select (splitstring (value, "="), 0, "");
+	foreach (string value, templ["defaultvalue"]:[], ``{
+	    string at = tolower (select (splitstring (value, "="), 0, ""));
 	    string v = substring (value, find (value, "=") + 1);
 	    template ["default_values", at] = v;
 	});
@@ -961,7 +961,7 @@ Value of DN is missing or invalid."),
 	templates = $[];
 	map all = (map)SCR::Read (.ldap.search, $[
 	    "base_dn":	base_config_dn,
-	    "filter":   "objectClass=objectTemplate",
+	    "filter":   "objectclass=objecttemplate",
 	    "attrs":	[],
 	    "scope":	2,// sub: all templates under config DN
 	    "map":	true,
@@ -989,7 +989,7 @@ Value of DN is missing or invalid."),
 	config_modules = $[];
 	map modules = (map)SCR::Read (.ldap.search, $[
 	    "base_dn":	base_config_dn,
-	    "filter":   "objectClass=moduleConfiguration",
+	    "filter":   "objectclass=moduleconfiguration",
 	    "attrs":	[],
 	    "scope":	1, // one - deeper searches would have problems with
 			   // constructing the dn
@@ -1086,17 +1086,17 @@ The object with the selected DN cannot be created.
 	    "cn":		[ cn ],
 	    "modified":		"added"
 	];
-	if (contains (classes, "userConfiguration"))
+	if (contains (classes, "userconfiguration"))
 	{
-	    obj = union (obj, new_objects ["userTemplate"]:$[]);
+	    obj = union (obj, new_objects ["usertemplate"]:$[]);
 	}
-	else if (contains (classes, "groupConfiguration"))
+	else if (contains (classes, "groupconfiguration"))
 	{
-	    obj = union (obj, new_objects ["groupTemplate"]:$[]);
+	    obj = union (obj, new_objects ["grouptemplate"]:$[]);
 	}
 	else
 	{
-	    obj["objectClass"] = [ "top", "objectTemplate"];
+	    obj["objectclass"] = [ "top", "objecttemplate"];
 	}
 
 	obj = ConvertDefaultValues (obj);
@@ -1105,14 +1105,14 @@ The object with the selected DN cannot be created.
 
     /**
      * Creates default new map for new configuration object
-     * @param class additional objectClass of new module (e.g.userConfiguration)
+     * @param class additional objectclass of new module (e.g.userConfiguration)
      * @return new module map
      */
     global define map<string,any> CreateModule (string cn, string class) ``{
 
 	map obj = $[
 	    "cn":		[ cn ],
-	    "objectClass":	add ([ "top", "moduleConfiguration"], class),
+	    "objectclass":	add ([ "top", "moduleconfiguration"], class),
 	    "modified":		"added"
 	];
 	// create some good defaults
@@ -1120,24 +1120,24 @@ The object with the selected DN cannot be created.
 	list templs = [];
 	string templ_cn = "";
 	string default_base = "";
-	if (class == "userConfiguration")
+	if (class == "userconfiguration")
 	{
 	    foreach (string dn, map t, (map<string,map<string,any> >)templates, ``{
-		if (contains (t["objectClass"]:[], "userTemplate"))
+		if (contains (t["objectclass"]:[], "usertemplate"))
 		    templs = add (templs, dn);
 	    });
 	    if (templs == [])
-		templ_cn = "userTemplate";
+		templ_cn = "usertemplate";
 	    default_base = nss_base_passwd;
 	}
-	if (class == "groupConfiguration")
+	if (class == "groupconfiguration")
 	{
 	    foreach (string dn, map t, (map<string,map<string,any> >)templates, ``{
-		if (contains (t["objectClass"]:[], "groupTemplate"))
+		if (contains (t["objectclass"]:[], "grouptemplate"))
 		    templs = add (templs, dn);
 	    });
 	    if (templs == [])
-		templ_cn = "groupTemplate";
+		templ_cn = "grouptemplate";
 	    default_base = nss_base_group;
 	}
 	// create proposal for defaultTemplate DN
@@ -1152,7 +1152,7 @@ The object with the selected DN cannot be created.
 	    }
 	    templs = [ tdn ];
 	}
-	obj ["defaultTemplate"] = templs;
+	obj ["defaulttemplate"] = templs;
 	// create proposal for defaultBase DN
 	if (default_base == "" || GetLDAPEntry (default_base) == $[])
 	{
@@ -1160,14 +1160,14 @@ The object with the selected DN cannot be created.
 	    if (GetLDAPEntry (default_base) == $[])
 		default_base = domain;
 	}
-	obj ["defaultBase"] = [ default_base ];
+	obj ["defaultbase"] = [ default_base ];
 	return (map<string,any>) AddMissingAttributes (obj);
     }
 
     /**
      * Searches for DN's of all objects defined by filter in given base ("sub")
      * @param base search base
-     * @param search_filter if filter is empty, "objectClass=*" is used
+     * @param search_filter if filter is empty, "objectclass=*" is used
      * @return list of DN's (list of strings)
      */
     global define list<string> ReadDN (string base, string search_filter) ``{
@@ -1189,14 +1189,14 @@ The object with the selected DN cannot be created.
     }
 
     /**
-     * Returns DN's of groups (objectClass=posixGroup) in given base
+     * Returns DN's of groups (objectclass=posixGroup) in given base
      * @param base LDAP search base
      * @return groups (list of strings)
      */
     global define list GetGroupsDN (string base) ``{
 
 	if (groups_dn == [])
-	    groups_dn = ReadDN (base, "objectClass=posixGroup");
+	    groups_dn = ReadDN (base, "objectclass=posixgroup");
 	return groups_dn;
     }
 
@@ -1216,7 +1216,7 @@ The object with the selected DN cannot be created.
 	    // OK, does not exist
 	    return $[];
 	}
-	else if (contains (object ["objectClass"]:[], "objectTemplate"))
+	else if (contains (object ["objectclass"]:[], "objecttemplate"))
 	{
 	    // exists as a template -> return object
 	    object = ConvertDefaultValues (object);
@@ -1311,7 +1311,7 @@ Select another one.
 
 	    if (haskey (object, "default_values"))
 	    {
-		object["defaultValue"] = maplist (string key, string val,
+		object["defaultvalue"] = maplist (string key, string val,
 		    (map<string,string>) object["default_values"]:$[], ``{
 		    return sformat ("%1=%2", key, val);
 		});
@@ -1510,7 +1510,7 @@ Select another one.
 	    if (member_attribute != old_member_attribute)
 	    {
 		WriteLdapConfEntries ("nss_map_attribute",
-		    ["uniqueMember", member_attribute ]);
+		    ["uniquemember", member_attribute ]);
 	    }
 
 	    WriteOpenLdapConf();
@@ -1531,10 +1531,10 @@ Select another one.
 	    user_base = domain;
 	    group_base = domain;
 	    foreach (string dn, map mod, (map<string,map<string,any> >)config_modules, ``{
-		if (contains (mod["objectClass"]:[], "userConfiguration"))
-		    user_base = mod["defaultBase",0]:domain;
-		if (contains (mod["objectClass"]:[], "groupConfiguration"))
-		    group_base = mod["defaultBase",0]:user_base;
+		if (contains (mod["objectclass"]:[], "userconfiguration"))
+		    user_base = mod["defaultbase",0]:domain;
+		if (contains (mod["objectclass"]:[], "groupconfiguration"))
+		    group_base = mod["defaultbase",0]:user_base;
 	    });
 	    WriteLdapConfEntry ("nss_base_passwd",
 		(nss_base_passwd != "")? nss_base_passwd : user_base);
@@ -1566,7 +1566,7 @@ Select another one.
 	    if (member_attribute != old_member_attribute)
 	    {
 		WriteLdapConfEntries ("nss_map_attribute",
-		    ["uniqueMember", member_attribute ]);
+		    ["uniquemember", member_attribute ]);
 	    }
 
 	    if (server != old_server || domain != old_domain)
@@ -1696,7 +1696,7 @@ exists on the LDAP server. Create it now?
 		if (!ParentExists (dn))
 		    return false;
 		return WriteLDAP ( $[ dn : $[
-		    "objectClass"	: [ "top", "organizationalUnit"],
+		    "objectclass"	: [ "top", "organizationalunit"],
 		    "modified"		: "added",
 		    "ou"		: get_cn (dn)]]
 		);
