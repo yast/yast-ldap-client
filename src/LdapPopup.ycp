@@ -196,9 +196,9 @@ global define map NewModule (list available, list conflicts) ``{
 
     map descriptions = $[
 	// description of configuration object
-	"userconfiguration": _("Configuration of user management tools"),
+	"suseuserconfiguration": _("Configuration of user management tools"),
 	// description of configuration object
-	"groupconfiguration": _("Configuration of group management tools"),
+	"susegroupconfiguration": _("Configuration of group management tools"),
     ];
     // label
     term r_buttons = `VBox( `Left(`Label (_("Object Class of New Module"))));

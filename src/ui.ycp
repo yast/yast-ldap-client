@@ -547,7 +547,7 @@ removing current ones.</p>
 
 	if (Ldap::SingleValued (attr))
 	    return val[0]:"";
-	else if (contains (["secondarygroup", "defaulttemplate"], attr))
+	else if (contains (["susesecondarygroup", "susedefaulttemplate"], attr))
 	    return mergestring (val, " ");
 	else
 	    return mergestring (val, ",");
@@ -556,7 +556,7 @@ removing current ones.</p>
     foreach (string attr, any value, template, ``{
 	any val = value;
 	// do not show internal attributes
-	if (contains (["defaultvalue", "default_values", "objectclass",
+	if (contains (["susedefaultvalue", "default_values", "objectclass",
 	"modified", "old_dn"], attr))
 	    return;
 	if (is (value, list))
@@ -625,13 +625,12 @@ removing current ones.</p>
 	    list<string> value	= template [attr]:[];
 	    list offer		= [];
 	    list conflicts	= [];
-	    if (attr == "secondarygroup")
+	    if (attr == "susesecondarygroup")
 		offer		= Ldap::GetGroupsDN (Ldap::GetDomain());
-	    if (attr == "requiredattribute" || attr == "allowedattribute" ||
-		attr == "namingattribute")
+	    if (attr == "susenamingattribute")
 	    {
 		offer		= Ldap::GetObjectAttributes (
-		    template["defaultobjectclass"]:[]);
+		    template["susedefaultobjectclass"]:[]);
 	    }
 	    /* TODO
 	    if (attr == "defaultObjectClass")
@@ -659,7 +658,7 @@ removing current ones.</p>
 	{
 	    list conflicts =
 		maplist (string attr, string val, default_values,``(attr));
-	    list classes = template["defaultobjectclass"]:[];
+	    list classes = template["susedefaultobjectclass"]:[];
 	    list available = Ldap::GetObjectAttributes (classes);
 	    // filter out objectclass (there is already defaultObjectClass)
 	    map dfl = LdapPopup::AddDefaultValue (available,
@@ -728,9 +727,10 @@ Enter a value."), attr));
 
 	    template ["default_values"] = default_values;
 
+	    /*
 	    boolean structural = false;
 	    // check the object classes in defaultObjectClass entry:
-	    foreach (string oc, template["defaultobjectclass"]:[], ``{
+	    foreach (string oc, template["susedefaultobjectclass"]:[], ``{
 		if (!cont && !Ldap::ObjectClassExists (oc))
 		{
 		    y2warning ("no object class %1 in schema", oc);
@@ -749,6 +749,7 @@ _("No object class in 'defaultObjectClass' entry has the structural type.
 It is impossible to create the LDAP objects without structural object classes.
 Are you sure?")))
 		continue;
+	    */
 	    break;
 	}
     }
@@ -856,7 +857,7 @@ click <b>Configure Template</b>.
     define void replace_templates_items () ``{
 
 	list items = maplist (string dn,
-	    modules[current_dn,"defaulttemplate"]:[], ``(`item (`id(dn), dn)));
+	    modules[current_dn,"susedefaulttemplate"]:[], ``(`item (`id(dn), dn)));
 	UI::ReplaceWidget (`id(`rp_templs),
 	    `MenuButton (`id(`templ_mb), `opt(`key_F7),
 		// button label
@@ -911,7 +912,7 @@ click <b>Configure Template</b>.
 	string attr	= (string)UI::QueryWidget (`id(`table), `CurrentItem);
 
 	// check the correctness of entry
-	if (contains (modules [current_dn, "defaulttemplate"]:[], result) ||
+	if (contains (modules [current_dn, "susedefaulttemplate"]:[], result) ||
 	    result == `next || result == `modules || result == `new)
 	{
 	    foreach (string oc, modules [current_dn, "objectclass"]:[], ``{
@@ -964,7 +965,8 @@ Enter a value."), attr));
 		if (mod["modified"]:"" == "deleted")
 		    return;
 		foreach (string cl, mod["objectclass"]:[], ``{
-		    available = filter (string c, available, ``(c != cl));
+		    available = filter (string c, available, ``(
+			tolower (c) != tolower (cl)));
 		});
 	    });
 	    if (available == [])
@@ -997,9 +999,9 @@ of each type, so you cannot add a new one."));
 	    list conflicts	= [];
 	    if (attr == "cn")
 		conflicts = names;
-	    if (attr == "defaulttemplate")
+	    if (attr == "susedefaulttemplate")
 		offer		= templates_dns;
-	    else if (attr == "passwordhash")
+	    else if (attr == "susepasswordhash")
 		offer		= Ldap::hash_schemas;
 
 	    value = LdapPopup::EditAttribute (attr, value, conflicts,
@@ -1030,11 +1032,11 @@ of each type, so you cannot add a new one."));
 		current_dn = get_dn (cn);
 		replace_module_names ();
 	    }
-	    if (attr == "defaulttemplate")
+	    if (attr == "susedefaulttemplate")
 		replace_templates_items ();
 	}
 	// configure template
-	if (contains (modules [current_dn, "defaulttemplate"]:[], result))
+	if (contains (modules [current_dn, "susedefaulttemplate"]:[], result))
 	{
 	    string template_dn = (string) result;
 	    Ldap::current_template_dn = template_dn;
@@ -1072,8 +1074,8 @@ of each type, so you cannot add a new one."));
 		    dn != template_dn));
 		templates_dns = add (templates_dns, new_dn);
 		// update list of templates
-		modules [current_dn, "defaulttemplate"] = maplist (
-		    string dn, modules [current_dn, "defaulttemplate"]:[],``{
+		modules [current_dn, "susedefaulttemplate"] = maplist (
+		    string dn, modules [current_dn, "susedefaulttemplate"]:[],``{
 			if (dn == template_dn) return new_dn;
 			return dn;
 		});

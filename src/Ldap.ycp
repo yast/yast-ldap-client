@@ -136,38 +136,35 @@
      * defaults for adding new config objects and templates
      */
     global map new_objects = $[
-	"userconfiguration"	: $[
-	    "searchfilter"	: ["objectclass=posixaccount"],
-	    "passwordhash"	: ["CRYPT"],
-	    "skeldir"		: ["/etc/skel"],
-	    "minuniqueid"	: ["500"],
-	    "nextuniqueid"	: ["500"],
-	    "maxuniqueid"	: ["60000"],
-	    "minpasswordlength" : ["5"],
-	    "maxpasswordlength" : ["8"],
+	"suseuserconfiguration"	: $[
+	    "susesearchfilter"	: ["objectclass=posixaccount"],
+	    "susepasswordhash"	: ["CRYPT"],
+	    "suseskeldir"	: ["/etc/skel"],
+	    "suseminuniqueid"	: ["500"],
+	    "susenextuniqueid"	: ["500"],
+	    "susemaxuniqueid"	: ["60000"],
+	    "suseminpasswordlength" : ["5"],
+	    "susemaxpasswordlength" : ["8"],
 	],
-	"groupconfiguration"	: $[
-	    "searchfilter"	: ["objectclass=posixgroup"],
-	    "minuniqueid"	: ["500"],
-	    "nextuniqueid"	: ["500"],
-	    "maxuniqueid"	: ["60000"],
+	"susegroupconfiguration": $[
+	    "susesearchfilter"	: ["objectclass=posixgroup"],
+	    "suseminuniqueid"	: ["500"],
+	    "susenextuniqueid"	: ["500"],
+	    "susemaxuniqueid"	: ["60000"],
 	],
-	"usertemplate"		: $[
-	    "objectclass"	: [ "top", "objecttemplate", "usertemplate"],
-	    "namingattribute"	: [ "uid" ],
-//	    "defaultobjectclass":
-//		[ "top", "posixaccount", "shadowaccount", "inetorgperson"],
-	    "defaultvalue"	: [
+	"suseusertemplate"	: $[
+	    "objectclass"	: [ "top", "suseobjecttemplate", "suseusertemplate"],
+	    "susenamingattribute"	: [ "uid" ],
+	    "susedefaultvalue"	: [
 		"homedirectory=/home/%uid",
 		"loginshell=/bin/bash"
 	    ],
-	    "plugin"		: [ "UsersPluginLDAPAll" ]
+	    "suseplugin"		: [ "UsersPluginLDAPAll" ]
 	],
-	"grouptemplate"		: $[
-	    "objectclass"	: [ "top", "objecttemplate", "grouptemplate"],
-	    "namingattribute"	: [ "cn" ],
-//	    "defaultobjectclass": [ "top", "posixgroup", "groupofnames"]
-	    "plugin"		: [ "UsersPluginLDAPAll" ]
+	"susegrouptemplate"	: $[
+	    "objectclass"	: [ "top", "suseobjecttemplate", "susegrouptemplate"],
+	    "susenamingattribute"	: [ "cn" ],
+	    "suseplugin"		: [ "UsersPluginLDAPAll" ]
 	]
     ];
 
@@ -205,8 +202,8 @@
      * TODO update
      */
     global list<string> available_config_modules = [
-	"userconfiguration",
-	"groupconfiguration"
+	"suseuserconfiguration",
+	"susegroupconfiguration"
     ];
 
     //----------------------------------------------------------------
@@ -944,7 +941,7 @@ Value of DN is missing or invalid."),
     global define map ConvertDefaultValues (map templ) ``{
 
         map template = add (templ, "default_values", $[]);
-	foreach (string value, templ["defaultvalue"]:[], ``{
+	foreach (string value, templ["susedefaultvalue"]:[], ``{
 	    string at = tolower (select (splitstring (value, "="), 0, ""));
 	    string v = substring (value, find (value, "=") + 1);
 	    template ["default_values", at] = v;
@@ -961,7 +958,7 @@ Value of DN is missing or invalid."),
 	templates = $[];
 	map all = (map)SCR::Read (.ldap.search, $[
 	    "base_dn":	base_config_dn,
-	    "filter":   "objectclass=objecttemplate",
+	    "filter":   "objectclass=suseobjecttemplate",
 	    "attrs":	[],
 	    "scope":	2,// sub: all templates under config DN
 	    "map":	true,
@@ -989,7 +986,7 @@ Value of DN is missing or invalid."),
 	config_modules = $[];
 	map modules = (map)SCR::Read (.ldap.search, $[
 	    "base_dn":	base_config_dn,
-	    "filter":   "objectclass=moduleconfiguration",
+	    "filter":   "objectclass=susemoduleconfiguration",
 	    "attrs":	[],
 	    "scope":	1, // one - deeper searches would have problems with
 			   // constructing the dn
@@ -1086,17 +1083,17 @@ The object with the selected DN cannot be created.
 	    "cn":		[ cn ],
 	    "modified":		"added"
 	];
-	if (contains (classes, "userconfiguration"))
+	if (contains (classes, "suseuserconfiguration"))
 	{
-	    obj = union (obj, new_objects ["usertemplate"]:$[]);
+	    obj = union (obj, new_objects ["suseusertemplate"]:$[]);
 	}
-	else if (contains (classes, "groupconfiguration"))
+	else if (contains (classes, "susegroupconfiguration"))
 	{
-	    obj = union (obj, new_objects ["grouptemplate"]:$[]);
+	    obj = union (obj, new_objects ["susegrouptemplate"]:$[]);
 	}
 	else
 	{
-	    obj["objectclass"] = [ "top", "objecttemplate"];
+	    obj["objectclass"] = [ "top", "suseobjecttemplate"];
 	}
 
 	obj = ConvertDefaultValues (obj);
@@ -1110,9 +1107,10 @@ The object with the selected DN cannot be created.
      */
     global define map<string,any> CreateModule (string cn, string class) ``{
 
+	class = tolower (class);
 	map obj = $[
 	    "cn":		[ cn ],
-	    "objectclass":	add ([ "top", "moduleconfiguration"], class),
+	    "objectclass":	add (["top", "susemoduleconfiguration"], class),
 	    "modified":		"added"
 	];
 	// create some good defaults
@@ -1120,24 +1118,24 @@ The object with the selected DN cannot be created.
 	list templs = [];
 	string templ_cn = "";
 	string default_base = "";
-	if (class == "userconfiguration")
+	if (class == "suseuserconfiguration")
 	{
 	    foreach (string dn, map t, (map<string,map<string,any> >)templates, ``{
-		if (contains (t["objectclass"]:[], "usertemplate"))
+		if (contains (t["objectclass"]:[], "suseusertemplate"))
 		    templs = add (templs, dn);
 	    });
 	    if (templs == [])
-		templ_cn = "usertemplate";
+		templ_cn = "suseusertemplate";
 	    default_base = nss_base_passwd;
 	}
-	if (class == "groupconfiguration")
+	if (class == "susegroupconfiguration")
 	{
 	    foreach (string dn, map t, (map<string,map<string,any> >)templates, ``{
-		if (contains (t["objectclass"]:[], "grouptemplate"))
+		if (contains (t["objectclass"]:[], "susegrouptemplate"))
 		    templs = add (templs, dn);
 	    });
 	    if (templs == [])
-		templ_cn = "grouptemplate";
+		templ_cn = "susegrouptemplate";
 	    default_base = nss_base_group;
 	}
 	// create proposal for defaultTemplate DN
@@ -1152,7 +1150,7 @@ The object with the selected DN cannot be created.
 	    }
 	    templs = [ tdn ];
 	}
-	obj ["defaulttemplate"] = templs;
+	obj ["susedefaulttemplate"] = templs;
 	// create proposal for defaultBase DN
 	if (default_base == "" || GetLDAPEntry (default_base) == $[])
 	{
@@ -1160,7 +1158,7 @@ The object with the selected DN cannot be created.
 	    if (GetLDAPEntry (default_base) == $[])
 		default_base = domain;
 	}
-	obj ["defaultbase"] = [ default_base ];
+	obj ["susedefaultbase"] = [ default_base ];
 	return (map<string,any>) AddMissingAttributes (obj);
     }
 
@@ -1216,7 +1214,8 @@ The object with the selected DN cannot be created.
 	    // OK, does not exist
 	    return $[];
 	}
-	else if (contains (object ["objectclass"]:[], "objecttemplate"))
+	else if (contains (object ["objectclass"]:[], "suseobjecttemplate"))
+// FIXME could be diffrerent case!!!
 	{
 	    // exists as a template -> return object
 	    object = ConvertDefaultValues (object);
@@ -1311,7 +1310,7 @@ Select another one.
 
 	    if (haskey (object, "default_values"))
 	    {
-		object["defaultvalue"] = maplist (string key, string val,
+		object["susedefaultvalue"] = maplist (string key, string val,
 		    (map<string,string>) object["default_values"]:$[], ``{
 		    return sformat ("%1=%2", key, val);
 		});
@@ -1331,6 +1330,7 @@ Select another one.
 	    }
 	    if (action == "renamed")
 	    {
+// FIXME FIXME works other way now!!!
 		string rdn = select (splitstring (dn, ","), 0, "");
 		dn = object["old_dn"]:dn;
 		object = remove (object, "old_dn");
@@ -1531,10 +1531,10 @@ Select another one.
 	    user_base = domain;
 	    group_base = domain;
 	    foreach (string dn, map mod, (map<string,map<string,any> >)config_modules, ``{
-		if (contains (mod["objectclass"]:[], "userconfiguration"))
-		    user_base = mod["defaultbase",0]:domain;
-		if (contains (mod["objectclass"]:[], "groupconfiguration"))
-		    group_base = mod["defaultbase",0]:user_base;
+		if (contains (mod["objectclass"]:[], "suseuserconfiguration"))
+		    user_base = mod["susedefaultbase",0]:domain;
+		if (contains (mod["objectclass"]:[], "sisegroupconfiguration"))
+		    group_base = mod["susedefaultbase",0]:user_base;
 	    });
 	    WriteLdapConfEntry ("nss_base_passwd",
 		(nss_base_passwd != "")? nss_base_passwd : user_base);
