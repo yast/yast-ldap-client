@@ -24,7 +24,6 @@
     import "Popup";
     include "network/ip.ycp";
 
-    include "ldap/edit_popups.ycp";
     include "ldap/routines.ycp";
 
     global define boolean Modified () ``{
@@ -813,6 +812,9 @@ removing current ones.</p>");
 	    list conflicts	= [];
 	    if (attr == "secondaryGroup")
 		offer		= Ldap::GetGroupsDN (Ldap::GetDomain());
+	    if (attr == "requiredAttribute")
+		offer		= Ldap::GetObjectAttributes (
+		    template["defaultObjectClass"]:[]);
 	    if (attr == "cn")
 	    {
 		string base = substring (template_dn, find (template_dn,",")+1);
@@ -821,7 +823,6 @@ removing current ones.</p>");
 			conflicts = add (conflicts, get_cn (it));
 		});
 	    }
-
 	    value = LdapPopup::EditAttribute (attr, value, conflicts,
 		Ldap::SingleValued (attr), offer);
 	    if (value == template[attr]:[])

@@ -236,7 +236,6 @@
      * returns html formated configuration summary
      * @return summary
      */
-
     global define string Summary ()
 	``{
 	string summary = "";
@@ -251,6 +250,23 @@
 	summary = Summary::AddHeader(summary, _("LDAP &TLS/SSL"));
 	summary = Summary::AddLine(summary, (ldap_tls) ? "Yes" : Summary::NotConfigured());
 
+	return summary;
+    }
+
+    /**
+     * returns html formated configuration summary (shorter than Summary)
+     * @return summary
+     */
+    global define string ShortSummary () ``{
+	string nc = Summary::NotConfigured();
+	string summary = "";
+	// summary text
+	summary = sformat (_("<b>Servers</b>:%1<br>"), server!=""? server: nc) +
+	// summary text
+	sformat (_("<b>Base DN</b>:%1<br>"), domain != "" ? domain : nc) +
+	// summary text (yes/no follows)
+	sformat ("<b>Client Enabled</b>:%1</br>",
+	    deletechars (start ? Label::YesButton(): Label::NoButton(),"&"));
 	return summary;
     }
 

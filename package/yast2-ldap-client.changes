@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Jul 10 11:30:25 CEST 2003 - jsuchome@suse.de
+
+- added ShortSummary()
+
+-------------------------------------------------------------------
 Tue Jul  8 17:17:14 CEST 2003 - nashif@suse.de
 
 - Read /etc/nsswitch.conf before writing configuration in autoinst
