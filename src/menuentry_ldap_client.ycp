@@ -27,7 +27,8 @@
    $[
      ////////////////////////////////////////////////////////////////////////////////
      // name of the entry, shon in curses menu and ycc                             //
-     `menuentry    : UI(_("LDAP client")),
+     `menuentry    : UI(
+     _("LDAP client")),
      
      ////////////////////////////////////////////////////////////////////////////////
      //leave blank,  experts only ;-)
@@ -51,7 +52,7 @@
      
       ////////////////////////////////////////////////////////////////////////////////
       // explanation in YaST2 Control Center                                         //
-      `helptext     : UI(_("Configure your LDAP client")),
+      `helptext     : UI(_("LDAP client configuration")),
    
       ////////////////////////////////////////////////////////////////////////////////
       // leaf nil, experts only ;-)
