@@ -149,12 +149,12 @@ possible values to use for the current attribute.</p>
 	    if (contains (offer, result) && value[value_size-1]:"" == "")
 	    {
 		// relace last empty entry
-		value [value_size-1] = result;
+		value [value_size-1] = (string) result;
 	    }
 	    else
 	    {
 		// add new entry
-		value = add (value, (result == `new)? "" : result);
+		value = add (value, (result == `new)? "" : (string) result);
 		value_size = value_size + 1;
 	    }
 	    UI::ReplaceWidget (`id(`rp), generate_value_list ());
