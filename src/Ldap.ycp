@@ -410,7 +410,7 @@
 	summary = Summary::AddLine(summary,( server!="") ? server : Summary::NotConfigured());
 	summary = Summary::AddHeader(summary, _("LDAP Version 2"));
 	summary = Summary::AddLine(summary, (ldap_v2) ? "Yes" : Summary::NotConfigured());
-	summary = Summary::AddHeader(summary, _("LDAP &TLS/SSL"));
+	summary = Summary::AddHeader(summary, _("LDAP TLS/SSL"));
 	summary = Summary::AddLine(summary, (ldap_tls) ? "Yes" : Summary::NotConfigured());
 
 	return summary;
