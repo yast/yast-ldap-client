@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Fri Nov 28 12:35:08 CET 2003 - jsuchome@suse.cz
+
+- syntax fixes for new interpreter
+- template configuration:
+  check if structural object class is included in list of default classes
+- 2.9.1
+
+-------------------------------------------------------------------
 Wed Oct  1 14:25:11 CEST 2003 - jsuchome@suse.cz
 
 - adapted to new Autologin interface

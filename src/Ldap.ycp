@@ -25,6 +25,12 @@
 
     import "PamSettings";
 
+    /**
+     * DN of base configuration object
+     */
+    global string base_config_dn = "";
+
+
     include "ldap/routines.ycp";
 
     /**
@@ -101,17 +107,12 @@
     global string current_template_dn = "";
 
     /**
-     * DN of base configuration object
-     */
-    global string base_config_dn = "";
-
-    /**
      * defaults for adding new config objects and templates
      */
     global map new_objects = $[
 	"userConfiguration"	: $[
-	    "searchFilter"		: ["objectClass=posixAccount"],
-	    "passwordHash"	: ["crypt"],
+	    "searchFilter"	: ["objectClass=posixAccount"],
+	    "passwordHash"	: ["CRYPT"],
 	    "skelDir"		: ["/etc/skel"],
 	    "minUniqueId"	: ["500"],
 	    "nextUniqueId"	: ["500"],
@@ -156,7 +157,6 @@
      * Map of object classes (from schema). Indexed by names.
      */
     global map object_classes = $[];
-    //TODO create defaults when schema could not be reached...
 
     /**
      * Map of atribute types (from schema). Indexed by names.
@@ -164,6 +164,19 @@
     global map attr_types = $[
     ];
 
+    /**
+     * encryption schemes supported by slappasswd
+     */
+    global list hash_schemas = ["CLEAR", "CRYPT", "SHA", "SSHA", "MD5", "SMD5"];
+
+    /**
+     * Available configuration modules (objectClass names)
+     * TODO update
+     */
+    global list available_config_modules = [
+	"userConfiguration",
+	"groupConfiguration"
+    ];
 
     //----------------------------------------------------------------
 
@@ -303,7 +316,8 @@
      */
     define string ReadLdapConfEntry (string entry, string defvalue) ``{
 
-	string ret = SCR::Read(add (.etc.ldap_conf.v."/etc/ldap.conf", entry));
+	string ret = (string) SCR::Read(
+	    add (.etc.ldap_conf.v."/etc/ldap.conf", entry));
 	if (ret == nil)
 	    ret = defvalue;
 	return ret;
@@ -315,7 +329,7 @@
      */
     global define boolean Read () ``{
 
-	start = (SCR::Execute (.target.bash, "/usr/bin/grep '^passwd:.*ldap' /etc/nsswitch.conf") == 0);
+	start = ((integer)SCR::Execute (.target.bash, "/usr/bin/grep '^passwd:.*ldap' /etc/nsswitch.conf") == 0);
 	server = ReadLdapConfEntry ("host", "");
 	domain  = ReadLdapConfEntry ("base", "");
 	old_domain = domain;
@@ -331,238 +345,24 @@
 	pam_password = ReadLdapConfEntry ("pam_password", "crypt");
 
 	nsswitch["passwd"] = splitstring
-	    (SCR::Read(.etc.nsswitch_conf.passwd)," ");
+	    ((string)SCR::Read(.etc.nsswitch_conf.passwd)," ");
 	nsswitch["group"] = splitstring
-	    (SCR::Read(.etc.nsswitch_conf.group), " ");
+	    ((string)SCR::Read(.etc.nsswitch_conf.group), " ");
 
 	// read sysconfig values
-	base_config_dn = SCR::Read (.sysconfig.ldap.BASE_CONFIG_DN);
+	base_config_dn = (string)SCR::Read (.sysconfig.ldap.BASE_CONFIG_DN);
 	if (base_config_dn == nil)
 	    base_config_dn = "";
 
-	file_server = (SCR::Read (.sysconfig.ldap.FILE_SERVER) == "yes");
+	file_server = ((string)SCR::Read (.sysconfig.ldap.FILE_SERVER)== "yes");
 
-	bind_dn = SCR::Read (.sysconfig.ldap.BIND_DN);
+	bind_dn = (string)SCR::Read (.sysconfig.ldap.BIND_DN);
 	if (bind_dn == nil || bind_dn == "")
 	    bind_dn = ReadLdapConfEntry ("binddn", "");
 
-	Autologin::Read ();
+//	Autologin::Read ();
 
 	return true;
-    }
-
-
-    /**
-     * Saves LDAP configuration.
-     * @param abort block for abort check
-     * @return symbol
-     */
-    global define symbol Write (block abort) ``{
-
-	// progress caption
-	string caption = _("Writing LDAP Configuration...");
-	integer no_of_steps = 4;
-
-	Progress::New (caption, " ", no_of_steps, [
-	    // progress stage label
-	    _("Stop services"),
-	    // progress stage label
-	    _("Update configuration files"),
-	    // progress stage label
-	    _("Start services"),
-	    // progress stage label
-	    _("Update configuration in LDAP directory"),
-           ], [
-	    // progress step label
-	    _("Stopping services..."),
-	    // progress step label
-	    _("Updating configuration files..."),
-	    // progress step label
-	    _("Starting services..."),
-	    // progress step label
-	    _("Updating configuration in LDAP directory..."),
-	    // final progress step label
-	    _("Finished") ],
-	    "" );
-
-	// -------------------- stop services
-	Progress::NextStage ();
-	if (eval (abort))
-	    return `abort;
-
-	boolean ypbind_running = false;
-
-	if (!write_only)
-	{
-	    ypbind_running = (Runlevel::ServiceStatus ("ypbind") == 0);
-		Runlevel::RunInitScript ("ypbind", "stop");
-	} else if (write_only && Mode::autoinst ){
-		// Read existing nsswitch in autoinstallation mode
-        nsswitch["passwd"] = splitstring
-           (SCR::Read(.etc.nsswitch_conf.passwd)," ");
-        nsswitch["group"] = splitstring
-           (SCR::Read(.etc.nsswitch_conf.group), " ");
-	}
-	map new_nsswitch = $[ "passwd":"", "group": ""];
-
-	// -------------------- update config files
-	Progress::NextStage ();
-	if (eval (abort))
-	    return `abort;
-
-	if (start) // ldap used
-	{
-	    // update ldap.conf
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".host, server);
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".base, domain);
-
-	    WriteOpenLdapConf();
-
-	    if (ldap_v2)
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ldap_version, "2");
-	    else
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ldap_version, "3");
-
-	    if (ldap_tls)
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ssl, "start_tls");
-	    else
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ssl, "no");
-
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".pam_password, pam_password);
-
-	    // save the user and group bases (check the LDAP config before)
-	    user_base = domain;
-	    group_base = domain;
-	    foreach (`dn, `mod, config_modules, ``{
-		if (contains (mod["objectClass"]:[], "userConfiguration"))
-		    user_base = mod["defaultBase",0]:domain;
-		if (contains (mod["objectClass"]:[], "groupConfiguration"))
-		    group_base = mod["defaultBase",0]:user_base;
-	    });
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_passwd,
-		(nss_base_passwd != "")? nss_base_passwd : user_base);
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_shadow,
-		(nss_base_shadow != "")? nss_base_shadow : user_base);
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_group,
-		(nss_base_group != "")? nss_base_group : group_base);
-
-	    // write the changes in ldap.conf now
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf", nil);
-
-	    // pam settigs
-	    foreach (`type, [ "account", "auth", "password" ], ``{
-		PamSettings::AddValue ("pam_unix2", type, "use_ldap");
-	    });
-
-	    // modify sources in /etc/nsswitch.conf
-	    foreach (`entry, `value, nsswitch, ``{
-		new_nsswitch [entry] = mergestring ( value, " " );
-		if (!contains (value, "ldap"))
-		    new_nsswitch [entry] = new_nsswitch [entry]:"" + " ldap";
-	    });
-	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
-	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
-	    SCR::Write(.etc.nsswitch_conf, nil);
-
-	    Autologin::Write (write_only);
-	}
-	else // ldap is not used
-	{
-	    // update ldap.conf -- currently only in cmd-line change is possible
-	    if (server != old_server || domain != old_domain)
-	    {
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".host, server);
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".base, domain);
-
-		WriteOpenLdapConf();
-	    }
-
-	    foreach (`entry, `value, nsswitch, ``{
-		new_nsswitch [entry] = mergestring (
-		    filter (`v, value, ``(v != "ldap")), " ");
-		// just to make sure that something remains...
-		if (new_nsswitch [entry]:"" == "")
-		    new_nsswitch [entry] = "files";
-	    });
-
-	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
-	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
-	    SCR::Write(.etc.nsswitch_conf, nil);
-
-	    foreach (`type, [ "account", "auth", "password" ], ``{
-		PamSettings::RemoveValue ("pam_unix2", type, "use_ldap");
-	    });
-	}
-
-	// write sysconfig values
-	SCR::Write (.sysconfig.ldap.FILE_SERVER, file_server? "yes": "no");
-
-	SCR::Write (.sysconfig.ldap.BASE_CONFIG_DN, base_config_dn);
-
-	SCR::Write (.sysconfig.ldap.BIND_DN, bind_dn);
-
-	// -------------------- start services
-	Progress::NextStage ();
-	if (eval (abort))
-	    return `abort;
-
-	if (Runlevel::ServiceStatus ("nscd") == 0 && !write_only)
-	{
-	    Runlevel::RunInitScript ("nscd", "restart");
-	}
-
-	if (ypbind_running)
-	{
-	    Runlevel::RunInitScript ("ypbind", "restart");
-	}
-
-	// -------------------- write settings to LDAP
-	Progress::NextStage ();
-	if (eval (abort))
-	    return `abort;
-
-	if (ldap_modified)
-	{
-	    WriteLDAP (config_modules);
-	    WriteLDAP (templates);
-	}
-
-	// final stage
-	Progress::NextStage ();
-
-	return `next;
-    }
-
-    /**
-     * Modify also /etc/openldap/ldap.conf for the use of
-     * ldap client utilities (like ldapsearch)
-     * @return modified?
-     */
-    global define boolean WriteOpenLdapConf () ``{
-
-	boolean write_openldap_conf = false;
-
-	if (!Require::IsAnyPackageInstalled (["openldap2-client"]))
-	    return false;
-
-	map out = SCR::Execute(.target.bash_output, "/bin/rpm -V openldap2-client");
-	// if the config file was not modified by user yet
-	if (!issubstring(out["stdout"]:"", "/etc/openldap/ldap.conf"))
-	    write_openldap_conf = true;
-	// if there are same values as in /etc/ldap.conf
-	else if (
-	    old_server == SCR::Read (.etc.ldap_conf.v."/etc/openldap/ldap.conf".host) &&
-	    old_domain == SCR::Read (.etc.ldap_conf.v."/etc/openldap/ldap.conf".base))
-		write_openldap_conf = true;
-
-	if (write_openldap_conf)
-	{
-	    // update ldap.conf
-	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".host, server);
-	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base, domain);
-	    y2milestone ("file /etc/openldap/ldap.conf was modified");
-	}
-	return write_openldap_conf;
     }
 
     /* ------------- functions for work with LDAP tree contents ------------ */
@@ -636,7 +436,7 @@ Value of DN is missing or invalid."),
 	    ret = UI::UserInput();
 	    if (ret == `details)
 	    {
-		if (UI::QueryWidget (`id(`details), `Value))
+		if ((boolean)UI::QueryWidget (`id(`details), `Value))
 		    UI::ReplaceWidget (`id(`rp), `VBox (
 			`Label (ldap_error[error]:error)));
 		else
@@ -648,37 +448,20 @@ Value of DN is missing or invalid."),
     }
 
     /**
+     * Reads and returns error map (=message + code) from agent
+     */
+    global define map LDAPErrorMap () ``{
+
+        return ((map)SCR::Read(.ldap.error));
+    }
+
+    /**
      * Reads and returns error message from agent
      */
     global define string LDAPError () ``{
 
 	map err_map = LDAPErrorMap ();
 	return err_map["msg"]:"";
-    }
-
-    /**
-     * Reads and returns error map (=message + code) from agent
-     */
-    global define map LDAPErrorMap () ``{
-
-        return (SCR::Read(.ldap.error));
-    }
-
-    /**
-     * Initializes LDAP agent
-     */
-    global define string LDAPInit () ``{
-
-	// TODO what if we have more servers?
-	string ret = "";
-	map args = $[
-	    "hostname":     GetFirstServer (server),
-	    "port":         GetFirstPort (server),
-	    "version":      ldap_v2 ? 2 : 3
-	];
-	if (!SCR::Execute (.ldap, args))
-	    ret = LDAPError();
-	return ret;
     }
 
     // this is a hack
@@ -690,7 +473,7 @@ Value of DN is missing or invalid."),
     }
 
     // this is a hack
-    global define string GetFirstPort (string servers) ``{
+    global define integer GetFirstPort (string servers) ``{
 
 	list l_servers = splitstring (servers, " ");
 	string srv = l_servers[0]:"";
@@ -700,6 +483,23 @@ Value of DN is missing or invalid."),
 	if (s_port == "")
 	    return default_port;
 	else return tointeger (s_port);
+    }
+
+    /**
+     * Initializes LDAP agent
+     */
+    global define string LDAPInit () ``{
+
+	// TODO what if we have more servers? -> choose dialog!
+	string ret = "";
+	map args = $[
+	    "hostname":     GetFirstServer (server),
+	    "port":         GetFirstPort (server),
+	    "version":      ldap_v2 ? 2 : 3
+	];
+	if (!(boolean)SCR::Execute (.ldap, args))
+	    ret = LDAPError();
+	return ret;
     }
 
     /**
@@ -714,7 +514,7 @@ Value of DN is missing or invalid."),
 	    map args = $[];
 	    if (!anonymous)
 		args = $[ "bind_dn": bind_dn, "bind_pw": pass];
-	    if (!SCR::Execute (.ldap.bind, args))
+	    if (!(boolean)SCR::Execute (.ldap.bind, args))
 		ret = LDAPError();
 	}
 	return ret;
@@ -747,7 +547,7 @@ Value of DN is missing or invalid."),
 	string pw = "";
 	if (ret == `ok)
 	{
-	    pw = UI::QueryWidget(`id(`pw), `Value);
+	    pw = (string) UI::QueryWidget(`id(`pw), `Value);
 	    anonymous = false;
 	}
 	else if (ret == `cancel)
@@ -786,7 +586,7 @@ Value of DN is missing or invalid."),
 
 	if (!haskey (attr_types, attr))
 	{
-	    map attr_type = SCR::Read (.ldap.schema.at, $["name":attr]);
+	    map attr_type = (map)SCR::Read (.ldap.schema.at, $["name":attr]);
 	    if (attr_type == nil)
 		attr_type = $[];
 	    if (attr == "cn")
@@ -806,7 +606,7 @@ Value of DN is missing or invalid."),
 
 	if (!haskey (attr_types, attr))
 	{
-	    map attr_type = SCR::Read (.ldap.schema.at, $["name":attr]);
+	    map attr_type = (map)SCR::Read (.ldap.schema.at, $["name":attr]);
 	    if (attr_type == nil)
 		attr_type = $[];
 	    attr_types [attr] = attr_type;
@@ -815,29 +615,42 @@ Value of DN is missing or invalid."),
     }
 
     /**
-     * Returns true id given object class exists in schema
+     * Returns true if given object class exists in schema
+     * @param class ObjectClass name
      */
     global define boolean ObjectClassExists (string class) ``{
 
-	return SCR::Read (.ldap.schema.oc.check, $["name":class]);
+	return (boolean)SCR::Read (.ldap.schema.oc.check, $["name":class]);
+    }
+
+    /**
+     * Returns true if given object class is of 'structural' type
+     * @param class ObjectClass name
+     */
+    global define boolean ObjectClassStructural (string class) ``{
+
+	map object_class = (map)SCR::Read(.ldap.schema.oc, $["name":class]);
+	return (object_class["kind"]:0 == 1);
     }
 
 
     /**
      * Returns allowed and required attributes of given object class
      * Read it from LDAP if it was not done yet.
+     * @param string class name of object class
+     * @return attribute names (list of strings)
      */
     global define list GetAllAttributes (string class) ``{
 
 	if (!haskey (object_classes, class))
 	{
-	    map object_class = SCR::Read (.ldap.schema.oc, $["name":class]);
+	    map object_class = (map)SCR::Read(.ldap.schema.oc, $["name":class]);
 	    if (object_class == nil)
 		object_class = $[];
 	    object_class ["all"] = union (object_class["may"]:[],
 		object_class["must"]:[]);
 	    // read attributes of superior classes
-	    foreach (`sup_oc, object_class["sup"]:[], ``{
+	    foreach (string sup_oc, object_class["sup"]:[], ``{
 		object_class ["all"] = union (object_class ["all"]:[],
 		    GetAllAttributes (sup_oc));
 	    });
@@ -849,11 +662,13 @@ Value of DN is missing or invalid."),
     /**
      * Returns the list of all allowed and required attributes for each
      * object class, given in the list of object classes
+     * @param classes list of object classes whose attributes we want
+     * @return attribute names (list of strings)
      */
     global define list GetObjectAttributes (list classes) ``{
 
 	list ret = [];
-	foreach (`class, classes, ``{
+	foreach (string class, classes, ``{
 	    ret = union (ret, GetAllAttributes (class));
 	});
 	return ret;
@@ -862,11 +677,13 @@ Value of DN is missing or invalid."),
     /**
      * For a given object, add all atributes this object is allowed to have
      * according to its "objectClass" value. Added attributes have empty values.
+     * @param object map describing LDAP entry
+     * @return updated map
      */
     global define map AddMissingAttributes (map object) ``{
 
-	foreach (`class, object["objectClass"]:[], ``{
-	    foreach (`attr, GetAllAttributes (class), ``{
+	foreach (string class, object["objectClass"]:[], ``{
+	    foreach (string attr, GetAllAttributes (class), ``{
 		if (!haskey (object, attr))
 		    object = add (object, attr, []);
 	    });
@@ -877,10 +694,11 @@ Value of DN is missing or invalid."),
     /**
      * Prepare agent for later schema queries
      * (agent reads schema to its internal structures)
+     * @return success
      */
     global define boolean InitSchema () ``{
 
-	list schemas = SCR::Read (.ldap.search, $[
+	list schemas = (list)SCR::Read (.ldap.search, $[
 	    "base_dn":  "",
 	    "attrs":    [ "subschemaSubentry" ],
 	    "scope":    0, //0:base
@@ -891,7 +709,8 @@ Value of DN is missing or invalid."),
 	    LDAPErrorMessage ("schema", LDAPError());
 	    return false;
 	}
-	boolean ok = SCR::Execute (.ldap.schema, $[ "schema_dn": schema_dn ]);
+	boolean ok = (boolean)SCR::Execute
+	    (.ldap.schema, $[ "schema_dn": schema_dn ]);
 
 	if (!ok)
 	    LDAPErrorMessage ("schema", LDAPError());
@@ -900,13 +719,15 @@ Value of DN is missing or invalid."),
 
     /**
      * In template object, convert the list of values
-     * (in the form [ "a1=v1", "a2=v2"])
+     * (where is in the form [ "a1=v1", "a2=v2"])
      * to map (in the form $[ "a1":"v1", "a2":"v2"]
+     * @param templ original template map
+     * @return updated template map
      */
     global define map ConvertDefaultValues (map templ) ``{
 
         map template = add (templ, "default_values", $[]);
-	foreach (`value, templ["defaultValue"]:[], ``{
+	foreach (string value, templ["defaultValue"]:[], ``{
 	    string at = select (splitstring (value, "="), 0, "");
 	    string v = substring (value, find (value, "=") + 1);
 	    template ["default_values", at] = v;
@@ -916,11 +737,12 @@ Value of DN is missing or invalid."),
 
     /**
      * Read object templates from LDAP server
+     * @return map of templates in the form $[ DN: $[ map_of_one_template ] ]
      */
     global define map ReadTemplates () ``{
 
 	templates = $[];
-	map all = SCR::Read (.ldap.search, $[
+	map all = (map)SCR::Read (.ldap.search, $[
 	    "base_dn":	base_config_dn,
 	    "filter":   "objectClass=objectTemplate",
 	    "attrs":	[],
@@ -934,21 +756,29 @@ Value of DN is missing or invalid."),
 	    all = $[];
 	}
 	// create a helper map of default values inside ...
-	templates = mapmap (`dn, `templ, all, ``{
+	/*
+	templates = mapmap (string dn, map templ, all, ``{
 	    map template = ConvertDefaultValues (templ);
 	    template = AddMissingAttributes (template);
 	    return [dn, template];
+	}); TODO use mapmap again
+	*/
+	foreach (string dn, map templ, all, ``{
+	    map template = ConvertDefaultValues (templ);
+	    template = AddMissingAttributes (template);
+	    templates [dn] = template;
 	});
 	return templates;
     }
 
     /**
      * Read configuration moduels from LDAP server
+     * @return map of config modules in the form $[ DN: $[ map_of_one_module] ]
      */
     global define map ReadConfigModules () ``{
 
 	config_modules = $[];
-	map modules = SCR::Read (.ldap.search, $[
+	map modules = (map)SCR::Read (.ldap.search, $[
 	    "base_dn":	base_config_dn,
 	    "filter":   "objectClass=moduleConfiguration",
 	    "attrs":	[],
@@ -962,8 +792,13 @@ Value of DN is missing or invalid."),
 	    LDAPErrorMessage ("read", LDAPError());
 	    modules = $[];
 	}
-	config_modules = mapmap (`dn, `mod, modules, ``{
+	/* TODO use mapmap
+	config_modules = mapmap (string dn, map mod, modules, ``{
 	    return [dn, AddMissingAttributes (mod)];
+	});
+	*/
+	foreach (string dn, map mod, modules, ``{
+	    config_modules = add(config_modules, dn, AddMissingAttributes(mod));
 	});
 
 	return config_modules;
@@ -976,7 +811,7 @@ Value of DN is missing or invalid."),
      */
     global define map GetLDAPEntry (string dn) ``{
 
-	list objects = SCR::Read (.ldap.search, $[
+	list objects = (list)SCR::Read (.ldap.search, $[
 	    "base_dn":	dn,
 	    "attrs":	[],
 	    "scope":	0, // only this one
@@ -992,6 +827,7 @@ Value of DN is missing or invalid."),
 
     /**
      * Check for existence of parent object of given DN in LDAP tree
+     * return the answer
      */
     global define boolean ParentExists (string dn) ``{
 
@@ -1012,37 +848,6 @@ The object with the selected DN cannot be created.
     }
 
     /**
-     * Check if base config DN belongs to some existing object and offer
-     * creating it if necessary
-     */
-    global define boolean CheckBaseConfig (string dn) ``{
-
-	map object = GetLDAPEntry (dn);
-	if (object == nil)
-	{
-	    return false;
-	}
-	if (object == $[])
-	{
-	    // yes/no popup, %1 is value of DN
-	    if (Popup::YesNo (sformat (_("No entry with DN '%1'
-exists on the LDAP server. Create it now?
-"), dn)))
-	    {
-		if (!ParentExists (dn))
-		    return false;
-		return WriteLDAP ( $[ dn : $[
-		    "objectClass"	: [ "top", "organizationalUnit"],
-		    "modified"		: "added",
-		    "ou"		: get_cn (dn)]]
-		);
-	    }
-	    return false;
-	}
-	return true;
-    }
-
-    /**
      * Return main configuration object DN
      */
     global define string GetMainConfigDN () ``{
@@ -1050,14 +855,20 @@ exists on the LDAP server. Create it now?
 	return base_config_dn;
     }
 
+    /**
+     * Return the map of configuration modules (new copy)
+     */
     global define map GetConfigModules () ``{
 
-	return eval (config_modules);
+	return (map) eval (config_modules);
     }
 
+    /**
+     * Return the map of templates (new copy)
+     */
     global define map GetTemplates () ``{
 
-	return eval (templates);
+	return (map) eval (templates);
     }
 
     /**
@@ -1090,6 +901,7 @@ exists on the LDAP server. Create it now?
     /**
      * Creates default new map for new configuration object
      * @param class additional objectClass of new module (e.g.userConfiguration)
+     * @return new module map
      */
     global define map CreateModule (string cn, string class) ``{
 
@@ -1105,7 +917,7 @@ exists on the LDAP server. Create it now?
 	string default_base = "";
 	if (class == "userConfiguration")
 	{
-	    foreach (`dn, `t, templates, ``{
+	    foreach (string dn, map t, templates, ``{
 		if (contains (t["objectClass"]:[], "userTemplate"))
 		    templs = add (templs, dn);
 	    });
@@ -1115,7 +927,7 @@ exists on the LDAP server. Create it now?
 	}
 	if (class == "groupConfiguration")
 	{
-	    foreach (`dn, `t, templates, ``{
+	    foreach (string dn, map t, templates, ``{
 		if (contains (t["objectClass"]:[], "groupTemplate"))
 		    templs = add (templs, dn);
 	    });
@@ -1148,23 +960,14 @@ exists on the LDAP server. Create it now?
     }
 
     /**
-     * Returns DN's of groups (objectClass=posixGroup) in given base
-     */
-    global define list GetGroupsDN (string base) ``{
-
-	if (groups_dn == [])
-	    groups_dn = ReadDN (base, "objectClass=posixGroup");
-	return groups_dn;
-    }
-
-    /**
      * Searches for DN's of all objects defined by filter in given base ("sub")
      * @param base search base
      * @param search_filter if filter is empty, "objectClass=*" is used
+     * @return list of DN's (list of strings)
      */
     global define list ReadDN (string base, string search_filter) ``{
 
-	list all = SCR::Read (.ldap.search, $[
+	list all = (list)SCR::Read (.ldap.search, $[
 	    "base_dn":	base,
 	    "filter":   search_filter,
 	    "attrs":	["cn"], // not necessary, just not read all values
@@ -1181,7 +984,20 @@ exists on the LDAP server. Create it now?
     }
 
     /**
+     * Returns DN's of groups (objectClass=posixGroup) in given base
+     * @param base LDAP search base
+     * @return groups (list of strings)
+     */
+    global define list GetGroupsDN (string base) ``{
+
+	if (groups_dn == [])
+	    groups_dn = ReadDN (base, "objectClass=posixGroup");
+	return groups_dn;
+    }
+
+    /**
      * Check if given DN exist and if it points to some template
+     * @param dn
      * @return empty map if DN don't exist, template map if DN points
      *  to template object, nil if object with given DN is not template
      */
@@ -1217,7 +1033,7 @@ Select another one.
      */
     global define boolean CommitConfigModules (map modules) ``{
 
-	foreach (`dn, `modmap, modules, ``{
+	foreach (string dn, map modmap, modules, ``{
 
 	    if (!haskey (config_modules, dn))
 	    {
@@ -1225,8 +1041,9 @@ Select another one.
 		ldap_modified = true;
 		return;
 	    }
-	    foreach (`attr, `val, modmap, ``{
-		if (config_modules [dn, attr]:"" != val)
+	    // 'val' can be list (most time), map (default_values), string
+	    foreach (string attr, any val, modmap, ``{
+		if (config_modules [dn, attr]:[] != val)
 		{
 		    config_modules [dn, attr] = val;
 		    if (!haskey (modmap, "modified"))
@@ -1244,7 +1061,7 @@ Select another one.
      */
     global define boolean CommitTemplates (map templs) ``{
 
-	foreach (`dn, `template, templs, ``{
+	foreach (string dn, map template, templs, ``{
 
 	    if (!haskey (templates, dn))
 	    {
@@ -1253,7 +1070,8 @@ Select another one.
 		ldap_modified = true;
 		return;
 	    }
-	    foreach (`attr, `val, template, ``{
+	    // 'val' can be list (most time), map (default_values), string
+	    foreach (string attr, any val, template, ``{
 		if (templates [dn, attr]:"" != val)
 		{
 		    templates [dn, attr] = val;
@@ -1277,7 +1095,7 @@ Select another one.
     global define map WriteToLDAP (map objects) ``{
 
 	map ret = $[];
-	foreach (`dn, `object, objects, ``{
+	foreach (string dn, map object, objects, ``{
 
 	    if (ret != $[])
 		return;
@@ -1288,19 +1106,20 @@ Select another one.
 
 	    if (haskey (object, "default_values"))
 	    {
-		object["defaultValue"] = maplist (`key, `val, object["default_values"]:$[], ``{
+		object["defaultValue"] = maplist (string key, string val,
+		    object["default_values"]:$[], ``{
 		    return sformat ("%1=%2", key, val);
 		});
 		object = remove (object, "default_values");
 	    }
 	    if (action == "added")
 	    {
-		if (!SCR::Write (.ldap.add, $[ "dn": dn ], object))
+		if (!(boolean)SCR::Write (.ldap.add, $[ "dn": dn ], object))
 		    ret = LDAPErrorMap();
 	    }
 	    if (action == "edited")
 	    {
-		if (!SCR::Write (.ldap.modify, $[
+		if (!(boolean)SCR::Write (.ldap.modify, $[
 		    "dn":		dn,
 		    "check_attrs":	true ], object))
 		    ret = LDAPErrorMap();
@@ -1310,7 +1129,7 @@ Select another one.
 		string rdn = select (splitstring (dn, ","), 0, "");
 		dn = object["old_dn"]:dn;
 		object = remove (object, "old_dn");
-		if (!SCR::Write (.ldap.modify, $[
+		if (!(boolean)SCR::Write (.ldap.modify, $[
 			"dn":	dn,// the original DN
 			"rdn":	rdn,
 			"deleteOldRDN":	true,
@@ -1321,7 +1140,7 @@ Select another one.
 	    {
 		if (object ["old_dn"]:dn != dn)
 		    dn = object ["old_dn"]:dn;
-		if (!SCR::Write (.ldap.delete, $[ "dn":	dn ]))
+		if (!(boolean)SCR::Write (.ldap.delete, $[ "dn": dn ]))
 		    ret = LDAPErrorMap();
 	    }
 	});
@@ -1347,16 +1166,280 @@ Select another one.
 	    if (error != $[])
 		LDAPErrorMessage ("write", error["msg"]:"");
 	}
-	return error == $[];
+	return (error == $[] && bind_pass != nil);
     }
+
+    /**
+     * Modify also /etc/openldap/ldap.conf for the use of
+     * ldap client utilities (like ldapsearch)
+     * @return modified?
+     */
+    global define boolean WriteOpenLdapConf () ``{
+
+	boolean write_openldap_conf = false;
+
+	if (!Require::IsAnyPackageInstalled (["openldap2-client"]))
+	    return false;
+
+	map out = (map)SCR::Execute(.target.bash_output,
+	    "/bin/rpm -V openldap2-client");
+
+	// if the config file was not modified by user yet
+	if (!issubstring(out["stdout"]:"", "/etc/openldap/ldap.conf"))
+	    write_openldap_conf = true;
+	// if there are same values as in /etc/ldap.conf
+	else if (
+	    (old_server ==
+	    (string)SCR::Read (.etc.ldap_conf.v."/etc/openldap/ldap.conf".host))
+	    &&
+	    (old_domain ==
+	    (string)SCR::Read (.etc.ldap_conf.v."/etc/openldap/ldap.conf".base))
+	)
+	{
+	    write_openldap_conf = true;
+	}
+
+	if (write_openldap_conf)
+	{
+	    // update ldap.conf
+	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".host, server);
+	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base, domain);
+	    y2milestone ("file /etc/openldap/ldap.conf was modified");
+	}
+	return write_openldap_conf;
+    }
+
+    /**
+     * Test if abort was pressed and ensure if user really wants to abort
+     */
+    define boolean AbortFunction (string text) ``{
+
+	return (UI::PollInput () == `abort && Popup::YesNo (text));
+    }
+
+    /**
+     * Saves LDAP configuration.
+     * @param abort_text question to ask when Abort is pressed
+     * @return symbol
+     */
+    global define symbol Write (string abort_text) ``{
+
+	// progress caption
+	string caption = _("Writing LDAP Configuration...");
+	integer no_of_steps = 4;
+
+	Progress::New (caption, " ", no_of_steps, [
+	    // progress stage label
+	    _("Stop services"),
+	    // progress stage label
+	    _("Update configuration files"),
+	    // progress stage label
+	    _("Start services"),
+	    // progress stage label
+	    _("Update configuration in LDAP directory"),
+           ], [
+	    // progress step label
+	    _("Stopping services..."),
+	    // progress step label
+	    _("Updating configuration files..."),
+	    // progress step label
+	    _("Starting services..."),
+	    // progress step label
+	    _("Updating configuration in LDAP directory..."),
+	    // final progress step label
+	    _("Finished") ],
+	    "" );
+
+	// -------------------- stop services
+	Progress::NextStage ();
+	if (AbortFunction (abort_text))
+	    return `abort;
+
+	boolean ypbind_running = false;
+
+	if (!write_only)
+	{
+	    ypbind_running = (Runlevel::ServiceStatus ("ypbind") == 0);
+		Runlevel::RunInitScript ("ypbind", "stop");
+	} else if (write_only && Mode::autoinst ){
+		// Read existing nsswitch in autoinstallation mode
+        nsswitch["passwd"] = splitstring
+           ((string)SCR::Read(.etc.nsswitch_conf.passwd)," ");
+        nsswitch["group"] = splitstring
+           ((string)SCR::Read(.etc.nsswitch_conf.group), " ");
+	}
+	map new_nsswitch = $[ "passwd":"", "group": ""];
+
+	// -------------------- update config files
+	Progress::NextStage ();
+	if (AbortFunction (abort_text))
+	    return `abort;
+
+	if (start) // ldap used
+	{
+	    // update ldap.conf
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".host, server);
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".base, domain);
+
+	    WriteOpenLdapConf();
+
+	    if (ldap_v2)
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ldap_version, "2");
+	    else
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ldap_version, "3");
+
+	    if (ldap_tls)
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ssl, "start_tls");
+	    else
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ssl, "no");
+
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".pam_password, pam_password);
+
+	    // save the user and group bases (check the LDAP config before)
+	    user_base = domain;
+	    group_base = domain;
+	    foreach (string dn, map mod, config_modules, ``{
+		if (contains (mod["objectClass"]:[], "userConfiguration"))
+		    user_base = mod["defaultBase",0]:domain;
+		if (contains (mod["objectClass"]:[], "groupConfiguration"))
+		    group_base = mod["defaultBase",0]:user_base;
+	    });
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_passwd,
+		(nss_base_passwd != "")? nss_base_passwd : user_base);
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_shadow,
+		(nss_base_shadow != "")? nss_base_shadow : user_base);
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_group,
+		(nss_base_group != "")? nss_base_group : group_base);
+
+	    // write the changes in ldap.conf now
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf", nil);
+
+	    // pam settigs
+	    foreach (string type, [ "account", "auth", "password" ], ``{
+		PamSettings::AddValue ("pam_unix2", type, "use_ldap");
+	    });
+
+	    // modify sources in /etc/nsswitch.conf
+	    foreach (string entry, list value, nsswitch, ``{
+		new_nsswitch [entry] = mergestring ( value, " " );
+		if (!contains (value, "ldap"))
+		    new_nsswitch [entry] = new_nsswitch [entry]:"" + " ldap";
+	    });
+	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
+	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
+	    SCR::Write(.etc.nsswitch_conf, nil);
+
+	    Autologin::Write (write_only);
+	}
+	else // ldap is not used
+	{
+	    // update ldap.conf -- currently only in cmd-line change is possible
+	    if (server != old_server || domain != old_domain)
+	    {
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".host, server);
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".base, domain);
+
+		WriteOpenLdapConf();
+	    }
+
+	    foreach (string entry, list value, nsswitch, ``{
+		new_nsswitch [entry] = mergestring (
+		    (list)filter (string v, value, ``(v != "ldap")), " ");
+		// just to make sure that something remains...
+		if (new_nsswitch [entry]:"" == "")
+		    new_nsswitch [entry] = "files";
+	    });
+
+	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
+	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
+	    SCR::Write(.etc.nsswitch_conf, nil);
+
+	    foreach (string type, [ "account", "auth", "password" ], ``{
+		PamSettings::RemoveValue ("pam_unix2", type, "use_ldap");
+	    });
+	}
+
+	// write sysconfig values
+	SCR::Write (.sysconfig.ldap.FILE_SERVER, file_server? "yes": "no");
+
+	SCR::Write (.sysconfig.ldap.BASE_CONFIG_DN, base_config_dn);
+
+	SCR::Write (.sysconfig.ldap.BIND_DN, bind_dn);
+
+	// -------------------- start services
+	Progress::NextStage ();
+	if (AbortFunction (abort_text))
+	    return `abort;
+
+	if (Runlevel::ServiceStatus ("nscd") == 0 && !write_only)
+	{
+	    Runlevel::RunInitScript ("nscd", "restart");
+	}
+
+	if (ypbind_running)
+	{
+	    Runlevel::RunInitScript ("ypbind", "restart");
+	}
+
+	// -------------------- write settings to LDAP
+	Progress::NextStage ();
+	if (AbortFunction (abort_text))
+	    return `abort;
+
+	if (ldap_modified)
+	{
+	    if (WriteLDAP (config_modules))
+		WriteLDAP (templates);
+	}
+
+	// final stage
+	Progress::NextStage ();
+
+	// unbind is done in agent destructor
+	// ldap-client can be called more times from users module so we
+	// will have to know it is necessary to bind again
+	binded = false;
+
+	return `next;
+    }
+
+    /**
+     * Check if base config DN belongs to some existing object and offer
+     * creating it if necessary
+     */
+    global define boolean CheckBaseConfig (string dn) ``{
+
+	map object = GetLDAPEntry (dn);
+	if (object == nil)
+	{
+	    return false;
+	}
+	if (object == $[])
+	{
+	    // yes/no popup, %1 is value of DN
+	    if (Popup::YesNo (sformat (_("No entry with DN '%1'
+exists on the LDAP server. Create it now?
+"), dn)))
+	    {
+		if (!ParentExists (dn))
+		    return false;
+		return WriteLDAP ( $[ dn : $[
+		    "objectClass"	: [ "top", "organizationalUnit"],
+		    "modified"		: "added",
+		    "ou"		: get_cn (dn)]]
+		);
+	    }
+	    return false;
+	}
+	return true;
+    }
+
 
     /**
      * Return needed packages and packages to be removed
      * during autoinstallation.
      * @return map of lists.
-     *
-     **/
-
+     */
     global  define map AutoPackages() ``{
       list install_pkgs = required_packages;
       list remove_pkgs = [];

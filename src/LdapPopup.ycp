@@ -11,8 +11,6 @@
 
 {
 
-// TODO: add BrowseLDAP popup
-
 module "LdapPopup";
 textdomain "ldap-client";
 
@@ -31,7 +29,37 @@ import "Wizard";
  *  groups for "secondaryGroup" attribute)
  * @return list of atrtibute values (edited or unchanged)
  */
-global define list EditAttribute (string attr, list value, list conflicts, boolean single, list offer) ``{
+global define list EditAttribute (string attr, list value, list conflicts,
+				  boolean single, list offer) ``{
+
+    // help text 1/3
+    string help_text = _("<p>Set the new value for the current attribute.</p>") +
+
+    // help text 2/3
+    _("<p>If the attribute can have more values, you can add new entries
+with <b>Add Value</b>. Sometimes the button contains the list of
+possible values to use for the current attribute.</p>
+");
+
+    string desc = Ldap::AttributeDescription (attr);
+
+    if (desc != "")
+	// help text 3/3, %1 is attribute name, description follows.
+	// The description will be not translated: maybe add a note
+	// "available only in english" to the sentence for other languages?
+	// Example:
+	// "<p>The description of attribute \"%1\"<br>(available only in english):</p>"
+	// or:
+	// "<p>The description (only in english) of attribute \"%1\":<br></p>"
+	help_text = help_text + sformat (_("<p>The description of attribute \"%1\":<br></p>"), attr) +
+
+	sformat ("<p><i>%1</i></p>", desc);
+
+    list org_value = value;
+    integer value_size = size (value);
+
+    // horizontal size of popup for
+    integer hsize = size (value[0]:"") + 10;
 
     /**
      * Helper for creating items for EditAttribute Popup
@@ -60,47 +88,20 @@ global define list EditAttribute (string attr, list value, list conflicts, boole
 	}
 	return ret;
     }
-    // help text 1/3
-    string help_text = _("<p>Set the new value for the current attribute.</p>") +
 
-    // help text 2/3
-    _("<p>If the attribute can have more values, you can add new entries
-with <b>Add Value</b>. Sometimes the button contains the list of
-possible values to use for the current attribute.</p>
-");
-
-    string desc = Ldap::AttributeDescription (attr);
-
-    if (desc != "")
-	// help text 3/3, %1 is attribute name, description follows.
-	// The description will be not translated: maybe add a note
-	// "available only in english" to the sentence for other languages?
-	// Exaple:
-	// "<p>The description of attribute \"%1\"<br>(available only in english):</p>"
-	// or:
-	// "<p>The description (only in english) of attribute \"%1\":<br></p>"
-	help_text = help_text + sformat (_("<p>The description of attribute \"%1\":<br></p>"), attr) +
-
-	sformat ("<p><i>%1</i></p>", desc);
-
-    list org_value = value;
-    integer value_size = size (value);
-
-    // horizontal size of popup for
-    integer hsize = size (value[0]:"") + 10;
     term values = generate_value_list ();
     // button label
     term add_button = `PushButton(`id(`new), `opt (`key_F3), _("&Add Value"));
 
     if (size (offer) > 0)
     {
-	// menubutton item
+	// menubutton item (default value)
 	list mb = [ `item(`id(`new), _("&Empty Entry")) ];
-	foreach (`item, offer, ``{
-	    mb = add (mb, `item(`id(item), item));
+	foreach (string it, offer, ``{
+	    mb = add (mb, `item(`id(it), it));
 	});
 	// button label
-	add_button = `MenuButton(`id(`mb), `opt (`key_F3), _("&Add Value"),mb);
+	add_button = `MenuButton(`id(`mb), `opt (`key_F3), _("&Add Value"), mb);
     }
 
     UI::OpenDialog( `opt(`decorated), `HBox(
@@ -166,7 +167,7 @@ possible values to use for the current attribute.</p>
 	    new_value = [];
 	    while (j < value_size && !duplicate)
 	    {
-		string v = UI::QueryWidget (`id(j), `Value);
+		string v = (string) UI::QueryWidget (`id(j), `Value);
 		if (!contains (org_value, v) && contains (conflicts, v))
 		{
 		    //error popup
@@ -201,9 +202,6 @@ a value.
  */
 global define map NewModule (list available, list conflicts) ``{
 
-    // help text TODO?
-    string help_text = "";
-
     map descriptions = $[
 	// description of configuration object
 	"userConfiguration": _("Configuration of user management tools"),
@@ -212,7 +210,7 @@ global define map NewModule (list available, list conflicts) ``{
     ];
     // label
     term r_buttons = `VBox( `Left(`Label (_("Object Class of New Module"))));
-    foreach (`class, available, ``{
+    foreach (string class, available, ``{
 	string desc = class;
 	if (descriptions [class]:"" != "")
 	    desc = sformat ("%1 (%2)", class, descriptions [class]:"");
@@ -228,7 +226,6 @@ global define map NewModule (list available, list conflicts) ``{
 	    `HBox(
 		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
 		`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton())
-//		`PushButton(`id(`help),`opt (`key_F2), Label::HelpButton())
 	    )
 	),
 	`HSpacing(1)
@@ -246,13 +243,9 @@ global define map NewModule (list available, list conflicts) ``{
 	    new_value = "";
 	    break;
 	}
-	if ( result == `help )
-	{
-	    Wizard::ShowHelp( help_text );
-	}
 	if (result == `ok)
 	{
-	    new_value = UI::QueryWidget (`id(`cn), `Value);
+	    new_value = (string) UI::QueryWidget (`id(`cn), `Value);
 	    if (contains (conflicts, new_value))
 	    {
 		//error popup
@@ -267,7 +260,7 @@ Select another one.
 		Popup::Error (_("Enter the module name."));
 		continue;
 	    }
-	    class = UI::QueryWidget (`id(`rb), `CurrentButton);
+	    class = (string) UI::QueryWidget (`id(`rb), `CurrentButton);
 	    break;
 	}
     }
@@ -302,7 +295,7 @@ with the value of attribute \"attr_name\" (for example, use \"/home/%uid\"
 as a value of \"homeDirectory\").</p>
 ");
 
-    available = filter (`attr, available, ``( !contains (conflicts, attr)));
+    available = filter (string attr, available, ``(!contains (conflicts,attr)));
 
     UI::OpenDialog( `opt(`decorated), `HBox(
 	`HSpacing(1),
@@ -343,8 +336,8 @@ as a value of \"homeDirectory\").</p>
 	}
 	if (result == `ok)
 	{
-	    attr	= UI::QueryWidget (`id(`attr), `Value);
-	    new_value	= UI::QueryWidget (`id(`val), `Value);
+	    attr	= (string) UI::QueryWidget (`id(`attr), `Value);
+	    new_value	= (string) UI::QueryWidget (`id(`val), `Value);
 	    break;
 	}
     }

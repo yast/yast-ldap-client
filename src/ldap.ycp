@@ -20,6 +20,7 @@
     import "Popup";
     import "Ldap";
     import "RichText";
+//    import "CommandLine";
 
     include "ldap/wizards.ycp";
 

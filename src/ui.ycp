@@ -23,8 +23,6 @@
     import "Label";
     import "Popup";
 
-    include "network/ip.ycp";
-
     include "ldap/routines.ycp";
 
     global define boolean Modified () ``{
@@ -68,19 +66,14 @@
      */
     global define symbol WriteDialog() ``{
 
-	// A callback function for abort
-	block abort = ``{
-	    // popup text
-	    if (UI::PollInput () == `abort && Popup::YesNo (_("Really abort the writing process?")))
-		return true;
-	    return false;
-	};
+	// popup text
+	string abort_text = _("Really abort the writing process?");
 
 	if (Modified())
 	{
 	    // help text
 	    Wizard::RestoreHelp(_("Writing LDAP Client Settings"));
-	    return Ldap::Write (abort);
+	    return Ldap::Write (abort_text);
 	}
 	return `next;
     }
@@ -185,9 +178,9 @@ removed.</p>") +
 		`PushButton(`id(`abort), Label::AbortInstallationButton()));
 	}
 
-	any result = nil;
+	symbol result = nil;
 	do {
-	    result = UI::UserInput ();
+	    result = (symbol) UI::UserInput ();
 
 	    start = (UI::QueryWidget(`id(`rd), `CurrentButton) == `ldapyes);
 
@@ -201,10 +194,10 @@ removed.</p>") +
             }
 
 	    if ((result == `next || result == `advanced) && start) {
-		domain = UI::QueryWidget(`id(`ldapd), `Value);
-		server = UI::QueryWidget(`id(`ldapa), `Value);
-		ldap_v2 = UI::QueryWidget(`id(`ldapv), `Value);
-		ldap_tls = UI::QueryWidget(`id(`ldaps), `Value);
+		domain = (string) UI::QueryWidget(`id(`ldapd), `Value);
+		server = (string) UI::QueryWidget(`id(`ldapa), `Value);
+		ldap_v2 = (boolean) UI::QueryWidget(`id(`ldapv), `Value);
+		ldap_tls = (boolean) UI::QueryWidget(`id(`ldaps), `Value);
 
 		if (domain == "")
 		{
@@ -317,7 +310,7 @@ directories.</p>
     if (Mode::cont) Wizard::ReplaceAbortButton (
 	    `PushButton(`id(`abort), Label::AbortInstallationButton()));
 
-    any result = nil;
+    symbol result = nil;
 
     // in autoyast-config mode, don't attach to server...
     if (Mode::config)
@@ -325,14 +318,14 @@ directories.</p>
 
     while (true)
     {
-	result = UI::UserInput ();
+	result = (symbol) UI::UserInput ();
 	if (contains ([`back, `cancel, `abort], result))
 	    break;
 	if (result == `next || result == `configure)
 	{
-	    bind_dn = UI::QueryWidget(`id(`bind_dn), `Value);
-	    base_config_dn = UI::QueryWidget(`id(`base_config_dn), `Value);
-	    file_server = UI::QueryWidget(`id(`file_server), `Value);
+	    bind_dn = (string) UI::QueryWidget(`id(`bind_dn), `Value);
+	    base_config_dn=(string)UI::QueryWidget(`id(`base_config_dn),`Value);
+	    file_server = (boolean)UI::QueryWidget(`id(`file_server), `Value);
 
 	    if (result == `configure && bind_dn == "")
 	    {
@@ -400,331 +393,6 @@ All changes will be lost.
 }
 
 /**
- * Dialog for configuration of one "configuration module"
- */
-global define symbol ModuleConfigurationDialog () ``{
-
-    /**
-     * Helper for creating table items in ModuleConfiguration Dialog
-     */
-    define list create_attrs_items (string cn) ``{
-
-	list attrs_items = [];
-
-	foreach (`attr, `value, modules[ get_dn(cn) ]:$[], ``{
-	    any val = value;
-	    if (contains (["objectClass", "modified", "old_dn"], attr))
-		return;
-	    if (is (value, list))
-	    {
-		if (Ldap::SingleValued (attr))
-		    val = value[0]:"";
-		else
-		    val = mergestring (value, ",");
-	    }
-	    attrs_items = add (attrs_items, `item(`id(attr), attr, val));
-	});
-
-	return attrs_items;
-    }
-
-    /**
-     * Helper for updating widgets in ModuleConfiguration Dialog
-     */
-    define void replace_module_names () ``{
-
-	list modules_items = []; // list of module names
-	foreach (`cn, names, ``{
-	    if (cn == current_cn)
-		modules_items = add (modules_items, `item(`id(cn), cn, true));
-	    else
-		modules_items = add (modules_items, `item(`id(cn), cn));
-	});
-	UI::ReplaceWidget (`id(`rp_modnames),
-	    `Left(`ComboBox (`id (`modules), `opt (`notify),
-		// combobox label
-		_("Configuration &Module"), modules_items)));
-	boolean ena = names != [];
-	UI::ChangeWidget (`id(`delete), `Enabled, ena);
-	UI::ChangeWidget (`id(`edit), `Enabled, ena);
-	UI::ChangeWidget (`id(`modules), `Enabled, ena);
-    }
-
-    /**
-     * Helper for updating widgets in ModuleConfiguration Dialog
-     */
-    define void replace_templates_items () ``{
-
-	list items = maplist (`dn, modules [current_dn,"defaultTemplate"]:[],``{
-	    return `item (`id(dn), dn);
-	});
-	UI::ReplaceWidget (`id(`rp_templs),
-	    `MenuButton (`id(`templ_mb), `opt(`key_F7),
-		// button label
-		_("&Configure Template"), items ));
-	UI::ChangeWidget (`id(`templ_mb), `Enabled, items != []);
-    }
-
-    // helptext 1/4
-    string help_text = _("<p>Here, manage the configuration stored in LDAP directory.</p>") +
-
-    // helptext 2/4
-    _("<p>Each configuration set is called a <b>configuration module</b>. If there
-is no configuration module in the provided location (Base Configuration),
-create one with <b>New</b>. Delete the current module
-using <b>Delete</b>.</p>
-") +
-
-    // helptext 3/4
-    _("<p>Edit the values of attributes in the table with <b>Edit</b>.
-Some values have special meanings, for example, changing the <b>cn</b> value renames the
-current module.</p>
-") +
-
-    // helptext 4/4
-    _("<p>To configure the default template of the current module,
-click <b>Configure Template</b>.
-</p>
-");
-
-    string current_dn		= Ldap::current_module_dn;
-    map  modules_attrs_items	= $[]; // map of list (table items), index is cn
-    map modules			= Ldap::GetConfigModules ();
-    map templates		= Ldap::GetTemplates ();
-    list names			= [];
-    list templates_dns		= maplist (`dn, `t, templates, ``{ return dn;});
-
-    foreach (`dn, `mod, modules, ``{
-	string cn = get_string (mod, "cn");
-	if (cn == "")
-	    return;
-	names = add (names, cn);
-	// attributes for table
-	modules_attrs_items [cn] = create_attrs_items (cn);
-	if (current_dn == "")
-	    current_dn = dn;
-    });
-    string current_cn = get_cn (current_dn);
-
-    term contents = `HBox(`HSpacing (1.5), `VBox(
-        `VSpacing(0.5),
-	`HBox (
-	    `ReplacePoint (`id(`rp_modnames), `Empty()),
-	    `VBox (
-		`Label (""), `PushButton (`id (`new), Label::NewButton())),
-	    `VBox (
-		`Label (""), `PushButton (`id (`delete), Label::DeleteButton()))
-	),
-        `VSpacing(0.5),
-	`Table(`id(`table), `opt(`notify), `header(
-	    // table header 1/2
-	    _("Attribute"),
-	    // table header 2/2
-	    _("Value")),
-	    modules_attrs_items[current_cn]:[]),
-        `HBox (
-            `PushButton(`id(`edit), `opt(`key_F4), Label::EditButton()),
-            `HStretch(),
-	    `ReplacePoint (`id(`rp_templs), `Empty ())
-	),
-	`VSpacing (0.5)
-	),
-	`HSpacing (1.5));
-
-    // dialog label
-    Wizard::SetContentsButtons(_("Module Configuration"),
-            contents, help_text, Label::BackButton(), Label::NextButton());
-    if (Mode::cont) Wizard::ReplaceAbortButton (
-	    `PushButton(`id(`abort), Label::AbortInstallationButton()));
-
-    if (size (modules_attrs_items[current_cn]:[]) > 0)
-    {
-	UI::SetFocus (`id(`table));
-    }
-    replace_templates_items ();
-    replace_module_names ();
-
-    any result = nil;
-    while (true)
-    {
-	result = UI::UserInput ();
-	string attr	= UI::QueryWidget (`id(`table), `CurrentItem);
-
-	// change the focus to new module
-	if (result == `modules)
-	{
-	    current_cn = UI::QueryWidget (`id(`modules), `Value);
-	    current_dn = get_dn (current_cn);
-	    UI::ChangeWidget (`id(`table), `Items,
-		modules_attrs_items[current_cn]:[]);
-	    replace_templates_items ();
-	}
-	// delete the module
-	if (result == `delete)
-	{
-	    // yes/no popup, %1 is name
-	    if (!Popup::YesNo (sformat (_("Really delete module \"%1\"?"), current_cn)))
-		continue;
-	    modules_attrs_items = remove (modules_attrs_items, current_cn);
-	    if (modules [current_dn, "modified"]:"" != "added")
-	    {
-		modules [current_dn, "modified"] = "deleted";
-	    }
-	    names = filter (`n, names, ``(n != current_cn));
-	    current_cn = names [0]:"";
-	    current_dn = get_dn (current_cn);
-	    replace_module_names ();
-	    replace_templates_items ();
-	    UI::ChangeWidget (`id(`table), `Items,
-		modules_attrs_items[current_cn]:[]);
-	}
-	// new module
-	if (result == `new)
-	{
-	    // offer list of free classes TODO which are available?
-	    list available = [ "userConfiguration", "groupConfiguration" ];
-	    foreach (`dn, `mod, modules, ``{
-		if (mod["modified"]:"" == "deleted")
-		    return;
-		foreach (`cl, mod["objectClass"]:[], ``{
-		    available = filter (`c, available, ``(c != cl));
-		});
-	    });
-	    if (available == [])
-	    {
-		// message
-		Popup::Message (_("You currently have configuration modules
-of each type, so you cannot add a new one."));
-		continue;
-	    }
-	    // get new name and class
-	    map new = LdapPopup::NewModule (available, names);
-	    string cn = new ["cn"]:"";
-	    if (cn == "")
-		continue;
-	    current_cn = cn;
-	    current_dn = get_dn (current_cn);
-	    modules [current_dn] = Ldap::CreateModule (cn, new ["class"]:"");
-	    names = add (names, cn);
-	    modules_attrs_items [cn] = create_attrs_items (cn);
-	    replace_module_names ();
-	    replace_templates_items ();
-	    UI::ChangeWidget (`id(`table), `Items,
-		modules_attrs_items[current_cn]:[]);
-	}
-	// module attribute modification
-	if (result == `edit || result == `table)
-	{
-	    list value		= modules [current_dn, attr]:[];
-	    list offer		= [];
-	    list conflicts	= [];
-	    if (attr == "cn")
-		conflicts = names;
-	    if (attr == "defaultTemplate")
-		offer		= templates_dns;
-	    else if (attr == "passwordHash")
-		offer		= [ "crypt", "clear"];//FIXME md5??
-
-	    value = LdapPopup::EditAttribute (attr, value, conflicts,
-		Ldap::SingleValued (attr), offer);
-	    if (value == modules [current_dn, attr]:[]) //nothing was changed
-		continue;
-	    modules [current_dn, attr] = value;
-	    modules_attrs_items [current_cn] = create_attrs_items (current_cn);
-	    // TODO: when only affected item is changed, focus remains...
-	    UI::ChangeWidget (`id(`table), `Items,
-		modules_attrs_items[current_cn]:[]);
-	    if (attr == "cn")
-	    {
-		string cn = value [0]:current_cn;
-		modules_attrs_items[cn] = modules_attrs_items[current_cn]:[];
-		modules_attrs_items = remove (modules_attrs_items, current_cn);
-		if (modules [current_dn, "modified"]:"" != "added" &&
-		    modules [current_dn, "modified"]:"" != "renamed")
-		{
-		    modules [current_dn, "modified"] = "renamed";
-		    modules [current_dn, "old_dn"] = current_dn;
-		}
-		modules [ get_dn (cn) ] = modules [current_dn]:$[];
-		modules = remove (modules, current_dn);
-		names = filter (`n, names, ``(n != current_cn));
-		names = add (names, cn);
-		current_cn = cn;
-		current_dn = get_dn (cn);
-		replace_module_names ();
-	    }
-	    if (attr == "defaultTemplate")
-		replace_templates_items ();
-	}
-	// configure template
-	if (contains (modules [current_dn, "defaultTemplate"]:[], result))
-	{
-	    string template_dn = result;
-	    Ldap::current_template_dn = template_dn;
-	    map template = eval (templates [template_dn]:$[]);
-	    // template not loaded, check DN:
-	    if (template == $[])
-	    {
-		template = Ldap::CheckTemplateDN (template_dn);
-		if (template == nil)
-		    continue;
-		else if (template == $[])
-		{
-		    if (!Ldap::ParentExists (template_dn))
-			continue;
-		    template = Ldap::CreateTemplate (get_cn (template_dn),
-			modules [current_dn, "objectClass"]:[]);
-		}
-		templates_dns = add (templates_dns, template_dn);
-	    }
-	    templates [template_dn] = TemplateConfigurationDialog (template);
-	    // check for template renaming
-	    if (templates [template_dn, "cn"]:[] != template ["cn"]:[])
-	    {
-		string cn = get_string (templates [template_dn]:$[], "cn");
-		string new_dn = get_new_dn (cn, template_dn);
-
-		templates [new_dn] = templates [template_dn]:$[];
-		templates = remove (templates, template_dn);
-		if (templates [new_dn, "modified"]:"" != "added")
-		{
-		    templates [new_dn, "modified"] = "renamed";
-		    templates [new_dn, "old_dn"] = template_dn;
-		}
-		templates_dns = filter (`dn, templates_dns, ``(
-		    dn != template_dn));
-		templates_dns = add (templates_dns, new_dn);
-		// update list of templates
-		modules [current_dn, "defaultTemplate"] =
-		    maplist (`dn, modules [current_dn, "defaultTemplate"]:[],``{
-			if (dn == template_dn) return new_dn;
-			return dn;
-		    });
-		modules_attrs_items [current_cn] =
-		    create_attrs_items (current_cn);
-		UI::ChangeWidget (`id(`table), `Items,
-		    modules_attrs_items[current_cn]:[]);
-		replace_templates_items ();
-	    }
-	    UI::SetFocus (`id(`table));
-	}
-	if (result == `next)
-	{
-	    Ldap::current_module_dn = current_dn;
-	    // save the edited values to global map...
-	    Ldap::CommitConfigModules (modules);
-	    // commit templates here!
-	    Ldap::CommitTemplates (templates);
-	    break;
-	}
-	if (contains ([`back, `cancel, `abort], result))
-	    break;
-    }
-
-    return result;
-}
-
-/**
  * Dialog for configuration one object template
  */
 global define map TemplateConfigurationDialog (map templ) ``{
@@ -748,33 +416,33 @@ removing current ones.</p>
     string template_dn = Ldap::current_template_dn;
 
     list table_items = [];
-    map template = eval (templ);
+    map template = (map) eval (templ);
 
     // helper function converting list value to string
     define string to_table (string attr, list val) ``{
 
 	if (Ldap::SingleValued (attr))
-	    return value[0]:"";
+	    return val[0]:"";
 	else if (contains (["secondaryGroup", "defaultTemplate"], attr))
-	    return mergestring (value, " ");
+	    return mergestring (val, " ");
 	else
-	    return mergestring (value, ",");
+	    return mergestring (val, ",");
     }
 
-    foreach (`attr, `value, template, ``{
+    foreach (string attr, any value, template, ``{
 	any val = value;
 	// do not show internal attributes
 	if (contains (["defaultValue", "default_values", "objectClass",
 	"modified", "old_dn"], attr))
 	    return;
 	if (is (value, list))
-	    val = to_table (attr, val);
+	    val = to_table (attr, (list) val);
 	table_items = add (table_items, `item (`id(attr), attr, val));
     });
 
     list default_items = [];
     map default_values = template["default_values"]:$[];
-    foreach (`attr, `value, default_values, ``{
+    foreach (string attr, string value, default_values, ``{
 	default_items = add (default_items, `item (`id(attr), attr, value));
     });
 
@@ -825,7 +493,7 @@ removing current ones.</p>
     while (true)
     {
 	result		= UI::UserInput ();
-	string attr	= UI::QueryWidget (`id(`table), `CurrentItem);
+	string attr	= (string)UI::QueryWidget (`id(`table), `CurrentItem);
 
 	// edit attribute
 	if (result == `edit || result == `table)
@@ -835,23 +503,28 @@ removing current ones.</p>
 	    list conflicts	= [];
 	    if (attr == "secondaryGroup")
 		offer		= Ldap::GetGroupsDN (Ldap::GetDomain());
-	    if (attr == "requiredAttribute")
+	    if (attr == "requiredAttribute" || attr == "allowedAttribute" ||
+		attr == "namingAttribute")
+	    {
 		offer		= Ldap::GetObjectAttributes (
 		    template["defaultObjectClass"]:[]);
-	    /* TODO offer available object classes
+	    }
+	    /* TODO
 	    if (attr == "defaultObjectClass")
-		offer		= available_object_classes;
+		- offer all available object classes
+		- mark "structural" ones
 	    */
 	    if (attr == "cn")
 	    {
 		string base = substring (template_dn, find (template_dn,",")+1);
-		foreach (`it, Ldap::ReadDN (base, ""), ``{
-		    if (substring (it,0,3) == "cn=")
-			conflicts = add (conflicts, get_cn (it));
+		foreach (string dn, Ldap::ReadDN (base, ""), ``{
+		    if (substring (dn,0,3) == "cn=")
+			conflicts = add (conflicts, get_cn (dn));
 		});
 	    }
 	    value = LdapPopup::EditAttribute (attr, value, conflicts,
 		Ldap::SingleValued (attr), offer);
+
 	    if (value == template[attr]:[])
 		continue;
 	    UI::ChangeWidget (`id(`table),`Item(attr,1), to_table(attr, value));
@@ -860,9 +533,8 @@ removing current ones.</p>
 	// add default value
 	if (result == `add_dfl)
 	{
-	    list conflicts = maplist (`attr, `val, default_values, ``{
-		return attr;
-	    });
+	    list conflicts =
+		maplist (string attr, string val, default_values,``(attr));
 	    list classes = template["defaultObjectClass"]:[];
 	    list available = Ldap::GetObjectAttributes (classes);
 	    // filter out objectClass (there is already defaultObjectClass)
@@ -881,7 +553,7 @@ removing current ones.</p>
 	// edit default value
 	if (result == `edit_dfl || result == `defaults)
 	{
-	    attr		= UI::QueryWidget (`id(`defaults),`CurrentItem);
+	    attr	= (string)UI::QueryWidget (`id(`defaults),`CurrentItem);
 	    if (attr == nil)
 		continue;
 	    string value	= default_values [attr]:"";
@@ -895,14 +567,14 @@ removing current ones.</p>
 	// delete default value
 	if (result == `delete_dfl)
 	{
-	    attr		= UI::QueryWidget (`id(`defaults),`CurrentItem);
+	    attr	= (string)UI::QueryWidget (`id(`defaults),`CurrentItem);
 	    if (attr == nil)
 		continue;
 	    // yes/no popup, %1 is name
 	    if (!Popup::YesNo (sformat (_("Really delete default attribute \"%1\"?"), attr)))
 		continue;
 	    default_values = remove (default_values, attr);
-	    default_items = filter (`it, default_items, ``(
+	    default_items = filter (term it, default_items, ``(
 		select (it, 1, "") != attr));
 	    UI::ChangeWidget (`id(`defaults), `Items, default_items);
 	    UI::ChangeWidget (`id(`edit_dfl), `Enabled, default_items != []);
@@ -915,6 +587,7 @@ removing current ones.</p>
 	    template ["default_values"] = default_values;
 
 	    boolean cont = false;
+	    boolean structural = false;
 	    // check the object classes in defaultObjectClass entry:
 	    foreach (string oc, template["defaultObjectClass"]:[], ``{
 		if (!cont && !Ldap::ObjectClassExists (oc))
@@ -926,13 +599,344 @@ Correct the value of \"defaultObjectClass\" entry."), oc));
 		    UI::SetFocus (`id(`table));
 		    cont = true;
 		}
+		structural = structural || Ldap::ObjectClassStructural (oc);
 	    });
 	    if (cont) continue;
+	    if (!structural && !Popup::YesNoHeadline (Label::WarningMsg(),
+// error message: not sufficient object classes
+_("No object class in 'defaultObjectClass' entry has the structural type.
+It is impossible to create the LDAP objects without structural object classes.
+Are you sure?")))
+		continue;
 	    break;
 	}
     }
     Wizard::CloseDialog ();
     return template;
+}
+
+/**
+ * Dialog for configuration of one "configuration module"
+ */
+global define symbol ModuleConfigurationDialog () ``{
+
+    // helptext 1/4
+    string help_text = _("<p>Here, manage the configuration stored in LDAP directory.</p>") +
+
+    // helptext 2/4
+    _("<p>Each configuration set is called a <b>configuration module</b>. If there
+is no configuration module in the provided location (Base Configuration),
+create one with <b>New</b>. Delete the current module
+using <b>Delete</b>.</p>
+") +
+
+    // helptext 3/4
+    _("<p>Edit the values of attributes in the table with <b>Edit</b>.
+Some values have special meanings, for example, changing the <b>cn</b> value renames the
+current module.</p>
+") +
+
+    // helptext 4/4
+    _("<p>To configure the default template of the current module,
+click <b>Configure Template</b>.
+</p>
+");
+
+    string current_dn		= Ldap::current_module_dn;
+    map  modules_attrs_items	= $[]; // map of list (table items), index is cn
+    map modules			= Ldap::GetConfigModules ();
+    map templates		= Ldap::GetTemplates ();
+    list names			= [];
+    list templates_dns		= maplist (string dn, map t, templates, ``(dn));
+
+    /**
+     * Helper for creating table items in ModuleConfiguration Dialog
+     */
+    define list create_attrs_items (string cn) ``{
+
+	list attrs_items = [];
+
+	foreach (string attr, any value, modules[ get_dn(cn) ]:$[], ``{
+	    any val = value;
+	    if (contains (["objectClass", "modified", "old_dn"], attr))
+		return;
+	    if (is (value, list))
+	    {
+		if (Ldap::SingleValued (attr))
+		    val = select ((list)value, 0, "");
+		else
+		    val = mergestring ((list)value, ",");
+	    }
+	    attrs_items = add (attrs_items, `item(`id(attr), attr, val));
+	});
+
+	return attrs_items;
+    }
+
+    foreach (string dn, map mod, modules, ``{
+	string cn = get_string (mod, "cn");
+	if (cn == "")
+	    return;
+	names = add (names, cn);
+	// attributes for table
+	modules_attrs_items [cn] = create_attrs_items (cn);
+	if (current_dn == "")
+	    current_dn = dn;
+    });
+    string current_cn = get_cn (current_dn);
+
+    /**
+     * Helper for updating widgets in ModuleConfiguration Dialog
+     */
+    define void replace_module_names () ``{
+
+	list modules_items = []; // list of module names
+	foreach (string cn, names, ``{
+	    if (cn == current_cn)
+		modules_items = add (modules_items, `item(`id(cn), cn, true));
+	    else
+		modules_items = add (modules_items, `item(`id(cn), cn));
+	});
+	UI::ReplaceWidget (`id(`rp_modnames),
+	    `Left(`ComboBox (`id (`modules), `opt (`notify),
+		// combobox label
+		_("Configuration &Module"), modules_items)));
+	boolean ena = names != [];
+	UI::ChangeWidget (`id(`delete), `Enabled, ena);
+	UI::ChangeWidget (`id(`edit), `Enabled, ena);
+	UI::ChangeWidget (`id(`modules), `Enabled, ena);
+    }
+
+    /**
+     * Helper for updating widgets in ModuleConfiguration Dialog
+     */
+    define void replace_templates_items () ``{
+
+	list items = maplist (string dn,
+	    modules[current_dn,"defaultTemplate"]:[], ``(`item (`id(dn), dn)));
+	UI::ReplaceWidget (`id(`rp_templs),
+	    `MenuButton (`id(`templ_mb), `opt(`key_F7),
+		// button label
+		_("&Configure Template"), items ));
+	UI::ChangeWidget (`id(`templ_mb), `Enabled, items != []);
+    }
+
+    term contents = `HBox(`HSpacing (1.5), `VBox(
+        `VSpacing(0.5),
+	`HBox (
+	    `ReplacePoint (`id(`rp_modnames), `Empty()),
+	    `VBox (
+		`Label (""), `PushButton (`id (`new), Label::NewButton())),
+	    `VBox (
+		`Label (""), `PushButton (`id (`delete), Label::DeleteButton()))
+	),
+        `VSpacing(0.5),
+	`Table(`id(`table), `opt(`notify), `header(
+	    // table header 1/2
+	    _("Attribute"),
+	    // table header 2/2
+	    _("Value")),
+	    modules_attrs_items[current_cn]:[]),
+        `HBox (
+            `PushButton(`id(`edit), `opt(`key_F4), Label::EditButton()),
+            `HStretch(),
+	    `ReplacePoint (`id(`rp_templs), `Empty ())
+	),
+	`VSpacing (0.5)
+	),
+	`HSpacing (1.5));
+
+    // dialog label
+    Wizard::SetContentsButtons(_("Module Configuration"),
+            contents, help_text, Label::BackButton(), Label::NextButton());
+    if (Mode::cont) Wizard::ReplaceAbortButton (
+	    `PushButton(`id(`abort), Label::AbortInstallationButton()));
+
+    if (size (modules_attrs_items[current_cn]:[]) > 0)
+    {
+	UI::SetFocus (`id(`table));
+    }
+    replace_templates_items ();
+    replace_module_names ();
+
+    // result could be symbol or string
+    any result = nil;
+    while (true)
+    {
+	result		= UI::UserInput ();
+	string attr	= (string)UI::QueryWidget (`id(`table), `CurrentItem);
+
+	// change the focus to new module
+	if (result == `modules)
+	{
+	    current_cn = (string)UI::QueryWidget (`id(`modules), `Value);
+	    current_dn = get_dn (current_cn);
+	    UI::ChangeWidget (`id(`table), `Items,
+		modules_attrs_items[current_cn]:[]);
+	    replace_templates_items ();
+	}
+	// delete the module
+	if (result == `delete)
+	{
+	    // yes/no popup, %1 is name
+	    if (!Popup::YesNo (sformat (_("Really delete module \"%1\"?"), current_cn)))
+		continue;
+	    modules_attrs_items = remove (modules_attrs_items, current_cn);
+	    if (modules [current_dn, "modified"]:"" != "added")
+	    {
+		modules [current_dn, "modified"] = "deleted";
+	    }
+	    names = filter (string n, names, ``(n != current_cn));
+	    current_cn = names [0]:"";
+	    current_dn = get_dn (current_cn);
+	    replace_module_names ();
+	    replace_templates_items ();
+	    UI::ChangeWidget (`id(`table), `Items,
+		modules_attrs_items[current_cn]:[]);
+	}
+	// new module
+	if (result == `new)
+	{
+	    list available = Ldap::available_config_modules;
+	    foreach (string dn, map mod, modules, ``{
+		if (mod["modified"]:"" == "deleted")
+		    return;
+		foreach (string cl, mod["objectClass"]:[], ``{
+		    available = filter (string c, available, ``(c != cl));
+		});
+	    });
+	    if (available == [])
+	    {
+		// message
+		Popup::Message (_("You currently have configuration modules
+of each type, so you cannot add a new one."));
+		continue;
+	    }
+	    // get new name and class
+	    map new = LdapPopup::NewModule (available, names);
+	    string cn = new ["cn"]:"";
+	    if (cn == "")
+		continue;
+	    current_cn = cn;
+	    current_dn = get_dn (current_cn);
+	    modules [current_dn] = Ldap::CreateModule (cn, new ["class"]:"");
+	    names = add (names, cn);
+	    modules_attrs_items [cn] = create_attrs_items (cn);
+	    replace_module_names ();
+	    replace_templates_items ();
+	    UI::ChangeWidget (`id(`table), `Items,
+		modules_attrs_items[current_cn]:[]);
+	}
+	// module attribute modification
+	if (result == `edit || result == `table)
+	{
+	    list value		= modules [current_dn, attr]:[];
+	    list offer		= [];
+	    list conflicts	= [];
+	    if (attr == "cn")
+		conflicts = names;
+	    if (attr == "defaultTemplate")
+		offer		= templates_dns;
+	    else if (attr == "passwordHash")
+		offer		= Ldap::hash_schemas;
+
+	    value = LdapPopup::EditAttribute (attr, value, conflicts,
+		Ldap::SingleValued (attr), offer);
+	    if (value == modules [current_dn, attr]:[]) //nothing was changed
+		continue;
+	    modules [current_dn, attr] = value;
+	    modules_attrs_items [current_cn] = create_attrs_items (current_cn);
+	    UI::ChangeWidget (`id(`table), `Items,
+		modules_attrs_items[current_cn]:[]);
+	    UI::ChangeWidget (`id(`table), `CurrentItem, attr);
+	    if (attr == "cn")
+	    {
+		string cn = value [0]:current_cn;
+		modules_attrs_items[cn] = modules_attrs_items[current_cn]:[];
+		modules_attrs_items = remove (modules_attrs_items, current_cn);
+		if (modules [current_dn, "modified"]:"" != "added" &&
+		    modules [current_dn, "modified"]:"" != "renamed")
+		{
+		    modules [current_dn, "modified"] = "renamed";
+		    modules [current_dn, "old_dn"] = current_dn;
+		}
+		modules [ get_dn (cn) ] = modules [current_dn]:$[];
+		modules = remove (modules, current_dn);
+		names = filter (string n, names, ``(n != current_cn));
+		names = add (names, cn);
+		current_cn = cn;
+		current_dn = get_dn (cn);
+		replace_module_names ();
+	    }
+	    if (attr == "defaultTemplate")
+		replace_templates_items ();
+	}
+	// configure template
+	if (contains (modules [current_dn, "defaultTemplate"]:[], result))
+	{
+	    string template_dn = (string) result;
+	    Ldap::current_template_dn = template_dn;
+	    map template = (map) eval (templates [template_dn]:$[]);
+	    // template not loaded, check DN:
+	    if (template == $[])
+	    {
+		template = Ldap::CheckTemplateDN (template_dn);
+		if (template == nil)
+		    continue;
+		else if (template == $[])
+		{
+		    if (!Ldap::ParentExists (template_dn))
+			continue;
+		    template = Ldap::CreateTemplate (get_cn (template_dn),
+			modules [current_dn, "objectClass"]:[]);
+		}
+		templates_dns = add (templates_dns, template_dn);
+	    }
+	    templates [template_dn] = TemplateConfigurationDialog (template);
+	    // check for template renaming
+	    if (templates [template_dn, "cn"]:[] != template ["cn"]:[])
+	    {
+		string cn = get_string (templates [template_dn]:$[], "cn");
+		string new_dn = get_new_dn (cn, template_dn);
+
+		templates [new_dn] = templates [template_dn]:$[];
+		templates = remove (templates, template_dn);
+		if (templates [new_dn, "modified"]:"" != "added")
+		{
+		    templates [new_dn, "modified"] = "renamed";
+		    templates [new_dn, "old_dn"] = template_dn;
+		}
+		templates_dns = filter (string dn, templates_dns, ``(
+		    dn != template_dn));
+		templates_dns = add (templates_dns, new_dn);
+		// update list of templates
+		modules [current_dn, "defaultTemplate"] = maplist (
+		    string dn, modules [current_dn, "defaultTemplate"]:[],``{
+			if (dn == template_dn) return new_dn;
+			return dn;
+		});
+		modules_attrs_items [current_cn] =
+		    create_attrs_items (current_cn);
+		UI::ChangeWidget (`id(`table), `Items,
+		    modules_attrs_items[current_cn]:[]);
+		replace_templates_items ();
+	    }
+	    UI::SetFocus (`id(`table));
+	}
+	if (result == `next)
+	{
+	    Ldap::current_module_dn = current_dn;
+	    // save the edited values to global map...
+	    Ldap::CommitConfigModules (modules);
+	    // commit templates here!
+	    Ldap::CommitTemplates (templates);
+	    break;
+	}
+	if (contains ([`back, `cancel, `abort], result))
+	    break;
+    }
+
+    return (symbol) result;
 }
 
 }//EOF
