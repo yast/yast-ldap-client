@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Mar  3 16:44:31 CET 2003 - jsuchome@suse.de
+
+- merged proofreaded texts
+
+-------------------------------------------------------------------
 Thu Feb 20 18:07:29 CET 2003 - kukuk@suse.de
 
 - Write "pam_password crypt" if entry does not exists

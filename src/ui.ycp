@@ -34,9 +34,9 @@
 Enter the name of the search base (base DN, such as dc=example,dc=com)
 in the first entry and the LDAP server's address (e.g., ldap.example.com
 or 10.20.0.2) in the second. Specify multiple servers by separating their
-addresses with spaces. The addresses must be resolveable without
-using LDAP.
-To deactivate LDAP services, click <b>Do not use LDAP</b>.</p>"));
+addresses with spaces. It must be possible to resolve the addresses
+without using LDAP.
+To deactivate LDAP services, click <b>Do Not Use LDAP</b>.</p>"));
 
 // help text 2/5
 	help_text = help_text + UI(_("<p>Some LDAP servers support
