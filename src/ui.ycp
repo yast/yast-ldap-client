@@ -16,6 +16,7 @@
 
     import "Wizard";
     import "Ldap";
+    import "Mode";
 
     include "ui/common_popups.ycp";
     include "network/ip.ycp";
@@ -109,7 +110,7 @@ groups on the LDAP server, click <b>Set up User Configuration Tool</b> and compl
 	Wizard::SetContentsButtons (
 	    // dialog title
 	    _("LDAP Client Configuration"), con, help_text,
-	    BackButtonLabel (), FinishButtonLabel ());
+	    BackButtonLabel(), Mode::cont ? NextButtonLabel(): FinishButtonLabel());
 
 	UI::ChangeWidget (`id (`ldapd), `Enabled, start);
 	UI::ChangeWidget (`id (`ldapa), `Enabled, start);

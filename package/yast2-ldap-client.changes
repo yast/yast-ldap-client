@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Feb 13 15:20:44 CET 2003 - jsuchome@suse.de
+
+- 'Next' instead of 'Finish' when Mode::cont is true
+
+-------------------------------------------------------------------
 Wed Feb 12 17:47:43 CET 2003 - kukuk@suse.de
 
 - Set ssl to "no" if no "start_tls" is selected.
