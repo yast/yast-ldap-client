@@ -59,6 +59,7 @@ else if(func == "Summary") {
 /* Reset configuration */
 else if (func == "Reset") {
     Ldap::Import($[]);
+    Ldap::modified = false;
     ret = $[];
 }
 /* Change configuration (run AutoSequence) */
@@ -68,6 +69,21 @@ else if (func == "Change") {
 /* Return actual state */
 else if (func == "Export") {
     ret = Ldap::Export();
+}
+/**
+ * Return if configuration  was changed
+ * return boolean
+ */
+else if (func == "GetModified") {
+    ret = Ldap::modified;
+}
+/**
+ * Set modified flag
+ * return boolean
+ */
+else if (func == "SetModified") {
+    Ldap::modified = true;
+    ret = true;
 }
 /* Write givven settings */
 else if (func == "Write") {
