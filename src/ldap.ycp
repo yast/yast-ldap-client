@@ -10,6 +10,7 @@
  * Modify:              /etc/nsswitch.conf, /etc/pam.d/*,
  *			/etc/openlap/ldap.conf
  *
+ * String corrections by Christian Steinruecken <cstein@suse.de>, 2001/08/20
  */
 
 
@@ -28,23 +29,22 @@
 // ===== main =====
 
 // help text 1/3
-    string help_text = UI(_("<p>Here your machine can be set up as a
- <b>LDAP client</b> to authenticate your User with an OpenLDAP server. Just
- enter the distinguished name of the search base
- (base DN, e.g, dc=mydomain,dc=com) as the first entry and the LDAP server's
- IP address (e.g., 10.20.0.2) as the second.
- To deactivate LDAP services, select the <b>Do not use LDAP</b> button.</p>"));
+    string help_text = UI(_("<p>Here your machine can be set up as
+ <b>LDAP client</b> to authenticate your user with an OpenLDAP server. 
+ Enter the name of the search base (base DN, e.g, dc=mydomain,dc=com)
+ in the first entry and the IP address of the LDAP server (e.g., 10.20.0.2)
+ in the second.
+ To deactivate LDAP services, click the button <b>Do not use LDAP</b>.</p>"));
 
 // help text 2/3
     help_text = help_text + UI(_("<p>If you deactivate LDAP, the current
  LDAP entry for passwd in /etc/nsswitch.conf will be removed and replaced
- with <i>compat</i>. The PAM configuration will be modified and the LDAP
- module removed.</p>"));
+ with <i>compat</i>. The PAM configuration will be modified and
+ the LDAP entry removed.</p>"));
 
 // help text 3/3
-    help_text = help_text + UI(_("<p>If you activate LDAP, the NSS and PAM
-    configuration will be modified to use LDAP for user
-    authentification.</p>"));
+    help_text = help_text + UI(_("<p>If you activate LDAP, NSS and PAM
+    will be configured accordingly to use LDAP for user authentification.</p>"));
 
     // XXX Look if ldap is configured
     boolean ldap_client = (SCR (`Execute (.target.bash, "grep '^passwd:.*ldap' /etc/nsswitch.conf")) == 0);
@@ -68,7 +68,7 @@
                              ));
 
     // dialog title
-    UI::SetWizardContents (_("Configuration of LDAP client"), con, help_text, true, true);
+    UI::SetWizardContents (_("LDAP Client Configuration"), con, help_text, true, true);
     // "Finish" button: Proceed to finish the configuration
     UI::ChangeWidget (`id(`next), `Label, FinishButtonLabel());
     UI::ChangeWidget(`id(`ldapd), `Enabled, ldap_client);
@@ -91,14 +91,14 @@
 
             // if (!check_domainname (ldap_domain)) {
     	    //	// error popup label
-            //    UI::MessagePopup(_("The domain name is not correct."));
+            //    UI::MessagePopup(_("The domain name is incorrect."));
             //    result = nil;
             //    continue;
             // }
 
             if (!checkIP (ldap_address)) {
     		// error popup label
-                UI::MessagePopup(_("The IP address is not correct."));
+                UI::MessagePopup(_("The IP address is incorrect."));
                 result = nil;
                 continue;
             }
@@ -121,15 +121,15 @@
               if (!RequireAndConflict (["pam_ldap","nss_ldap"], [],
                   _("<p>To configure and access the LDAP Services, the
 <b>%1</b> packages must be installed.</p>
-<p>Do you wish to install it now?</p>")))
+<p>Do you wish to install now?</p>")))
               {
                  UI::MessagePopup("The configuration of the LDAP client
-cannot be finished without this packages.");
+cannot be completed without this packages.");
 	         return;
               }
 
                UI::MessagePopup("The configuration of the LDAP client
-was saved and can be used.");
+was saved and is ready for use.");
            }
          else
            UI::MessagePopup("The configuration of the LDAP
