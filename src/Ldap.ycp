@@ -45,6 +45,15 @@
     global boolean ldap_v2 = false;
     global boolean ldap_tls = false;
 
+    /* variables for LDAP user configuration, stored in /etc/cpu.cfg */
+    global string user_base = "";
+    global string group_base = "";
+    global string user_filter = "";
+    global string bind_dn = "";
+
+    // save cpu settings
+    global boolean cpu_modified = false;
+
     /* stored values of /etc/nsswitch.conf */
     map nsswitch = $[ "passwd" : [], "group": []];
 
@@ -164,6 +173,8 @@
     nsswitch["group"] = splitstring (SCR::Read(.etc.nsswitch_conf.group), " ");
 
 	old_domain = domain;
+
+    ReadCpuSettings ();
 	return true;
     }
 
@@ -207,6 +218,9 @@
         foreach (`entry, `value, nsswitch, ``{
             new_nsswitch [entry] = mergestring (
                 filter (`v, value, ``(v != "ldap")), " ");
+            // just to make sure that something remains...
+            if (new_nsswitch [entry]:"" == "")
+                new_nsswitch [entry] = "files";
         });
 	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
 	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
@@ -228,7 +242,38 @@
     if (ypbind_running)
         Runlevel::RunInitScript ("ypbind", "restart");
 
+    if (cpu_modified)
+        WriteCpuSettings ();
+
 	return true;
+    }
+
+    /**
+     * Write settings to /etc/cpu.cfg
+     */
+    global define boolean WriteCpuSettings () ``{
+
+        SCR::Write (.etc.cpu_cfg."ldap_host", server);
+        SCR::Write (.etc.cpu_cfg."base_dn", domain);
+        SCR::Write (.etc.cpu_cfg."user_base", user_base);
+        SCR::Write (.etc.cpu_cfg."user_filter", user_filter);
+        SCR::Write (.etc.cpu_cfg."group_base", group_base);
+        SCR::Write (.etc.cpu_cfg."bind_dn", bind_dn);
+
+    }
+
+    /**
+     * Read settings from /etc/cpu.cfg
+     */
+    global define void ReadCpuSettings () ``{
+
+        if (SCR::Execute (.target.bash, "/usr/bin/test -e /etc/cpu.cfg") == 0)
+        {
+            user_base = SCR::Read(.etc.cpu_cfg."user_base");
+            group_base = SCR::Read(.etc.cpu_cfg."group_base");
+            user_filter = SCR::Read(.etc.cpu_cfg."user_filter");
+            bind_dn = SCR::Read(.etc.cpu_cfg."bind_dn");
+        }
     }
 
 

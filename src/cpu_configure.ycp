@@ -1,0 +1,136 @@
+/**
+ * File:	include/ldap/cpu_configure.ycp
+ * Package:	Configuration of LDAP
+ * Summary: Dialog for cpu.cfg, to use for LDAP user manipulation
+ * Authors:	Jiri Suchomel <jsuchome@suse.cz>
+ *
+ * $Id$
+ *
+ */
+
+{
+    textdomain "ldap-client";
+    import "Ldap";
+    import "Wizard";
+
+    string user_base = Ldap::user_base;
+    string group_base = Ldap::group_base;
+    string user_filter = Ldap::user_filter;
+    string bind_dn = Ldap::bind_dn;
+
+    // check for presence of cpu
+    if (SCR::Execute(.target.bash, "rpm -q cpu") !=0)
+    {
+        // Popup text (required application):
+        if (!UI::YesNoPopup(_("For managing LDAP users, the package
+\"cpu\" is necessary. Install it now?")))
+            return `back;
+
+        include "require.ycp";
+        DoInstallAndRemove(["cpu"], []);
+        // propose some values
+        user_base = Ldap::GetDomain();
+        group_base = user_base;
+        user_filter = "objectclass=person";
+        bind_dn = "";
+    }
+
+    // help text "cpu" is the utility name, not processor!
+	string help_text = _("<p>Here you can configure \"cpu\" - the LDAP user management utility, which is used by YaST2 Users module.</p>") +
+
+    _("<p><b>User base</b><br>
+This is the base to which users will be added. Is of the form: <i>ou=People,o=dbaseiv.net,c=US</i>. If you are not sure, use your <b>base DN</b> value.</p>") +
+
+    _("<p><b>Group base</b><br>
+This is the base to which groups will be added. It may be the same as user base but is still required.</p>") +
+
+    _("<p><b>User filter</b><br>
+Filter for searching. Default of <i>objectclass=person</i> is fine.</p>") +
+
+    _("<p><b>Bind DN</b><br>
+Required to get the acces to LDAP database. Is of the form: <i>cn=Manager,o=dbaseiv.net,c=US</i></p>");
+
+    term con = `HVSquash(
+        `VBox (
+        `VSpacing(1),
+        // frame label
+        `Frame (_("LDAP user/group settings"),
+            `VBox (
+                `VSpacing (0.5),
+                `HSquash(
+                    // textentry label
+                    `TextEntry (`id (`userb), _("&User base"),
+                         user_base)),
+                `HSquash(
+                    // textentry label
+                    `TextEntry (`id (`groupb), _("&Group base"),
+                         group_base)),
+                `HSquash(
+                    // textentry label
+                    `TextEntry (`id (`userf), _("Default user fi&lter"),
+                         user_filter)),
+                `HSquash(
+                    // textentry label
+                    `TextEntry (`id (`binddn), _("Bind &DN"), bind_dn))
+            )
+        ),
+        `VSpacing(1)
+    ));
+
+    Wizard::CreateDialog();
+	Wizard::SetContentsButtons (
+	    // dialog title
+	    _("LDAP user management configuration"), con, help_text,
+	    UI::BackButtonLabel (), UI::NextButtonLabel ());
+    Wizard::ReplaceAbortButton(`Empty ());
+
+	any result = nil;
+	do {
+	    result = UI::UserInput ();
+
+	    if (result == `next)
+        {
+
+		    user_base = UI::QueryWidget(`id(`userb), `Value);
+		    group_base = UI::QueryWidget(`id(`groupb), `Value);
+		    user_filter = UI::QueryWidget(`id(`userf), `Value);
+		    bind_dn = UI::QueryWidget(`id(`binddn), `Value);
+
+		    if (bind_dn == "")
+		    {
+		        // error popup label
+                Report::Error(_("Enter an LDAP bind DN."));
+                result = nil;
+                continue;
+            }
+            if (user_base == "")
+            {
+		        // error popup label
+                Report::Error(_("Enter the user base."));
+                result = nil;
+                continue;
+            }
+            if (group_base == "")
+            {
+		        // error popup label
+                Report::Error(_("Enter the group base."));
+                result = nil;
+                continue;
+            }
+	    }
+
+	} while (result != `back && result != `next && result != `cancel);
+
+	if (result == `next)
+	{
+        Ldap::user_base = user_base;
+        Ldap::group_base = group_base;
+        Ldap::user_filter = user_filter;
+        Ldap::bind_dn = bind_dn;
+        Ldap::cpu_modified = true;
+	}
+
+    UI::CloseDialog();
+    return result;
+
+}

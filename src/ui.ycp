@@ -49,13 +49,16 @@ OpenLDAP v1), you should activate <b>LDAP Version 2</b>.</p>"));
 
 // help text 4/5
 	help_text = help_text + UI(_("<p>If you deactivate LDAP, the current
-LDAP entry for passwd in /etc/nsswitch.conf will be removed and replaced
-with <i>compat</i>. The PAM configuration will be modified and
-the LDAP entry removed.</p>"));
+LDAP entry for passwd in /etc/nsswitch.conf will be removed. The PAM
+configuration will be modified and the LDAP entry removed.</p>"));
 
 // help text 5/5
 	help_text = help_text + UI(_("<p>If you activate LDAP, NSS and PAM
 will be configured accordingly to use LDAP for user authentification.</p>"));
+
+// help text 5/5
+	help_text = help_text + UI(_("<p>If you would like to configure users and
+groups on the LDAP server, push <b>Set up users configuration</b> button and fill the settings.</p>"));
 
 	boolean start = Ldap::start;
 	string domain  = Ldap::GetDomain ();
@@ -69,6 +72,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 	boolean old_ldap_v2 = ldap_v2;
 
 	term con = `HVSquash(
+                 `VBox(
 			     `Frame (_("LDAP client"),
 				     `VBox (`VSpacing (0.2),
 					    `RadioButtonGroup(`id(`rd),
@@ -92,8 +96,14 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 					    `CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2),
 					    `VSpacing (0.2)
 					    )
-				     )
-			     );
+				     ),
+                `VSpacing (1),
+                // PushButton label
+                `PushButton (`id(`cpu), _("&Set up users configuration..."))
+                // Checkbox label
+//                `CheckBox (`id(`cpu), _("&Set up user configuration"), `opt(`notify))
+                )
+	);
 
 
 
@@ -106,6 +116,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 	UI::ChangeWidget (`id (`ldapa), `Enabled, start);
 	UI::ChangeWidget (`id (`ldaps), `Enabled, start);
 	UI::ChangeWidget (`id (`ldapv), `Enabled, start);
+	UI::ChangeWidget (`id (`cpu), `Enabled, start);
 
 	any result = nil;
 	do {
@@ -118,9 +129,10 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 		UI::ChangeWidget(`id(`ldapa), `Enabled, start);
 		UI::ChangeWidget(`id(`ldaps), `Enabled, start);
 		UI::ChangeWidget (`id (`ldapv), `Enabled, start);
-	    }
+		UI::ChangeWidget (`id (`cpu), `Enabled, start);
+        }
 
-	    if (result == `next && start) {
+	    if ((result == `next || result == `cpu) && start) {
 		domain = UI::QueryWidget(`id(`ldapd), `Value);
 		server = UI::QueryWidget(`id(`ldapa), `Value);
 		ldap_v2 = UI::QueryWidget(`id(`ldapv), `Value);
@@ -143,6 +155,11 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 		}
 	    }
 
+        if (result == `cpu)
+        {
+            CallFunction (`cpu_configure());
+        }
+
 	    if (result == `next)
 	    {
 		// if nothing is changed go back.
@@ -150,7 +167,8 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 		    old_domain == domain &&
 		    old_server == server &&
 		    old_ldap_tls == ldap_tls &&
-		    old_ldap_v2 == ldap_v2)
+		    old_ldap_v2 == ldap_v2 &&
+            !Ldap::cpu_modified) // TODO no need to restart for only cpu change
 		    result = `back;
 		else
 		    if (!Ldap::auto && ! UI::YesNoPopup(_("The configuration of the LDAP client will be saved\nand the client will be restarted.")))

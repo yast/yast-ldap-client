@@ -32,5 +32,7 @@ Summary:	Configuration of LDAP client
 @yncludedir@/ldap/*
 @moduledir@/Ldap.ycp
 @clientdir@/ldap*.ycp
+@clientdir@/cpu_configure.ycp
 @scrconfdir@/ldap_conf.scr
+@scrconfdir@/etc_cpu_cfg.scr
 %doc @docdir@

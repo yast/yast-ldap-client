@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Jan 14 17:11:10 CET 2003 - jsuchome@suse.cz
+
+- added agent and dialog for /etc/cpu.cfg handling
+- check if passwd key in nsswitch.conf is not empty 
+
+-------------------------------------------------------------------
 Tue Dec 17 12:59:34 CET 2002 - jsuchome@suse.de
 
 - do not remove nis/compat values from /etc/nsswitch.conf
