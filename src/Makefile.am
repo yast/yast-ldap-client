@@ -22,4 +22,6 @@ module_DATA =		\
 
 config_DATA = ldap.y2cc 
 
-EXTRA_DIST = $(client_DATA) $(ynclude_DATA) $(module_DATA) $(config_DATA)
+desktop_DATA = ldap.desktop
+
+EXTRA_DIST = $(client_DATA) $(ynclude_DATA) $(module_DATA) $(config_DATA) $(desktop_DATA)
