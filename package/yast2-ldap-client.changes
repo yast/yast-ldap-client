@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Aug 20 14:17:57 CEST 2003 - jsuchome@suse.de
+
+- removed redundant "initialization dialog" (#28779)
+- 2.8.6
+
+-------------------------------------------------------------------
 Fri Aug 15 15:05:19 CEST 2003 - jsuchome@suse.cz
 
 - added default value for nextUniqueId (configuration on LDAP server)

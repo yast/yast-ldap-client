@@ -46,14 +46,7 @@ global define symbol LdapSequence() ``{
 	]
     ];
 
-    // label
-    string caption = _("LDAP Client Configuration");
-    // label
-    term contents = `Label(_("Initializing ..."));
-
     Wizard::CreateDialog();
-    Wizard::SetContentsButtons(caption, contents, "",
-	    Label::BackButton(), Label::NextButton());
 
     any ret = WizardSequencer(aliases, sequence);
 
