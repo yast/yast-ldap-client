@@ -715,8 +715,14 @@ removing current ones.</p>
 			conflicts = add (conflicts, get_cn (dn));
 		});
 	    }
-	    value = LdapPopup::EditAttribute (attr, value, conflicts,
-		Ldap::SingleValued (attr), offer);
+	    value = LdapPopup::EditAttribute ($[
+		"attr"		: attr,
+		"value"		: value,
+		"conflicts"	: conflicts,
+		"single"	: Ldap::SingleValued (attr),
+		"offer"		: offer,
+		"browse"	: attr == "susesecondarygroup"
+	    ]);
 
 	    if (value == template[attr]:[])
 		continue;
@@ -750,7 +756,11 @@ removing current ones.</p>
 	    if (attr == nil)
 		continue;
 	    string value	= default_values [attr]:"";
-	    list l_value = LdapPopup::EditAttribute (attr, [value],[],true,[]);
+	    list l_value	= LdapPopup::EditAttribute ($[
+		"attr"		: attr,
+		"value"		: [value],
+		"single"	: true,
+	    ]);
 	    if (l_value [0]:"" == value)
 		continue;
 	    value = l_value[0]:"";
@@ -1056,8 +1066,17 @@ of each type, so you cannot add a new one."));
 	    else if (attr == "susepasswordhash")
 		offer		= Ldap::hash_schemas;
 
-	    value = LdapPopup::EditAttribute (attr, value, conflicts,
-		Ldap::SingleValued (attr), offer);
+	    value = LdapPopup::EditAttribute ($[
+		"attr"		: attr,
+		"value"		: value,
+		"conflicts"	: conflicts,
+		"single"	: Ldap::SingleValued (attr),
+		"offer"		: offer,
+		"browse"	:
+		    // TODO function, that checks if value should be DN
+		    (attr == "susedefaultbase" || attr == "susedefaulttemplate")
+	    ]);
+
 	    if (value == modules [current_dn, attr]:[]) //nothing was changed
 		continue;
 	    modules [current_dn, attr] = value;

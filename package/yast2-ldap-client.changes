@@ -1,4 +1,16 @@
 -------------------------------------------------------------------
+Wed Aug  4 19:42:01 CEST 2004 - jsuchome@suse.cz
+
+- call Browse widget also from modules & template configuration
+- changed LdapPopup::EditAttribute interface
+- 2.10.2
+
+-------------------------------------------------------------------
+Wed Jul 28 14:15:08 CEST 2004 - jsuchome@suse.cz
+
+- enhanced helptext for "Create LDAP objects" checkbox (#41077)
+
+-------------------------------------------------------------------
 Tue Jul 27 11:23:33 CEST 2004 - jsuchome@suse.cz
 
 - use Message module for common messages

@@ -19,18 +19,201 @@ import "Label";
 import "Popup";
 import "Wizard";
 
+    /**
+     * Popup for browsing LDAP tree and selecting the DN
+     * WARNING we expect that LDAP connection is already correctly initialized !
+     * @param root_dn the starting point (root of tree); if empty string is
+     * given, the search for available bases will be done automatically
+     * @return DN of selected item, empty string when canceled
+     */
+    global define string BrowseTree (string root_dn) {
+
+	// get display mode
+	map display_info = UI::GetDisplayInfo();
+	boolean textmode = display_info["TextMode"]:true;
+
+	// map of already read subtrees
+	map<string,boolean> dns	= $[];
+	// selected DN (return value)
+	string current_dn	= "";
+
+	term contents = `HBox (`VSpacing (20), `VBox (`HSpacing(70),
+	    `VSpacing (0.2),
+	    `HBox (
+		`HSpacing (),
+		`ReplacePoint (`id (`reptree), `Tree (`id(`tree), root_dn, [])),
+		`ReplacePoint (`id (`repbuttons), `Empty ()),
+		`HSpacing ()
+	    ),
+	    `HBox (
+		`HSpacing (1.5),
+	        `PushButton (`id (`ok), `opt (`key_F10), Label::OKButton()),
+		`PushButton(`id (`cancel),`opt (`key_F9),Label::CancelButton()),
+		// pushbutton label
+		textmode ?
+		  // button label
+		  `Right (`PushButton (`id (`open), `opt (`key_F6),_("&Open"))):
+		  `Empty (),
+		`HSpacing (1.5)
+	    ),
+	    `VSpacing (0.2)
+	));
+
+	UI::OpenDialog (`opt (`decorated), contents);
+
+	list<term> items = maplist (string dn,
+	    (list<string>) SCR::Read (.ldap.search, $[
+		"base_dn"	: root_dn,
+		"scope"		: 1,
+		"dn_only"	: true,
+		"not_found_ok": true ]), {
+
+	    dns [dn]	= false;
+	    return `item (dn, false, []);
+	});
+
+	if (size (items) > 0)
+	{
+	    UI::ReplaceWidget (`id (`reptree), textmode ?
+		`Tree (`id(`tree), root_dn, items) :
+		`Tree (`id(`tree), `opt(`notify), root_dn, items));
+	}
+	else if (root_dn == "")
+	{
+	    list bases = (list) SCR::Read (.ldap.search, $[
+		"base_dn"	: "",
+	        "scope"		: 0,
+		"attrs"		: [ "namingcontexts" ]
+	    ]);
+	    if (size (bases) > 0)
+		items = maplist (string dn, bases[0,"namingcontexts"]:[],
+		    ``(`item(dn, false, [])));
+	    if (size (items) > 0)
+		UI::ReplaceWidget (`id (`reptree), textmode ?
+		    `Tree (`id(`tree), root_dn, items) :
+		    `Tree (`id(`tree), `opt(`notify), root_dn, items));
+	}
+
+	if (textmode)
+	    UI::SetFocus (`id(`tree));
+
+	list<string> subdns	= [];
+	map open_items		= $[];
+
+	define list<term> update_items (list<term> its) {
+
+	    return maplist (term it, its, {
+		string dn	= select (it, 0, "");
+		if (dn == current_dn)
+		{
+		    return `item (dn, true, maplist (string k,
+			subdns, ``(`item (k, false, []))));
+		}
+		integer last = size (it) - 1;
+		if (size (select (it, last, [])) == 0)
+		    return it;
+		// `OpenItems doesn't work in ncurses...
+		boolean open = haskey (open_items, dn) && !textmode;
+		return `item (dn, open, update_items (select(it,last,[])));
+	    });
+	}
+
+	string retval = root_dn;
+	while (true)
+	{
+	    any ret = UI::UserInput ();
+	    if (ret == `tree || ret == `open)
+	    {
+		current_dn = (string) UI::QueryWidget (`id(`tree),`CurrentItem);
+		if (! dns[current_dn]:false)
+		{
+		    subdns = (list<string>) SCR::Read (.ldap.search, $[
+			"base_dn"	: current_dn,
+			"scope"		: 1,
+			"dn_only"	: true,
+			"not_found_ok"	: true,
+		    ]);
+		    dns [current_dn]	= true;
+		    if (size (subdns) > 0)
+		    {
+			open_items = (map) UI::QueryWidget (`tree, `OpenItems);
+			items	= update_items (items);
+			UI::ReplaceWidget (`id (`reptree), textmode ?
+			    `Tree (`id(`tree), root_dn, items) :
+			    `Tree (`id(`tree), `opt(`notify), root_dn, items));
+			UI::ChangeWidget (`id(`tree), `CurrentItem, current_dn);
+			open_items = $[];
+		    }
+		}
+		if (textmode)
+		    UI::SetFocus (`id(`tree));
+	    }
+	    if (ret == `cancel)
+	    {
+		break;
+	    }
+	    if (ret == `ok)
+	    {
+		string dn = (string)UI::QueryWidget (`id(`tree), `CurrentItem);
+		if (dn != nil)
+		    retval = dn;
+		else retval = current_dn;
+		break;
+	    }
+	}
+	UI::CloseDialog ();
+	return retval;
+    }
+
+    /**
+     * Open the LDAP Browse popup and initialize initialize LDAP connection
+     * before.
+     * @param connection init map with information passed to ldap agent
+     * (see ldap agent '.ldap' Execute call documentation)
+     * @param root_dn the starting point (root of tree); if empty string is
+     * given, the search for available bases will be done automatically
+     * @return DN of selected item, empty string when canceled
+     */
+    global define string InitAndBrowseTree (string root_dn, map connection) {
+
+	map args = size (connection) > 0 ? connection : $[
+	    "hostname"	: Ldap::GetFirstServer (Ldap::server),
+	    "port"	: Ldap::GetFirstPort (Ldap::server),
+	    "version"	: Ldap::ldap_v2 ? 2 : 3,
+	    "use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+	];
+	boolean init = (boolean) SCR::Execute (.ldap, args);
+	if (init == nil || !init)
+	{
+	    y2error ("init failed");
+	    return root_dn;
+	}
+
+	return BrowseTree (root_dn);
+    }
+
+
 /**
  * Generic popup for editing attribute's value
- * @param attr attribute name
- * @param value current attribute values
- * @param conflicts list of forbidden values (e.g. existing 'cn' values)
- * @param single true if attribute can have only one value
- * @param offer list of possible values for current attribute (e.g. existing
- *  groups for "secondaryGroup" attribute)
+ * @param map with settings, it could have these keys:
+ *  "attr"	attribute name
+ *  "value"	current attribute values
+ *  "conflicts" list of forbidden values (e.g. existing 'cn' values)
+ *  "single"	if attribute can have only one value
+ *  "offer"	list of possible values for current attribute (e.g. existing
+ *		groups for "secondaryGroup" attribute)
+ *  "browse"	if Browse LDAP Tree widget should be provided for choosing DN
  * @return list of atrtibute values (edited or unchanged)
  */
-global define list<string> EditAttribute (string attr, list<string> value,
-				list conflicts, boolean single, list offer) ``{
+global define list<string> EditAttribute (map settings)
+{
+
+    string attr		= settings["attr"]:"";
+    list<string> value	= settings["value"]:[];
+    list conflicts	= settings["conflicts"]:[];
+    list offer		= settings["offer"]:[];
+    boolean single	= settings["single"]:false;
+    boolean browse	= settings["browse"]:false;
 
     // help text 1/3
     string help_text = _("<p>Set the new value for the current attribute.</p>") +
@@ -38,7 +221,10 @@ global define list<string> EditAttribute (string attr, list<string> value,
     // help text 2/3
     _("<p>If the attribute can have more values, you can add new entries
 with <b>Add Value</b>. Sometimes the button contains the list of
-possible values to use for the current attribute.</p>
+possible values to use for the current attribute.
+If the value of edited attribute should be distinguished name (DN),
+it is possible to choose it from LDAP tree using <b>Browse</b> option.
+</p>
 ");
 
     string desc = Ldap::AttributeDescription (attr);
@@ -93,10 +279,12 @@ possible values to use for the current attribute.</p>
     // button label
     term add_button = `PushButton(`id(`new), `opt (`key_F3), _("&Add Value"));
 
-    if (size (offer) > 0)
+    if (size (offer) > 0 || browse)
     {
 	// menubutton item (default value)
 	list mb = [ `item(`id(`new), _("&Empty Entry")) ];
+	if (browse)
+	    mb	= add (mb, `item(`id(`browse), _("Bro&wse")));
 	foreach (string it, (list<string>) offer, ``{
 	    mb = add (mb, `item(`id(it), it));
 	});
@@ -137,7 +325,7 @@ possible values to use for the current attribute.</p>
 	{
 	    Wizard::ShowHelp( help_text );
 	}
-	if ((result == `new) || (contains (offer, result)))
+	if (result == `new || contains (offer, result) || result == `browse)
 	{
 	    integer j = 0;
 	    value = [];
@@ -150,6 +338,10 @@ possible values to use for the current attribute.</p>
 	    {
 		// relace last empty entry
 		value [value_size-1] = (string) result;
+	    }
+	    else if (result == `browse)
+	    {
+		value [value_size-1] = BrowseTree ("");
 	    }
 	    else
 	    {
@@ -338,178 +530,5 @@ as a value of \"homeDirectory\").</p>
     UI::CloseDialog();
     return $[ "attr": attr, "value": new_value ];
 }
-
-    /**
-     * Popup for browsing LDAP tree and selecting the DN
-     * WARNING we expect that LDAP connection is already correctly initialized !
-     * @param root_dn the starting point (root of tree); if empty string is
-     * given, the search for available bases will be done automatically
-     * @return DN of selected item, empty string when canceled
-     */
-    global define string BrowseTree (string root_dn) {
-
-	// get display mode
-	map display_info = UI::GetDisplayInfo();
-	boolean textmode = display_info["TextMode"]:true;
-
-	// map of already read subtrees
-	map<string,boolean> dns	= $[];
-	// selected DN (return value)
-	string current_dn	= "";
-
-	term contents = `HBox (`VSpacing (20), `VBox (`HSpacing(70),
-	    `VSpacing (0.2),
-	    `HBox (
-		`HSpacing (),
-		`ReplacePoint (`id (`reptree), `Tree (`id(`tree), root_dn, [])),
-		`ReplacePoint (`id (`repbuttons), `Empty ()),
-		`HSpacing ()
-	    ),
-	    `HBox (
-		`HSpacing (1.5),
-	        `PushButton (`id (`ok), `opt (`key_F10), Label::OKButton()),
-		`PushButton(`id (`cancel),`opt (`key_F9),Label::CancelButton()),
-		// pushbutton label
-		textmode ?
-		  // button label
-		  `Right (`PushButton (`id (`open), `opt (`key_F6),_("&Open"))):
-		  `Empty (),
-		`HSpacing (1.5)
-	    ),
-	    `VSpacing (0.2)
-	));
-
-	UI::OpenDialog (`opt (`decorated), contents);
-
-	list<term> items = maplist (string dn,
-	    (list<string>) SCR::Read (.ldap.search, $[
-		"base_dn"	: root_dn,
-		"scope"		: 1,
-		"dn_only"	: true,
-		"not_found_ok": true ]), {
-
-	    dns [dn]	= false;
-	    return `item (dn, false, []);
-	});
-
-	if (size (items) > 0)
-	{
-	    UI::ReplaceWidget (`id (`reptree), textmode ?
-		`Tree (`id(`tree), root_dn, items) :
-		`Tree (`id(`tree), `opt(`notify), root_dn, items));
-	}
-	else if (root_dn == "")
-	{
-	    list bases = (list) SCR::Read (.ldap.search, $[
-		"base_dn"	: "",
-	        "scope"		: 0,
-		"attrs"		: [ "namingcontexts" ]
-	    ]);
-	    if (size (bases) > 0)
-		items = maplist (string dn, bases[0,"namingcontexts"]:[],
-		    ``(`item(dn, false, [])));
-	    if (size (items) > 0)
-		UI::ReplaceWidget (`id (`reptree), textmode ?
-		    `Tree (`id(`tree), root_dn, items) :
-		    `Tree (`id(`tree), `opt(`notify), root_dn, items));
-	}
-
-	if (textmode)
-	    UI::SetFocus (`id(`tree));
-
-	list<string> subdns	= [];
-	map open_items		= $[];
-
-	define list<term> update_items (list<term> its) {
-
-	    return maplist (term it, its, {
-		string dn	= select (it, 0, "");
-		if (dn == current_dn)
-		{
-		    return `item (dn, true, maplist (string k,
-			subdns, ``(`item (k, false, []))));
-		}
-		integer last = size (it) - 1;
-		if (size (select (it, last, [])) == 0)
-		    return it;
-		// `OpenItems doesn't work in ncurses...
-		boolean open = haskey (open_items, dn) && !textmode;
-		return `item (dn, open, update_items (select(it,last,[])));
-	    });
-	}
-
-	string retval = root_dn;
-	while (true)
-	{
-	    any ret = UI::UserInput ();
-	    if (ret == `tree || ret == `open)
-	    {
-		current_dn = (string) UI::QueryWidget (`id(`tree),`CurrentItem);
-		if (! dns[current_dn]:false)
-		{
-		    subdns = (list<string>) SCR::Read (.ldap.search, $[
-			"base_dn"	: current_dn,
-			"scope"		: 1,
-			"dn_only"	: true,
-			"not_found_ok"	: true,
-		    ]);
-		    dns [current_dn]	= true;
-		    if (size (subdns) > 0)
-		    {
-			open_items = (map) UI::QueryWidget (`tree, `OpenItems);
-			items	= update_items (items);
-			UI::ReplaceWidget (`id (`reptree), textmode ?
-			    `Tree (`id(`tree), root_dn, items) :
-			    `Tree (`id(`tree), `opt(`notify), root_dn, items));
-			UI::ChangeWidget (`id(`tree), `CurrentItem, current_dn);
-			open_items = $[];
-		    }
-		}
-		if (textmode)
-		    UI::SetFocus (`id(`tree));
-	    }
-	    if (ret == `cancel)
-	    {
-		break;
-	    }
-	    if (ret == `ok)
-	    {
-		string dn = (string)UI::QueryWidget (`id(`tree), `CurrentItem);
-		if (dn != nil)
-		    retval = dn;
-		else retval = current_dn;
-		break;
-	    }
-	}
-	UI::CloseDialog ();
-	return retval;
-    }
-
-    /**
-     * Open the LDAP Browse popup and initialize initialize LDAP connection
-     * before.
-     * @param connection init map with information passed to ldap agent
-     * (see ldap agent '.ldap' Execute call documentation)
-     * @param root_dn the starting point (root of tree); if empty string is
-     * given, the search for available bases will be done automatically
-     * @return DN of selected item, empty string when canceled
-     */
-    global define string InitAndBrowseTree (string root_dn, map connection) {
-
-	map args = size (connection) > 0 ? connection : $[
-	    "hostname"	: Ldap::GetFirstServer (Ldap::server),
-	    "port"	: Ldap::GetFirstPort (Ldap::server),
-	    "version"	: Ldap::ldap_v2 ? 2 : 3,
-	    "use_tls"	: Ldap::ldap_tls ? "yes" : "no"
-	];
-	boolean init = (boolean) SCR::Execute (.ldap, args);
-	if (init == nil || !init)
-	{
-	    y2error ("init failed");
-	    return root_dn;
-	}
-
-	return BrowseTree (root_dn);
-    }
 
 }//EOF
