@@ -68,7 +68,7 @@
     /**
      * If no, automounter will not be affected.
      */
-    global boolean _autofs_allowed = false;
+    global boolean _autofs_allowed = true;
     /**
      * Start automounter and import the settings from LDAP
      */
@@ -343,7 +343,7 @@
 	_start_autofs	= settings["start_autofs"]:false;
 	if (_start_autofs)
 	    required_packages = (list<string>)
-		union (required_packages, ["autofs"]);
+		union (required_packages, ["autofs4"]);
 
 	old_domain		= domain;
 	old_server		= server;
@@ -2039,7 +2039,7 @@ Select another one.
 
 	// ------------------------------ create the LDAP configuration (#40484)
 	boolean ldap_ok = true;
-	if (create_ldap)
+	if (create_ldap && !Mode::autoinst ())
 	{
 	    ldap_ok	= CreateDefaultLDAPConfiguration ();
 	}

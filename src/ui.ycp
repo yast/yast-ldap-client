@@ -379,7 +379,7 @@ Which should be used as the primary authentication service?
 		if (autofs && !Package::InstalledAny(["autofs", "autofs4"]))
 		{
 		    Ldap::required_packages = (list<string>) union (
-			Ldap::required_packages, ["autofs"]);
+			Ldap::required_packages, ["autofs4"]);
 		}
 		if (!Package::InstallAll(Ldap::required_packages))
 		{
@@ -403,30 +403,29 @@ Which should be used as the primary authentication service?
 	    {
 		if (result == `next)
 		{
-		    if (start && !Ldap::start)
+		    if (start && !Ldap::start && !Mode::config())
 		    {
-			// popup text
-			Autologin::AskForDisabling(_("Now you have enabled LDAP."));
-			if (!Mode::config())
-			{
-			    string message	=
-			    // message popup, part 1/2
+			Autologin::AskForDisabling (
+			    // popup text
+			    _("Now you have enabled LDAP."));
+
+			string message	=
+			// message popup, part 1/2
 _("This change only affects newly created processes and not already
 running services. Restart your services manually or reboot 
 the machine to enable it for all services.
 ");
 
-			    if (Service::Status ("sshd") == 0)
-			    {
-				Ldap::RestartSSHD (true);
-				// message popup, part 1/2
-				message = message + _("
+			if (Service::Status ("sshd") == 0)
+			{
+			    Ldap::RestartSSHD (true);
+			    // message popup, part 1/2
+			    message = message + _("
 To enable remote login for LDAP users, 'sshd' will be
 restarted automatically by YaST.
 ");
-			    }
-			    Popup::Message (message);
 			}
+			Popup::Message (message);
 		    }
 		}
 		Ldap::SetDomain (domain);
