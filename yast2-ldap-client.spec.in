@@ -1,11 +1,11 @@
 @HEADER-COMMENT@
 
-# neededforbuild  yast2-devel-packages yast2-pam yast2-packager
+# neededforbuild  yast2-devel-packages yast2-pam
 
 @HEADER@
 PreReq:         %fillup_prereq
 
-Requires:	yast2 yast2-network yast2-pam yast2-packager yast2-ldap
+Requires:	yast2 yast2-network yast2-pam yast2-ldap yast2-packager
 
 Provides:	yast2-config-ldap_client
 Obsoletes:	yast2-config-ldap_client

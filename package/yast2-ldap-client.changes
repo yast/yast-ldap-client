@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Feb 20 13:38:29 CET 2004 - jsuchome@suse.cz
+
+- again: force write of ldap.conf
+- do not forget to read autologin settings
+
+-------------------------------------------------------------------
 Fri Feb 13 10:43:13 CET 2004 - jsuchome@suse.cz
 
 - force write of ldap.conf

@@ -366,7 +366,7 @@
 	if (bind_dn == nil || bind_dn == "")
 	    bind_dn = ReadLdapConfEntry ("binddn", "");
 
-//	Autologin::Read ();
+	Autologin::Read ();
 
 	return true;
     }
@@ -1206,7 +1206,6 @@ Select another one.
 	    // update ldap.conf
 	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".host, server);
 	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base, domain);
-	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf", nil);
 	    y2milestone ("file /etc/openldap/ldap.conf was modified");
 	}
 	return write_openldap_conf;
@@ -1307,7 +1306,7 @@ Select another one.
 		(nss_base_group != "")? nss_base_group : group_base);
 
 	    // write the changes in ldap.conf now
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf", nil);
+	    SCR::Write(.etc.ldap_conf, nil);
 
 	    // pam settigs
 	    foreach (string type, [ "account", "auth", "password" ], ``{
