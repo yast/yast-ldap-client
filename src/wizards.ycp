@@ -88,9 +88,14 @@ global define symbol MainSequence() ``{
 
     map aliases = $[
 	"ldap"		: ``( LdapDialog() ),
-	"users"		: ``( UsersConfigureDialog() ),
-	"defaults"	: ``( DefaultsConfigureDialog() ),
-	"abort"		: ``( ReallyAbort())
+//	"users"		: ``( UsersConfigureDialog() ),
+//	"defaults"	: ``( DefaultsConfigureDialog() ),
+	"abort"		: ``( ReallyAbort()),
+	"advanced"	: ``( AdvancedConfigurationDialog ()),
+	"configure"	: ``( ModuleConfigurationDialog ()),
+//	"template"	: ``( TemplateConfigurationDialog ()),
+	"read_ldap"	: [``(LDAPReadDialog ()), true ],
+	"confirm_write"	: ``( WriteConfirmationPopup()),
     ];
 
     map sequence = $[
@@ -98,24 +103,68 @@ global define symbol MainSequence() ``{
 	"ldap" : $[
 	    `abort	: "abort",
 	    `cancel	: "abort",
-	    `details	: "users",
-	    `next	: `next
+//	    `details	: "users",
+	    `advanced	: "advanced",
+//	    `advanced	: "read_ldap",
+//	    `next	: `next
+//	    `next	: "advanced",
+	    `next	: "confirm_write"
 	],
-	"users" : $[
+	/*
+	"users" : $[// OBSOLETE
 	    `abort	: "abort",
 	    `cancel	: "abort",
 	    `next	: "defaults"
 	],
-	"defaults" : $[
+	"defaults" : $[// OBSOLETE
 	    `abort	: "abort",
 	    `cancel	: "abort",
 	    `next	: "ldap"
 	],
+	*/
 	"abort": $[
 	    `abort	: `abort,
 	    `next	: `abort,
 	    `cancel	: `back,
 	    `back	: `back
+	],
+	"read_ldap": $[
+	    `abort	: `abort,
+	    `cancel	: `abort,
+//	    `next	: "advanced",
+	    `next	: "configure",
+	    `skip	: "ldap"
+	],
+	"advanced": $[
+	    `abort	: "abort",
+	    `cancel	: "abort",
+//	    `next	: "ldap",
+//	    `next	: `next,
+	    `next	: "read_ldap",
+//	    `configure	: "configure"
+//	    `configure	: "read_ldap"
+	],
+	"configure": $[
+	    `abort	: "abort",
+	    `cancel	: "abort",
+	    `next	: "advanced",
+//	    `template	: "template"
+//	    `templ	: "template",
+//	    `next	: "template",
+	    `next	: "ldap",
+	],
+	/*
+	"template": $[
+	    `abort	: "abort",
+	    `cancel	: "abort",
+//	    `next	: "advanced",
+	    `next	: "configure",
+	],
+	*/
+	"confirm_write": $[
+	    `abort	: "abort",
+	    `cancel	: `back,
+	    `next	: `next
 	]
     ];
 

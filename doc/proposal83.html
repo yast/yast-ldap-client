@@ -1,0 +1,90 @@
+<html><head><title>YaST2 Ldap-client module proposal</title></head>
+<body>
+<h1>YaST2: Ldap-client module</h1>
+
+<h2>Situation</h2>
+
+<p>
+SL 8.2 (and even more later versions) should operate with LDAP much more than
+it used to be. Documentation to all the large area called "LDAP enablement"
+could be found at
+<br>
+<a href="http://w3.suse.de/~rhafer/LDAP/">http://w3.suse.de/~rhafer/LDAP</a>
+
+and in yast2/planning CVS directory.
+<p>
+These changes include (from YaST side)
+<ul>
+<li>create new universal agent for accesing and modifying data in LDAP directory
+<li>enhance yast2-client module to enable large configuration of data stored in
+LDAP
+<li>adapt modules which need to work with LDAP (e.g. yast2-users)
+<li>write a module for configuration of LDAP server
+</ul>
+
+This document describes the changes of ldap-client module.
+<h2>Solution</h2>
+<p>
+According to
+<a href="http://w3.suse.de/~rhafer/LDAP/suse-ldap.html">Ralf's proposal</a>, we
+must add some dialogs to configure various "modules" (e.g. user configuration).
+All the data should be stored in LDAP, in the local file (ldap.conf) there will
+be one new value (Main Configuration Object) which is the base DN for searching
+all other configuration data.
+
+Here is the dialog proposal.
+<h3>Workflow</h3>
+<p>
+<img src="workflow.png">
+
+<h3>Summary dialog</h3>
+<p>
+This should remain simple is to enable fast configuration if user don't need
+much (or just for enabling/disabling the services).
+<p>
+<img src="01_ldap-client.png">
+
+<h3>Advanced Configuration Dialog</h3>
+<p>
+Dialog for configuring main configuration DN's (base, template) and show
+the "modules", which could be configured (in the table).
+<b>Problems</b>
+<ul>
+<li>First value is written in the config file, while others are stored in LDAP
+- this is not very consistent
+<li>What if the main DN is changed? Should be everything moved in LDAP tree? Or
+should it be just new start point for new values, stored at other place?
+</ul>
+<p>
+<img src="02_ldap-client.png">
+
+<h3>Advanced Configuration Dialog</h3>
+<p>
+For configuration of one specified module (here the users configuration).
+The table contains some values common for each module (like Default Base or
+Default Filter) and some module-specific (like Password Length for users).
+<br>
+Maybe the ObjectClass should not be allowed to edit.
+<b>Problem</b>
+<ul>
+<li>As before - should be allowed changing of cn (which implies change of DN)
+when something is already configured?
+</ul>
+<p>
+<img src="03_ldap-client.png">
+
+<h3>Template Configuration Dialog</h3>
+<p>
+Configuration of template values. There is one table with  default template
+attributes (they cannot be deleted, only ignored) and one table for setting
+the defaultValue attribute.
+<br>
+<b>Problem</b>
+<ul>
+<li>The attribute of secondaryGroup is not very easy to edit with our widgets...
+</ul>
+</ul>
+<p>
+<img src="04_ldap-client.png">
+
+</body></html>

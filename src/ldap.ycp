@@ -16,14 +16,11 @@
 
     textdomain "ldap-client";
 
-    import "Ldap";
-    import "Wizard";
-    include "require.ycp";
+    import "Require";
 
-//    include "ldap/ui.ycp";
     include "ldap/wizards.ycp";
 
-    if (!RequireAndConflict (["pam_ldap","nss_ldap"], [],
+    if (!Require::RequireAndConflict (["pam_ldap","nss_ldap"], [],
 			     _("<p>To configure and access LDAP services,
 the <b>%1</b> packages must be installed.</p>
 <p>Install these packages now?</p>
@@ -33,34 +30,6 @@ the <b>%1</b> packages must be installed.</p>
 cannot be completed without the mentioned packages."));
 	return `auto;
     }
-
-/*
-    Wizard::CreateDialog ();
-    Wizard::ReplaceAbortButton(`Empty ());
-
-    Ldap::Read ();
-    symbol result = LdapDialog ();
-
-    if (result == `next)
-    {
-	if (Ldap::Write ())
-	{
-	    if (Ldap::start)
-	    {
-		UI::MessagePopup(_("The configuration of the LDAP client
-was saved and can be used."));
-	    }
-	    else
-	    {
-		UI::MessagePopup(_("The configuration of the LDAP
-client was saved."));
-	    }
-	}
-    }
-
-    UI::CloseDialog();
-    return result;
-*/
     return LdapSequence();
 
 }

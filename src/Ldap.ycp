@@ -16,7 +16,7 @@
     import "Runlevel";
     import "Report";
     import "Summary";
-
+    import "Progress";
 
     /**
      * Write only, used during autoinstallation.
@@ -35,7 +35,7 @@
      */
     global string  server = "";
 
-    // anything modified?
+    // local settings modified?
     global boolean modified = false;
 
     string domain = "";
@@ -47,37 +47,26 @@
     global boolean ldap_tls = false;
 
     /* Which crypt method should be used? If not set, use crypt. */
-    // TODO make it configurable
     global string pam_password = "";
 
+    global integer default_port = 389;
     /**
      * If home directories of LDAP users are stored on this machine
      */
-    global boolean file_server = false;
+    global boolean file_server = false; // FIXME where to store this?
 
-    /* variables for LDAP user configuration*/
-    // TODO: store it in LDAP
-    global string user_base = "";
+    global string user_base = ""; // FIXME store both in LDAP and ldap.conf
     global string group_base = "";
-    global string user_filter = "";
-    global string group_filter = "";
-    global string user_class = "";
-    global string group_class = "";
-    global string bind_dn = "";
 
-    // default (and shadow) settings for new LDAP users
-    // TODO: store it in LDAP
-    global string default_home = "/home";
-    global string default_shell = "/bin/bash";
-    global string default_skel = "/etc/skel";
-    global string default_groupname = "users";
-    global string default_inactive = "-1";
-    global string default_expire = "";
-    global integer default_gid = 100; // TODO change to 500 with new version
-
+    /*
+    global string user_filter = "objectClass=posixAccount";
+    global string group_filter = "objectClass=posixGroup";
+    */
 
     /* stored values of /etc/nsswitch.conf */
     map nsswitch = $[ "passwd" : [], "group": []];
+
+    //----------------------------------------------------------------
 
     /**
      * If the domain has changed from a nonempty one, it may only be
@@ -207,20 +196,16 @@
 
         bind_dn = ReadLdapConfEntry ("binddn", "");
 
-	// TODO: usere/group base should be stored in LDAP also?
+        base_config_dn = ReadLdapConfEntry ("admintool_dn", "");
+
+	// TODO: usere/group base should be stored in LDAP also!
         user_base = ReadLdapConfEntry ("nss_base_passwd", domain);
         group_base = ReadLdapConfEntry ("nss_base_group", user_base);
 
-	// TODO read these from somewhere!-----------------------------
-	user_filter = "objectclass=person";
-	user_class = "person,posixAccount,top,shadowAccount,inetOrgPerson";
-
-	group_filter = "objectClass=posixGroup";
-	group_class = "posixGroup,top";
-
-	file_server = false;
+	file_server = false;//TODO read from some file!
 	// ------------------------------------------------------------
 
+	// TODO: test this attribute with various values!
 	pam_password = ReadLdapConfEntry ("pam_password", "crypt");
 	/* else plain text is used, bad idea.  */
 
@@ -235,10 +220,41 @@
 
     /**
      * Saves LDAP configuration.
-     * (No parameters because it is too short to abort)
+     * @param abort block for abort check
      * @return true on success
      */
-    global define boolean Write () ``{
+    global define boolean Write (block abort) ``{
+
+	// progress caption
+	string caption = _("Writing LDAP configuration...");
+	integer no_of_steps = 4;
+
+	Progress::New (caption, " ", no_of_steps, [
+	    // progress stage label
+	    _("Stop services"),
+	    // progress stage label
+	    _("Update configuration files"),
+	    // progress stage label
+	    _("Start services"),
+	    // progress stage label
+	    _("Update configuration in LDAP database"),
+           ], [
+	    // progress step label
+	    _("Stopping services..."),
+	    // progress step label
+	    _("Updating configuration files..."),
+	    // progress step label
+	    _("Starting services..."),
+	    // progress step label
+	    _("Updating configuration in LDAP database..."),
+	    // final progress step label
+	    _("Finished") ],
+	    "" );
+
+	// -------------------- stop services
+	Progress::NextStage ();
+	if (eval (abort))
+	    return `abort;
 
 	boolean ypbind_running = false;
 
@@ -248,6 +264,11 @@
 		Runlevel::RunInitScript ("ypbind", "stop");
 	}
 	map new_nsswitch = $[ "passwd":"", "group": ""];
+
+	// -------------------- update config files
+	Progress::NextStage ();
+	if (eval (abort))
+	    return `abort;
 
 	if (start) // ldap used
 	{
@@ -265,10 +286,14 @@
 		SCR::Write(.etc.openldap.ldap_conf.ssl, "no");
 
 	    // TODO configure password encryption
+	    // -check the value stored in LDAP
 	    SCR::Write(.etc.openldap.ldap_conf.pam_password, pam_password);
 
 	    if (bind_dn != "")
 		SCR::Write (.etc.openldap.ldap_conf.binddn, bind_dn);
+
+	    if (base_config_dn != "")
+		SCR::Write(.etc.openldap.ldap_conf.admintool_dn,base_config_dn);
 
 	    // TODO when write to ldap.conf?
 	    if (user_base != "")
@@ -323,6 +348,11 @@
 
 	// TODO: save file_server somewhere
 
+	// -------------------- start services
+	Progress::NextStage ();
+	if (eval (abort))
+	    return `abort;
+
 	if (Runlevel::ServiceStatus ("nscd") == 0 && !write_only)
 	{
 	    Runlevel::RunInitScript ("nscd", "restart");
@@ -333,33 +363,583 @@
 	    Runlevel::RunInitScript ("ypbind", "restart");
 	}
 
+	// -------------------- write settings to LDAP
+	Progress::NextStage ();
+	if (eval (abort))
+	    return `abort;
+
+	if (ldap_modified)
+	{
+	    if (ldap_anonymous || ldap_bind_pass == nil)
+	    {
+		ldap_bind_pass = LDAPAskAndBind (false);
+	    }
+	    // nil means "canceled"
+	    if (ldap_bind_pass != nil)
+	    {
+		string error = WriteToLDAP (config_modules);
+		if (error != "")
+		    LDAPErrorMessage ("write", error);
+
+		error = WriteToLDAP (templates);
+		if (error != "")
+		    LDAPErrorMessage ("write", error);
+	    }
+	}
+
+	// final stage
+	Progress::NextStage ();
+
 	return true;
     }
 
-    // ------------------------------------------------------
-    // TODO settings to write to LDAP directory (ConfigObject)
-    /*
-	base_config: dn, scope, (objectclass?)
-	user_base
-	group_base
-	user_filter
-	group_filter
-	user_object_class
-	group_object_class
+    // ---------------------------- new variables, functions...
 
-	default user settings (group, shell, shadow) from template
+/**
+ * Error popup for errors detected during LDAP operation
+ * @param type error type: binding/reading/writing
+ * @param detailed error message (from agent-ldap)
+ */
+global define void LDAPErrorMessage (string type, string error) ``{
+
+    map ldap_error = $[
+    "initialize":
+// error message:
+_("
+Server could be down or unreachable."),
+
+    "missing_dn":
+// error message:
+_("
+Value of DN is missing or invalid."),
+    ];
+
+    map error_type = $[
+        // error message, more specific description follows
+	"init": _("Connection to LDAP server can not be established."),
+        // error message, more specific description follows
+	"bind": _("Problem with connecting to the LDAP server."),
+        // error message, more specific description follows
+	"read": _("Problem with reading data from the LDAP server."),
+        // error message, more specific description follows
+	"users": _("There was a problem with writing LDAP users."),
+        // error message, more specific description follows
+	"groups": _("There was a problem with writing LDAP groups."),
+        // error message, more specific description follows
+	"write": _("There was a problem with writing data to LDAP server."),
+    ];
+
+    if (error == nil) error = "YaST error?";
+
+    UI::OpenDialog (`HBox(`HSpacing (0.5),
+	`VBox(
+	    `VSpacing (0.5),
+	    // label
+	    `Left(`Heading (_("Error"))),
+	    `Label (error_type[type]:_("Unknown LDAP error")),
+	    `ReplacePoint (`id(`rp), `Empty()),
+	    `VSpacing (0.5),
+	    // checkbox label
+	    `Left(`CheckBox (`id(`details), `opt (`notify),_("&Show Details"), false)),
+	    `PushButton (`id(`ok), `opt(`key_F10,`default), UI::OKButtonLabel())
+	),
+	`HSpacing(0.5))
+    );
+    any ret = nil;
+    do
+    {
+	ret = UI::UserInput();
+	if (ret == `details)
+	{
+	    if (UI::QueryWidget (`id(`details), `Value))
+		UI::ReplaceWidget (`id(`rp), `VBox (
+		    `Label (ldap_error[error]:error)));
+	    else
+		UI::ReplaceWidget (`id(`rp), `Empty());
+	}
+    }
+    while (ret != `ok && ret != `cancel);
+
+    UI::CloseDialog();
+}
+
+    global define string LDAPError () ``{
+
+	map err_map = LDAPErrorMap ();
+	return err_map["msg"]:"";
+    }
+
+    global define map LDAPErrorMap () ``{
+
+        return (SCR::Read(.ldap.error));
+    }
+
+    // TODO what if we have more servers?
+    global define string LDAPInit () ``{
+
+	string ret = "";
+	map args = $[
+	    "hostname":     GetFirstServer (server),
+	    "port":         GetFirstPort (server),
+	    "version":      ldap_v2 ? 2 : 3
+	];
+	if (!SCR::Execute (.ldap, args))
+	    ret = LDAPError();
+	return ret;
+    }
+
+    global define string LDAPBind (string pass) ``{
+
+        string ret = "";
+	if (pass != nil)
+	{
+	    map args = $[];
+	    if (!ldap_anonymous)
+		args = $[ "bind_dn": bind_dn, "bind_pw": pass];
+	    if (!SCR::Execute (.ldap.bind, args))
+		ret = LDAPError();
+	}
+	return ret;
+    }
+
+    // this is a hack
+    // TODO solve choosing from multiple servers
+    global define string GetFirstServer (string servers) ``{
+
+	list l_servers = splitstring (servers, " ");
+	string srv = l_servers[0]:"";
+	return substring (srv, 0, find (srv, ":"));
+    }
+
+    global define string GetFirstPort (string servers) ``{
+
+	list l_servers = splitstring (servers, " ");
+	string srv = l_servers[0]:"";
+	if (!issubstring (srv, ":"))
+	    return default_port;
+	string s_port = substring (srv, find (srv, ":") + 1);
+	if (s_port == "")
+	    return default_port;
+	else return tointeger (s_port);
+    }
+/**
+ * Gets the bind password to LDAP database
+ * @return password
+ */
+global define string GetLDAPPassword (boolean anonymous) ``{
+
+    UI::OpenDialog (`opt(`decorated),
+        `VBox(
+            `HSpacing(40),
+            // password entering label
+            `Password(`id(`pw), _("&Enter the Password for LDAP Server:")),
+            `HBox(
+              `PushButton (`id(`ok),`opt(`key_F10, `default),
+		UI::OKButtonLabel()),
+              // button label
+	      `PushButton (`id(`anon), `opt(`key_F6), _("&Anonymous Access")),
+              `PushButton (`id(`cancel),`opt(`key_F9), UI::CancelButtonLabel())
+            )
+        )
+    );
+    if (!anonymous)
+	UI::ChangeWidget (`id(`anon), `Enabled, false);
+    UI::SetFocus (`id(`pw));
+    any ret = UI::UserInput();
+    string pw = "";
+    if (ret == `ok)
+    {
+        pw = UI::QueryWidget(`id(`pw), `Value);
+	ldap_anonymous = false;
+    }
+    else if (ret == `cancel)
+        pw = nil;
+    else ldap_anonymous = true;
+    UI::CloseDialog();
+    return pw;
+}
+
+/**
+ * Asks for LDAP password and tries to bind with it
+ * @return password entered, nil on cancel
+ */
+global define string LDAPAskAndBind (boolean anonymous) ``{
+
+    string pw = GetLDAPPassword (anonymous);
+    if (pw != nil)
+    {
+	string ldap_msg = LDAPBind (pw);
+	while (pw != nil && ldap_msg != "")
+	{
+	    LDAPErrorMessage ("bind", ldap_msg);
+	    pw = GetLDAPPassword (anonymous);
+	    ldap_msg = LDAPBind (pw);
+	}
+    }
+    return pw;
+}
+
+    // are we binding anonymously?
+    global boolean ldap_anonymous = false;
+
+    // bind password for LDAP server
+    global string ldap_bind_pass = "";
+
+    // DN for binding to LDAP server
+    global string bind_dn = "";
+
+    // DN of currently edited configuration module
+    global string current_module_dn = "";
+    // DN of currently edited template
+    global string current_template_dn = "";
+
+    // DN of base configuration object
+    global string base_config_dn = "ou=ldapconfig,dc=suse,dc=cz";
+
+    global string base_template_dn = base_config_dn;
+    //global string base_template_dn = "ou=templates,ou=ldapconfig,dc=suse,dc=cz";
+
+    // settings saved at LDAP server modified
+    global boolean ldap_modified = false;
+
+    // TODO use map or list?
+    global map config_modules = $[];
+    global map templates = $[];
+
+    global boolean binded = false;
+
+    global list groups_dn = [];//DN's of groups (posixGroups) in LDAP
+
+    // TODO FIXME read from schema!!!
+    global map allowed_attrs = $[
+	"moduleConfiguration":	[ "cn", "defaultBase", "objectClass",
+	    "searchUri", "defaultTemplate",
+	    "minUniqueId", "maxUniqueId", "nextUniqueId"],
+	"userConfiguration":	[ "minPasswordLength", "maxPasswordLength",
+	    "skelDir", "passwordHash"],
+	"objectTemplate":	[ "cn", "defaultObjectClass", "defaultValue",
+	    "requiredAttribute", "allowedAttribute", "namingAttribute" ],
+	"userTemplate":		[ "secondaryGroup" ],
+
+	"posixAccount":		[ "cn", "uid", "gidNumber" ],
+	"inetOrgPerson":	[ "sn", "o" ],
+    ];
+
+    global define boolean SingleValued (string attr) ``{
+
+	// TODO where to get this?
+	return contains (["uid", "uidNumber", "cn", "gidNumber",
+	    "defaultBase", "defaultTemplate", //only for here
+	    "maxUniqueId", "minUniqueId", "nextUniqueId"],
+	    attr);
+    }
+
+    // TODO: read schema!
+    // TODO do not call every time, store it after 1st read
+    global define list GetObjectAttributes (list classes) ``{
+
+	list ret = [];
+	foreach (`class, classes, ``{
+	    ret = union (ret, allowed_attrs [class]:[]);
+	});
+	return ret;
+    }
+
+    /**
+     * For a given object, add all atributes this object is allowed to have
+     * according to its "objectClass" value. New attributes have empty value.
+     */
+    define map AddMissingAttributes (map object) ``{
+
+	// add empty attributes, allowed by schema
+	foreach (`class, object["objectClass"]:[], ``{
+	    foreach (`attr, allowed_attrs [class]:[], ``{
+		if (!haskey (object, attr))
+		    object = add (object, attr, "");
+	    });
+	});
+	return object;
+    }
+
+    /**
+     * Read configuration moduels from LDAP server
+     */
+    global define map ReadConfigModules () ``{
+
+	map modules = SCR::Read (.ldap.search, $[
+	    "base_dn":	base_config_dn,
+	    "filter":   "objectClass=moduleConfiguration",
+	    "attrs":	[],
+	    "scope":	1, //one - deeper searches would have problems with
+	    //constructing of dn
+	    "map":	true
+	]);
+	if (modules == nil)
+	{
+	    LDAPErrorMessage ("read", LDAPError());
+	    return $[];
+	}
+	config_modules = mapmap (`dn, `mod, modules, ``{
+	    return [dn, AddMissingAttributes (mod)];
+	});
+
+	return config_modules;
+    }
+
+    /**
+     * Read object templates from LDAP server
+     */
+    global define map ReadTemplates () ``{
+
+	map all = SCR::Read (.ldap.search, $[
+	    "base_dn":	base_template_dn,
+	    "filter":   "objectClass=objectTemplate",
+	    "attrs":	[],
+	    "scope":	2,// sub: all templates under config DN
+	    "map":	true
+	]);
+	if (all == nil)
+	{
+	    LDAPErrorMessage ("read", LDAPError());
+	    return $[];
+	}
+	// create a helper map of default values...
+	templates = mapmap (`dn, `templ, all, ``{
+	    list default_values = [];
+	    if (is (templ["defaultValue"]:[], list))
+		default_values = templ["defaultValue"]:[];
+	    else
+		default_values = [ templ["defaultValue"]:"" ];
+
+	    map template = add (templ, "default_values", $[]);
+	    foreach (`value, default_values, ``{
+		list line = splitstring (value, "=");
+		if (size (line) != 2)
+		    return;
+		template ["default_values", line[0]:""] = line[1]:"";
+	    });
+
+	    template = AddMissingAttributes (template);
+	    return [dn, template];
+	});
+	return templates;
+    }
+
+    /**
+     * Return main configuration object DN
+     */
+    global define string GetMainConfigDN () ``{
+
+	return base_config_dn;
+    }
+
+    global define map GetConfigModules () ``{
+
+	return eval (config_modules);
+    }
+
+    global define map GetTemplates () ``{
+
+	return eval (templates);
+    }
+
+    /* FIXME read from LDAP
+    global define string GetUserFilter () ``{
+
+	return user_filter;
+    }
+
+    // FIXME read from LDAP
+    global define string GetGroupFilter () ``{
+
+	return "objectClass=posixGroup";
+    }
+
+    // FIXME read from LDAP
+    global define list GetUserObjectClasses () ``{
+
+	return [ "top", "posixAccount", "inetOrgPerson" ];
+    }
+
+    // FIXME read from LDAP
+    global define list GetGroupObjectClasses () ``{
+
+	return [ "top", "posixGroup" ];
+    }
     */
 
     /**
-     * Read additional/default settings from LDAP?
-     *
+     * Creates default new map for a new object template
+     */
+    global define map CreateTemplate (string cn, list classes) ``{
 
+	map obj = $[
+	    "cn":		cn,
+	    "objectClass":	[ "top", "objectTemplate"],
+	    "modified":		"added"
+	];
+	if (contains (classes, "userConfiguration"))
+	    obj["objectClass"] = add (obj["objectClass"]:[],"userTemplate");
 
-    */
+	return AddMissingAttributes (obj);
+    }
+
+    /**
+     * Creates default new map for a new configuration object
+     */
+    global define map CreateModule (string cn, string class) ``{
+
+	map obj = $[
+	    "cn":		cn,
+	    "objectClass":	add ([ "top", "moduleConfiguration"], class),
+	    "modified":		"added"
+	];
+	return AddMissingAttributes (obj);
+    }
+
+    /**
+     * Returns DN's of groups (objectClass=posixGroup) in given base
+     */
+    global define list GetGroupsDN (string base) ``{
+
+	if (groups_dn == [])
+	    groups_dn = ReadGroupsDN (base);
+	return groups_dn;
+    }
+
+    /**
+     * Searches for DN's of groups (objectClass=posixGroup) in given base
+     */
+    global define list ReadGroupsDN (string base) ``{
+
+	map groups = SCR::Read (.ldap.search, $[
+	    "base_dn":	base,
+	    "filter":   "objectClass=posixGroup",
+	    "attrs":	["cn"],
+	    "attrsOnly":true,
+	    "scope":	2,
+	    "map":	true,
+	]);
+	if (groups == nil)
+	{
+	    LDAPErrorMessage ("read", LDAPError());
+	    return [];
+	}
+	return maplist (`dn, `group, groups, ``{ return dn;});
+    }
+
+    /**
+     */
+    global define boolean CommitConfigModules (map modules) ``{
+
+	foreach (`dn, `modmap, modules, ``{
+
+	    if (!haskey (config_modules, dn))
+	    {
+		config_modules [dn] = eval (modmap);
+		ldap_modified = true;
+		return;
+	    }
+	    foreach (`attr, `val, modmap, ``{
+		if (config_modules [dn, attr]:"" != val)
+		{
+		    config_modules [dn, attr] = val;
+		    if (!haskey (modmap, "modified"))
+			config_modules [dn, "modified"] = "edited";
+		    ldap_modified = true;
+		    y2internal ("modified: %1", val);
+		}
+	    });
+	});
+	return true;
+    }
+
+    // TODO - same function as above...
+    global define boolean CommitTemplates (map templs) ``{
+
+	foreach (`dn, `template, templs, ``{
+
+//	y2internal ("template to commit: %1", template);
+	    if (!haskey (templates, dn))
+	    {
+		// dn changed
+		templates [dn] = eval (template);
+		ldap_modified = true;
+		return;
+	    }
+	    foreach (`attr, `val, template, ``{
+		if (templates [dn, attr]:"" != val)
+		{
+		    templates [dn, attr] = val;
+		    if (!haskey (template, "modified"))
+			templates [dn, "modified"] = "edited";
+		    ldap_modified = true;
+		    y2internal ("modified: %1", val);
+		}
+	    });
+	});
+	return true;
+    }
+
+    /**
+     * Writes map of objects to LDAP
+     */
+    global define string WriteToLDAP (map objects) ``{
+
+	string ret = "";
+	foreach (`dn, `object, objects, ``{
+
+	    if (ret != "")
+		return;
+	    string action = object["modified"]:"";
+	    if (action != "")
+		object = remove (object, "modified");
+	    else return;
+
+	    if (haskey (object, "default_values"))
+	    {
+		object["defaultValue"] = maplist (`key, `val, object["default_values"]:$[], ``{
+		    return sformat ("%1=%2", key, val);
+		});
+		object = remove (object, "default_values");
+	    }
+	    if (action == "added")
+	    {
+		if (!SCR::Write (.ldap.add, $[ "dn": dn ], object))
+		    ret = LDAPError();
+	    }
+	    if (action == "edited")
+	    {
+		if (!SCR::Write (.ldap.modify, $[
+		    "dn":		dn,
+		    "check_attrs":	true ], object))
+		    ret = LDAPError();
+	    }
+	    if (action == "renamed")
+	    {
+		string rdn = select (splitstring (dn, ","), 0, "");
+		dn = object["old_dn"]:dn;
+		object = remove (object, "old_dn");
+		if (!SCR::Write (.ldap.modify, $[
+			"dn":	dn,// the original DN
+			"rdn":	rdn,
+			"deleteOldRDN":	true,
+			"check_attrs":	true ], object))
+		    ret = LDAPError();
+	    }
+	    if (action == "deleted")
+	    {
+		if (!SCR::Write (.ldap.delete, $[ "dn":	dn ]))
+		    ret = LDAPError();
+	    }
+	});
+	return ret;
+    }
+
     // ------------------------------------------------------
 
 
-    /**
+    /** TODO update to new client
      * Summary()
      * returns html formated configuration summary
      * @return summary

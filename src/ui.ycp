@@ -17,11 +17,17 @@
     import "Wizard";
     import "Ldap";
     import "Mode";
+    import "Report";
 
     include "ui/common_popups.ycp";
     include "network/ip.ycp";
-    // include "network/dns.ycp";
 
+    include "ldap/edit_popups.ycp";
+
+    global define boolean Modified () ``{
+
+	return (Ldap::modified || Ldap::ldap_modified);
+    }
 
     /**
      * The dialog that appears when the [Abort] button is pressed.
@@ -32,7 +38,7 @@
 	boolean ret = true;
 	if (!Mode::cont)
 	{
-	    if (Ldap::modified)
+	    if (Modified())
 		ret = UI::ReallyAbortPopup (true);;
 	}
 	else
@@ -53,32 +59,34 @@
     }
 
     /**
+     * @return
+     */
+    global define symbol WriteConfirmationPopup ()``{
+
+	// yes/no popup text
+	if (!Mode::config && !Mode::cont && Modified() && !UI::YesNoPopup(_("The configuration of the LDAP client will be saved
+and the client will be restarted.")))
+	    return `back;
+
+	return `next;
+    }
+
+    /**
      * Write settings dialog
      * @return `next
      */
     global define symbol WriteDialog() ``{
 
-	if (!Ldap::modified)
-	    return `next;
+	// A callback function for abort
+	block abort = ``{
+	    // popup text
+	    if (UI::PollInput () == `abort && UI::YesNoPopup (_("Really abort the writing process?")))
+		return true;
+	    return false;
+	};
 
-	// yes/no popup text
-	if (!Mode::config && !Mode::cont && !UI::YesNoPopup(_("The configuration of the LDAP client will be saved
-and the client will be restarted.")))
-	    return `back;
-
-	if (Ldap::Write() && !Mode::cont && !Mode::config)
-	{
-	    if (Ldap::start)
-	    {
-		UI::MessagePopup(_("The configuration of the LDAP client
-was saved and can be used."));
-	    }
-	    else
-	    {
-		UI::MessagePopup(_("The configuration of the LDAP
-client was saved."));
-	    }
-	}
+	if (Modified())
+	    Ldap::Write (abort);
 	return `next;
     }
 
@@ -88,8 +96,14 @@ client was saved."));
      */
     global define symbol LdapDialog () ``{
 
+	string help_text = _("FIXME!
+<p>First, basic terms have to be described, like
+<b>What does it mean \"DN\"</b>...</p>
+<p>server:port</p>
+");
+
 // help text 1/5
-	string help_text = UI(_("<p>Here, your machine can be set up as an
+	help_text = help_text + UI(_("<p>Here, your machine can be set up as an
 <b>LDAP client</b> to authenticate your user with an OpenLDAP server.
 Enter the name of the search base (base DN, such as dc=example,dc=com)
 in the first entry and the LDAP server's address (e.g., ldap.example.com
@@ -123,7 +137,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 group settings, click <b>Advanced Configuration</b> button.</p>
 "));
 
-	//#23733: during installation, only starting ldap is enabled
+	// during installation, only starting ldap is enabled
 	boolean start		= Mode::cont || Ldap::start;
 	string domain		= Ldap::GetDomain ();
 	string server		= Ldap::server;
@@ -137,14 +151,14 @@ group settings, click <b>Advanced Configuration</b> button.</p>
 		`Left(`HVSquash(`VBox (
 		    `Left (`RadioButton(`id(`ldapno), `opt (`notify),
 			// radio button label
-			_("Do &not use LDAP"), !start)),
+			_("Do n&ot use LDAP"), !start)),
 		    `Left(`RadioButton(`id(`ldapyes), `opt (`notify),
 			// radio button label
 			_("&Use LDAP"), start)))))),
 	    // text entry label
 	    `HSquash(`TextEntry (`id (`ldapd), _("LDAP base &DN"), domain)),
 	    // text entry label
-	    `HSquash(`TextEntry (`id (`ldapa), _("&Addresses of LDAP servers"),
+	    `HSquash(`TextEntry (`id (`ldapa), _("Addresses of LDAP &servers"),
 		server)),
 	    `VSpacing (0.2),
 	    // check box label
@@ -156,7 +170,7 @@ group settings, click <b>Advanced Configuration</b> button.</p>
 	    )),
 	    `VSpacing(1),
 	    // pushbutton label
-	    `PushButton (`id(`details), _("Advan&ced configuration..."))
+	    `PushButton (`id(`advanced), _("&Advanced configuration..."))
         ));
 
 	Wizard::SetContentsButtons (
@@ -164,14 +178,17 @@ group settings, click <b>Advanced Configuration</b> button.</p>
 	    _("LDAP Client Configuration"), con, help_text,
 	    BackButtonLabel(),
 	    Mode::cont ? NextButtonLabel(): FinishButtonLabel());
+//	    NextButtonLabel());
+
+	// TODO Finish on "disable ldap"
 
 	UI::ChangeWidget (`id (`ldapd), `Enabled, start);
 	UI::ChangeWidget (`id (`ldapa), `Enabled, start);
 	UI::ChangeWidget (`id (`ldaps), `Enabled, start);
 	UI::ChangeWidget (`id (`ldapv), `Enabled, start);
-	UI::ChangeWidget (`id (`details), `Enabled, start);
+	UI::ChangeWidget (`id (`advanced), `Enabled, start);
 
-	// during installation, only enabling makes sence (#23831)
+	// during installation, only enabling makes sence
 	if (Mode::cont)
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
 
@@ -186,12 +203,11 @@ group settings, click <b>Advanced Configuration</b> button.</p>
 		UI::ChangeWidget(`id(`ldapa), `Enabled, start);
 		UI::ChangeWidget(`id(`ldaps), `Enabled, start);
 		UI::ChangeWidget (`id (`ldapv), `Enabled, start);
-		UI::ChangeWidget (`id (`details), `Enabled, start);
+		UI::ChangeWidget (`id (`advanced), `Enabled, start);
 
             }
 
-//	    if ((result == `next || result == `details) && start) {
-	    if (result == `next && start) {
+	    if ((result == `next || result == `advanced) && start) {
 		domain = UI::QueryWidget(`id(`ldapd), `Value);
 		server = UI::QueryWidget(`id(`ldapa), `Value);
 		ldap_v2 = UI::QueryWidget(`id(`ldapv), `Value);
@@ -213,11 +229,11 @@ group settings, click <b>Advanced Configuration</b> button.</p>
 		    continue;
 		}
 	    }
-	} while (!contains ([`back, `next, `cancel, `abort, `details], result));
+	} while (!contains ([`back, `next, `cancel, `abort, `advanced], result));
 
-	if (result == `next)
+	if (result == `next || result == `advanced)
 	{
-	    if (Ldap::start != start || Ldap::GetDomain != domain ||
+	    if (Ldap::start != start || Ldap::GetDomain() != domain ||
 		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||
 		Ldap::ldap_tls != ldap_tls)
 	    {
@@ -233,357 +249,649 @@ group settings, click <b>Advanced Configuration</b> button.</p>
 	return result;
     }
 
-/**
- * Dialog for configuration of general LDAP user settings
- * @return symbol for sequencer
- */
-global define symbol UsersConfigureDialog() ``{
 
-    string user_base	= Ldap::user_base;
-    string group_base	= Ldap::group_base;
-    string user_filter	= Ldap::user_filter;
-    string user_class	= Ldap::user_class;
+global define symbol AdvancedConfigurationDialog () ``{
+
+    string help_text = _("FIXME!") +
+
+_("<p><b>Configuration Base DN</b> should be written in ldap.conf file,
+while all other values are strored in LDAP.</p> ") +
+
+_("<p>Template DN should not be edited?</p>") +
+
+_("<p>Push the <b>Next</b> button to configure settings stored in LDAP...</p>");
+
+
+    string base_config_dn = Ldap::GetMainConfigDN();
     string bind_dn	= Ldap::bind_dn;
     boolean file_server = Ldap::file_server;
 
-    list encryptions = [
-	// TODO: which encryption?
-	// password encryption type
-	`item( `id("crypt"), _("CRYPT"), true),
-	// password encryption type
-	`item( `id("md5"), _("MD5"), false)
-    ];
-
-    // help text 1/7
-	string help_text = _("<p>Here, you can set the values used by the YaST2 Users module for managing LDAP users and groups.</p>") +
-
-    // help text 2/7
-    _("<p><b>User Base</b><br>
-This is the base to which users will be added. It is in the form: <i>ou=People,dc=example,dc=com</i>. If you are not sure, use your <b>base DN</b> value.</p>
-") +
-
-    // help text 3/7
-    _("<p><b>Group Base</b><br>
-This is the base to which groups will be added. It may be the same as the user base.</p>
-") +
-
-    // help text 4/7
-    _("<p><b>User Object Class</b><br>
-Object classes the user entry belongs to. The value is in the form:
-<i>person,posixAccount,top,shadowAccount,inetOrgPerson</i>.</p>
-") +
-
-    // help text 5/7 FIXME: add group filter
-    _("<p><b>User Filter</b><br>
-Filter for searching. Default of <i>objectclass=person</i> is fine.</p>
-") +
-
-    // help text 6/7 FIXME: understandable!!!
-    _("<p><b>Bind DN</b><br>
-Required to get access to the LDAP database. It is in the form: <i>uid=manager,dc=example,dc=com</i></p>
-") +
-
-    // TODO encryption!
-
-    // help text 7/7
-    _("<p><b>File Server</b><br>
-Check this if home directories of your LDAP users are stored on this machine.</p>");
-
-    term con = `VSquash(
-        `VBox (
-        `VSpacing(1),
-        // frame label
-        `Frame (_("LDAP User and Group Settings"),
-            `HBox (
-            `HSpacing (2),
-            `VBox (
-                `VSpacing (0.5),
-                // textentry label
-                `TextEntry (`id (`userb), _("&User Base"),
-                     user_base),
-                // textentry label
-                `TextEntry (`id (`groupb), _("&Group Base"),
-                     group_base),
-                // textentry label
-                `TextEntry (`id (`userc), _("User &Object Class:"),
-                     user_class),
-                // textentry label
-                `TextEntry (`id (`userf), _("Default User Fi&lter"),
-                     user_filter),
-// FIXME add group filter!!
-                // textentry label
-                `TextEntry (`id (`binddn), _("Bind &DN"), bind_dn),
-		    //TODO:move to 1st dialog?
-		// combobox label
-		`Left(`ComboBox (`id(`encr),
-                    // combobox label
-                    _("User Password &Encryption"), encryptions)),
-		    //TODO:move to 1st dialog?
-                `VSpacing (0.5)
-            ),
-            `HSpacing (2)
-            )
-        ),
-        `VSpacing(1),
+    term contents = `HBox(`HSpacing (1.5), `VBox(
+	// frame label
+	`Frame (_("Access to LDAP Configuration"), `HBox(
+	    `HSpacing (1), `VBox(
+		`VSpacing(0.5),
+		`TextEntry (`id (`base_config_dn),
+		    // textentry label
+		    _("&Configuration Base DN (Main Configuration Object)"),
+		    base_config_dn),
+		`VSpacing(0.5),
+		/*
+		// textentry label
+		`TextEntry (`id (`templates), _("DN of Main &Template Object"),
+		    templates_dn),
+		`VSpacing(0.5),
+		*/
+		`TextEntry (`id (`bind_dn),
+		    // textentry label
+		    _("Bind &DN for LDAP Server"), bind_dn),
+		`VSpacing(1)
+	    ),
+	    `HSpacing (1)
+	)),
+        `VSpacing(0.5),
         `Left(`CheckBox (`id(`file_server),
             // checkbox label
-            _("&File Server (home directories are stored here)"), file_server)),
-        `VSpacing(1)
-    ));
+            _("F&ile Server (home directories are stored here)"), file_server)),
+        `VSpacing(2)
+	/*
+	// pushbutton label
+	`PushButton (`id(`configure), _("&Modules configuration..."))
+	*/
+	),
+	`HSpacing (1.5));
 
-    Wizard::SetContentsButtons (
-	// dialog title
-	_("LDAP User Management Configuration"), con, help_text,
-	UI::BackButtonLabel (), UI::NextButtonLabel ());
+    // dialog label
+    Wizard::SetContentsButtons(_("Advanced Configuration"),
+            contents, help_text, BackButtonLabel(), NextButtonLabel());
 
     any result = nil;
-    do {
-	result = UI::UserInput ();
-
-	if (result == `next)
-        {
-
-	    user_base = UI::QueryWidget(`id(`userb), `Value);
-	    group_base = UI::QueryWidget(`id(`groupb), `Value);
-	    user_filter = UI::QueryWidget(`id(`userf), `Value);
-	    user_class = UI::QueryWidget(`id(`userc), `Value);
-	    bind_dn = UI::QueryWidget(`id(`binddn), `Value);
-
-	    if (bind_dn == "")
-	    {
-		// error popup label
-                Report::Error(_("Enter an LDAP bind DN."));
-                result = nil;
-                continue;
-            }
-            if (user_base == "")
-            {
-		// error popup label
-                Report::Error(_("Enter the user base."));
-                result = nil;
-                continue;
-            }
-            if (user_class == "")
-            {
-		// error popup label
-                Report::Error(_("Enter the user class."));
-                result = nil;
-                continue;
-            }
-            if (group_base == "")
-            {
-		// error popup label
-                Report::Error(_("Enter the group base."));
-                result = nil;
-                continue;
-            }
-	    file_server = UI::QueryWidget (`id(`file_server), `Value);
-	}
-
-    } while (!contains ([`back, `next, `cancel, `abort], result));
-
-    if (result == `next &&
-	(Ldap::user_base != user_base || Ldap::group_base != group_base ||
-	 Ldap::user_filter != user_filter || Ldap::user_class != user_class ||
-	 Ldap::bind_dn != bind_dn || Ldap::file_server != file_server))
+    while (true)
     {
-        Ldap::user_base		= user_base;
-        Ldap::group_base	= group_base;
-        Ldap::user_filter	= user_filter;
-        Ldap::user_class	= user_class;
-        Ldap::bind_dn		= bind_dn;
-	Ldap::file_server	= file_server;
-        Ldap::modified		= true;
+	result = UI::UserInput ();
+	if (contains ([`back, `cancel, `abort], result))
+	    break;
+	if (result == `next)
+	{
+	    bind_dn = UI::QueryWidget(`id(`bind_dn), `Value);
+	    base_config_dn = UI::QueryWidget(`id(`base_config_dn), `Value);
+	    file_server = UI::QueryWidget(`id(`file_server), `Value);
+	    // TODO templates?
+
+	    if (Ldap::GetMainConfigDN() != base_config_dn ||
+		Ldap::bind_dn != bind_dn || Ldap::file_server != file_server)
+	    {
+		Ldap::bind_dn = bind_dn;
+		Ldap::base_config_dn = base_config_dn;
+		Ldap::file_server = file_server;
+		Ldap::modified = true;
+	    }
+	    break;
+	}
     }
     return result;
 }
 
-/** FIXME: all function...
- * The dialogs for setting defaults for new LDAP users
- * @return symbol for sequencer
- */
-global define symbol DefaultsConfigureDialog() ``{
+global define symbol LDAPReadDialog () ``{
 
-    string home		= Ldap::default_home;
-    string shell	= Ldap::default_shell;
-    string skel		= Ldap::default_skel;
-    string expire	= Ldap::default_expire;
-    string inactive	= Ldap::default_inactive;
-    integer inact	= tointeger(inactive);
-    integer gid		= Ldap::default_gid;
-    string s_gid	= sformat ("%1", gid);
-    string exp_date = "";
-    list available_groups = [];
-
-    //FIXME get shells list!
-    list available_shells = [];
-
-    if (expire != "0" && expire != "")
+    if (!Ldap::binded)
     {
-        exp_date = lookup (SCR::Execute (.target.bash_output, (sformat (
-		"date --date='1970-01-01 00:00:01 %1 days' ", expire) +
-		"+\"%Y-%m-%d\"")), "stdout", "");
-        // remove \n from the end
-        exp_date = substring(exp_date,0,size(exp_date)-1);
+	Ldap::LDAPInit ();
+	Ldap::ldap_bind_pass = Ldap::LDAPAskAndBind (true);
+	if (Ldap::ldap_bind_pass == nil)
+	    return `skip;
+	Ldap::binded = true;
+	Ldap::ReadConfigModules ();
+	Ldap::ReadTemplates ();
+    }
+    else
+    {
+	if (Ldap::ldap_modified && UI::YesNoPopup (
+// yes/no popup
+_("Re-read settings from server?
+All changes will be lost.")))
+	{
+	    if (Ldap::modified)
+	    {
+		//server or bind dn could have been changed!
+		Ldap::LDAPInit ();
+		Ldap::ldap_bind_pass = Ldap::LDAPAskAndBind (true);
+		if (Ldap::ldap_bind_pass == nil)
+		    return `skip;
+	    }
+	    Ldap::ReadConfigModules ();
+	    Ldap::ReadTemplates ();
+	    Ldap::ldap_modified = false;
+	    Ldap::groups_dn = [];
+	}
     }
 
-    string help_text = "FIXME!";
+    return `next;
+}
 
-    term contents = `HBox(`HSpacing(1.5),
-        `VBox(`VSpacing(0.5),
-	    // Frame label
-	    `Frame(_("Set the default values for new LDAP users"),`HBox(
-            `HSpacing(2), `VBox(
-                `VSpacing(0.5),
-		`TextEntry(`id(`defaultgid),
-		    // textentry label
-		    _("D&efault GID (gidNumber)"), s_gid ),
-                `VSpacing(0.5),
-		`ComboBox(`id(`shell), `opt(`hstretch, `editable),
-		    // combobox label
-		    _("Default &Login Shell (loginShell)"), available_shells) ,
-		/*
-		`HBox(
-		    `TextEntry (`id(`min), _("shadowMin"), ""),
-		    `TextEntry (`id(`min), _("shadowMax"), "")
-		),
-		// intfield
-		`IntField (`id ("warn"), _("Issue &warning how many days before password expiration"), -1, 99999, warn),
-		*/
-                `VSpacing(0.5),
-                // intfield
-                `IntField (`id (`inact), _("Days &after Password Expiration Login Is Usable (shadowInactive)"), -1, 99999, inact),
-                `VSpacing(0.5),
-                // text entry
-                `TextEntry( `id(`exp), _("Default E&xpiration Date (shadowExpire)"), exp_date),
-                `VSpacing(0.5),
-                // text entry
-                `TextEntry( `id(`home), _("Path Prefix for &Home Directory"),
-                    home),
-                `VSpacing(0.5),
-                // text entry
-                `TextEntry( `id(`skel), _("&Skeleton for Home Directory"),skel),
-                `VSpacing(0.5)
-                ),
-              `HSpacing(2))),
-            `VSpacing(0.5)),
-        `HSpacing(1.5));
+// comment
+global define string get_cn (string dn) ``{
 
-    Wizard::SetContentsButtons(
-            // dialog label
-            _("LDAP User Defaults"),
-            contents,
-            help_text,
-            BackButtonLabel(),
-            NextButtonLabel());
+    list dn_list = splitstring (dn, ",");
+    return substring (dn_list[0]:"", find (dn_list[0]:"", "=")+1);
+}
 
-    UI::ChangeWidget(`id(`shell), `Value, shell);
+// comment
+global define string get_dn (string cn) ``{
 
-    boolean modified = false;
+    return sformat ("cn=%1,%2", cn, Ldap::base_config_dn);
+}
 
-    string new_home  = home;
-    string new_shell = shell;
-    string new_skel = skel;
-    string new_exp_date = exp_date;
-    string new_expire = expire;
-    integer new_inact = inact;
-    integer new_gid = gid;
+// comment
+global define string get_rdn (string dn) ``{
 
+    list dn_list = splitstring (dn, ",");
+    return dn_list[0]:dn;
+}
+
+// get string value of attribute from map
+global define string get_string (map object, string attr) ``{
+
+    if (is (object [attr]:"", list))
+	return object [attr,0]:"";
+    return object [attr]:"";
+}
+
+// save edited value to map's attribute
+global define map save_value (map object, string attr, string values) ``{
+
+    if (Ldap::SingleValued (attr))
+	object [attr] = value;
+    else
+	// FIXME what if value contains ","?
+	object [attr] = splitstring (value, ",");
+    return object;
+}
+
+// for debug only, TODO remove
+global define void debug (any object) ``{
+
+    y2internal ("----------------------------------");
+    if (is (object, list))
+	foreach (`it, object, ``{ y2internal ("item: %1", it);});
+    else if (is (object, map))
+	foreach (`k, `v, object, ``{
+	    y2internal ("key: %1", k);
+	    y2warning ("value: %1",v);
+	});
+    else
+	y2internal ("%1", object);
+    y2warning ("----------------------------------");
+}
+
+/**
+ */
+global define symbol ModuleConfigurationDialog () ``{
+
+    //--------------
+    define list create_attrs_items (string cn) ``{
+
+	list attrs_items = [];
+
+	foreach (`attr, `value, modules[ get_dn(cn) ]:$[], ``{
+	    any val = value;
+	    if (contains (["objectClass", "modified", "old_dn"], attr))
+		return;
+	    if (is (value, list))
+	    {
+		if (Ldap::SingleValued (attr))
+		    val = value[0]:"";
+		else
+		    val = mergestring (value, ",");
+	    }
+	    attrs_items = add (attrs_items, `item(`id(attr), attr, val));
+	});
+
+	return attrs_items;
+    }
+
+    //--------------
+    define void replace_module_names () ``{
+
+	list modules_items = []; // list of module names
+	foreach (`cn, names, ``{
+	    if (cn == current_cn)
+		modules_items = add (modules_items, `item(`id(cn), cn, true));
+	    else
+		modules_items = add (modules_items, `item(`id(cn), cn));
+	});
+	UI::ReplaceWidget (`id(`rp),
+	    `Left(`ComboBox (`id (`modules), `opt (`notify),
+		// combobox label
+		_("Configuration &Module"), modules_items)));
+	boolean ena = names != [];
+	UI::ChangeWidget (`id(`delete), `Enabled, ena);
+	UI::ChangeWidget (`id(`templ), `Enabled, ena);
+	UI::ChangeWidget (`id(`edit), `Enabled, ena);
+	UI::ChangeWidget (`id(`modules), `Enabled, ena);
+    }
+
+
+    string help_text = _("FIXME!") +
+
+    _("<p>Clicking on <b>Next</b> button gets you to Template Configuration Dialog.
+</p>");
+
+    string current_dn = Ldap::current_module_dn;
+
+    map  modules_attrs_items = $[]; // map of list, indexed by cn
+
+    map modules = Ldap::GetConfigModules ();
+    map templates = Ldap::GetTemplates ();
+    list names = [];
+// TODO edit only RDN?
+    list templates_dns = maplist (`dn, `t, templates, ``{ return dn;});
+
+
+    foreach (`dn, `mod, modules, ``{
+	string cn = get_string (mod, "cn");
+	if (cn == "")
+	    return;
+	names = add (names, cn);
+	// attributes for table
+	modules_attrs_items [cn] = create_attrs_items (cn);
+	if (current_dn == "")
+	    current_dn = dn;
+    });
+    string current_cn = get_cn (current_dn);
+//TODO list or string?
+    string current_template_dn = get_string (modules [current_dn]:$[], "defaultTemplate");
+
+    term contents = `HBox(`HSpacing (1.5), `VBox(
+        `VSpacing(0.5),
+	`HBox (
+	    `ReplacePoint (`id(`rp), `Empty()),
+	    `VBox (
+		`Label (""), `PushButton (`id (`new), _("Ne&w"))),
+	    `VBox (
+		`Label (""), `PushButton (`id (`delete), _("&Delete")))
+	),
+        `VSpacing(0.5),
+	`Table(`id(`table), `opt(`notify), `header(
+	    // table header 1/2
+	    _("Attribute"),
+	    // table header 2/2
+	    _("Value")),
+	    modules_attrs_items[current_cn]:[]),
+        `HBox (
+            `PushButton(`id(`edit), `opt(`key_F4), EditButtonLabel()),
+            `HStretch(),
+	    // button label
+            `PushButton(`id(`templ), `opt(`key_F7), _("Configure &Template"))
+	),
+	`VSpacing (0.5)
+	),
+	`HSpacing (1.5));
+
+    // dialog label
+    Wizard::SetContentsButtons(_("Module Configuration"),
+            contents, help_text, BackButtonLabel(), NextButtonLabel());
+
+    if (size (modules_attrs_items[current_cn]:[]) > 0)
+    {
+	UI::SetFocus (`id(`table));
+    }
+    replace_module_names ();
+
+    any result = nil;
     while (true)
     {
-        modified = false;
-        ret = UI::UserInput();
-        if (ret == `back || ret == `abort || ret == `cancel) break;
-        if (ret == `next)
-        {
-            new_home  = UI::QueryWidget(`id(`home),  `Value);
-            new_shell = UI::QueryWidget(`id(`shell), `Value);
-            new_skel = UI::QueryWidget(`id(`skel), `Value);
-            new_inact = UI::QueryWidget(`id(`inact), `Value);
-            new_gid = tointeger (UI::QueryWidget(`id(`defaultgid),`Value));
-            new_exp_date = UI::QueryWidget(`id(`exp),`Value);
-            // check the home existence //FIXME only on server!
-            if (home != new_home)
-            {
-                if (SCR::Read(.target.dir, new_home ) == nil)
-                {
-                    Report::Error(_("The entered path prefix for home is not a directory.
-Try again.
-"));
-                    UI::SetFocus(`id(`home));
-                    continue;
-                }
-                modified = true;
-            }
-            // check the shell existence
-            if (shell != new_shell)
-            {
-		// FIXME: Users::
-                if (! contains (Users::all_shells, new_shell))
-                {
-                    // Yes-No popup
-                    if (! UI::YesNoPopup (_("If you select a nonexistent shell, the user
-may be unable to log in. Continue?
-")))
-                        continue;
-                }
-                modified = true;
-            }
-            // check the skeleton existence //FIXME only on server!
-            if (skel != new_skel)
-            {
-                if (SCR::Read(.target.dir, new_skel ) == nil)
-                {
-                    Report::Error(_("The entered home directory skeleton is not a directory.
-Try again.
-"));
-                    UI::SetFocus(`id(`skel));
-                    continue;
-                }
-                modified = true;
-            }
-            // check the expire date
-            if (exp_date != new_exp_date)
-            {
-                if (new_exp_date != "" && !regexpmatch (new_exp_date,
-                    "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]"))
-                {
-                    // Trannslators: Don't reorder the letters YYYY-MM-DD!!!
-                    // The date must stay in this format
-                    UI::MessagePopup(_("Expiration date must be in format YYYY-MM-DD"));
-                    UI::SetFocus(`id(`exp));
-                    continue;
-                }
-                if (new_exp_date == "")
+	result = UI::UserInput ();
+	string attr	= UI::QueryWidget (`id(`table), `CurrentItem);
+
+	// change the focus to new module
+	if (result == `modules)
+	{
+	    current_cn = UI::QueryWidget (`id(`modules), `Value);
+	    current_dn = get_dn (current_cn);
+//TODO list or string?
+	    current_template_dn = get_string (modules [current_dn]:$[], "defaultTemplate");
+	    UI::ChangeWidget (`id(`table), `Items,
+		modules_attrs_items[current_cn]:[]);
+	}
+	// delete the module
+	if (result == `delete)
+	{
+	    // yes/no popup, %1 is name
+	    if (!UI::YesNoPopup (sformat (_("Are you sure to delete module \"%1\"?"), current_cn)))
+		continue;
+	    modules_attrs_items = remove (modules_attrs_items, current_cn);
+	    if (modules [current_dn, "modified"]:"" != "added")
+	    {
+		modules [current_dn, "modified"] = "deleted";
+		// TODO what if it was renamed?
+	    }
+	    names = filter (`n, names, ``(n != current_cn));
+	    current_cn = names [0]:"";
+	    current_dn = get_dn (current_cn);
+	    replace_module_names ();
+	    UI::ChangeWidget (`id(`table), `Items,
+		modules_attrs_items[current_cn]:[]);
+	}
+	// new module
+	if (result == `new)
+	{
+	    // offer list of free classes TODO some function...
+	    list available = [ "userConfiguration", "groupConfiguration" ];
+	    foreach (`dn, `mod, modules, ``{
+		if (mod["modified"]:"" == "deleted")
+		    return;
+		foreach (`cl, mod["objectClass"]:[], ``{
+		    available = filter (`c, available, ``(c != cl));
+		});
+	    });
+	    if (available == [])
+	    {
+		// message
+		UI::MessagePopup (_("You currently have configuration modules
+of each type, so you cannot add new one."));
+		continue;
+	    }
+	    // get new name and class
+	    map new = NewModulePopup (available, names);
+	    string cn = new ["cn"]:"";
+	    if (cn == "")
+		continue;
+	    current_cn = cn;
+	    current_dn = get_dn (current_cn);
+	    modules [current_dn] = Ldap::CreateModule (cn, new ["class"]:"");
+	    names = add (names, cn);
+	    modules_attrs_items [cn] = create_attrs_items (cn);
+	    replace_module_names ();
+	    UI::ChangeWidget (`id(`table), `Items,
+		modules_attrs_items[current_cn]:[]);
+	}
+	// module attribute modification
+	if ((result == `edit || result == `table) && attr != "defaultTemplate")
+	{
+debug (modules[current_dn]:$[]);
+	    term item		= UI::QueryWidget (`id(`table), `Item(attr));
+	    string value	= select (item, 2, "");
+	    list conflicts	= [];
+	    if (attr == "cn")
+		conflicts = names;
+	    // edit selected attribute
+	    value = EditAttributePopup (attr, value, conflicts);
+	    if (value == select (item, 2, "")) //nothing changed
+		continue;
+	    UI::ChangeWidget (`id(`table), `Item (attr, 1), value);
+//	    modules [current_dn, attr] = value;
+	    modules [current_dn] = save_value (
+		modules [current_dn]:$[], attr, value);
+	    modules_attrs_items [current_cn] = create_attrs_items (current_cn);
+	    if (attr == "cn")
+	    {
+		modules_attrs_items[value] = modules_attrs_items[current_cn]:[];
+		modules_attrs_items = remove (modules_attrs_items, current_cn);
+		if (modules [current_dn, "modified"]:"" != "added")
 		{
-                    new_expire = "";
+		    modules [current_dn, "modified"] = "renamed";
+		    modules [current_dn, "old_dn"] = current_dn;
 		}
-                else
-                {
-                    map out = SCR::Execute(.target.bash_output,
-                        sformat("date --date='%1' ", new_exp_date) + "+%s");
-                    string days_s = out["stdout"]:"0\n";
-                    if (days_s != "")
-                    {
-                        days_s = substring(days_s, 0, size(days_s)-1);
-                        integer days = (tointeger(days_s) + 3600)/ (60*60*24);
-                        new_expire = sformat("%1", days);
-                    }
-                }
-                modified = true;
-            }
-            if (gid != new_gid || inact != new_inact)
-                modified = true;
-            break;
-        }
-    }
-    if (ret == `next && modified)
-    {
-	// TODO save new defaults
-	Ldap::modified = true;
+		modules [ get_dn (value) ] = modules [current_dn]:$[];
+		modules = remove (modules, current_dn);
+		names = filter (`n, names, ``(n != current_cn));
+		names = add (names, value);
+		current_cn = value;
+		current_dn = get_dn (value);
+		replace_module_names ();
+	    }
+	}
+	// module "defaultTemplate" attribute modification
+	if ((result == `edit || result == `table) && attr == "defaultTemplate")
+	{
+debug (modules[current_dn]:$[]);
+	    term item		= UI::QueryWidget (`id(`table), `Item(attr));
+	    string value	= select (item, 2, "");
+	    map templ		= EditTemplatePopup (value, templates_dns);
+	    value		= templ["value"]:value;
+	    if (value == select (item, 2, ""))
+		continue;
+	    if (templ["action"]:"select" == "select")
+	    {
+		UI::ChangeWidget (`id(`table), `Item (attr, 1), value);
+		//modules [current_dn, attr] = value;
+		modules [current_dn] = save_value (
+		    modules [current_dn]:$[], attr, value);
+		modules_attrs_items[current_cn]= create_attrs_items(current_cn);
+	    }
+	    if (templ["action"]:"select" == "new")
+	    {
+		// TODO 1. check for potential existence
+		// 2. change the value in table and modules
+		UI::ChangeWidget (`id(`table), `Item (attr, 1), value);
+//		modules [current_dn, attr] = value;
+		modules [current_dn] = save_value (
+		    modules [current_dn]:$[], attr, value);
+		modules_attrs_items[current_cn]= create_attrs_items(current_cn);
+
+		// 3. create new object? -> before "configure template"
+	    }
+	    if (templ["action"]:"select" == "rename")
+	    {
+		// TODO 1. check for potential existence
+		// 2. change the value in table and modules
+		UI::ChangeWidget (`id(`table), `Item (attr, 1), value);
+//		modules [current_dn, attr] = value;
+		modules [current_dn] = save_value (
+		    modules [current_dn]:$[], attr, value);
+		modules_attrs_items[current_cn]= create_attrs_items(current_cn);
+
+		// 3. rename object now?
+		templates [value] = templates [current_template_dn]:$[];
+		templates = remove (templates, current_template_dn);
+		if (templates [value, "modified"]:"" != "added")
+		{
+		    templates [value, "modified"] = "renamed";
+		    templates [value, "old_dn"] = current_template_dn;
+		}
+		templates [value, "cn"] = get_cn (value);
+		templates_dns = filter (`dn, templates_dns, ``(
+		    dn != current_template_dn));
+		templates_dns = add (templates_dns, value);
+	    }
+	    current_template_dn = value;
+	}
+	if (result == `templ)
+	{
+	    term item = UI::QueryWidget (`id(`table), `Item("defaultTemplate"));
+	    if (select (item, 2, "") == "")
+	    {
+		// message, do not translate \"defaultTemplate\"
+		UI::MessagePopup (_("Please set the value of \"defaultTemplate\" attribute first."));
+		continue;
+	    }
+	    Ldap::current_template_dn = current_template_dn;
+	    Ldap::current_module_dn = current_dn;
+	    map template = templates [current_template_dn]:$[];
+	    // if doesn't exist, create new:
+	    if (template == $[])
+	    {
+		template = Ldap::CreateTemplate (get_cn (current_template_dn),
+		    modules [current_cn, "objectClass"]:[]);
+		templates_dns = add (templates_dns, current_template_dn);
+	    }
+	    templates [current_template_dn] = TemplateConfigurationDialog (
+		template);
+	}
+	if (result == `next)
+	{
+	    Ldap::current_module_dn = current_dn;
+	    // save the edited values to global map...
+	    Ldap::CommitConfigModules (modules);
+	    // commit templates here!
+	    Ldap::CommitTemplates (templates);
+	    break;
+	}
+	if (contains ([`back, `cancel, `abort], result))
+	    break;
     }
 
-    return ret;
+    return result;
+}
+
+/**
+ * Dialog for configuration one object template
+ */
+global define map TemplateConfigurationDialog (map template) ``{
+
+    string help_text = _("FIXME!") +
+
+_("<p>Editing the <b>secondaryGroup</b> attribute is a bit tricky...</p>");
+
+    //TODO FIXME anyway, attributes have to be tested against schema
+
+    string current_template_dn = Ldap::current_template_dn;
+
+    list table_items = [];
+    foreach (`attr, `value, template, ``{
+	any val = value;
+	if (contains (["defaultValue", "default_values", "objectClass",
+	"modified", "old_dn", "cn"], attr))
+	    return;
+	if (is (value, list)) //always is list!
+	{
+	    if (Ldap::SingleValued (attr))
+		val = value[0]:"";
+	    else if (attr == "secondaryGroup")
+		val = mergestring (value, " ");
+	    else
+		val = mergestring (value, ",");
+	}
+	table_items = add (table_items, `item (`id(attr), attr, val));
+    });
+
+    list default_items = [];
+    map default_values = template["default_values"]:$[];
+    foreach (`attr, `value, default_values, ``{
+	default_items = add (default_items, `item (`id(attr), attr, value));
+    });
+
+    term contents = `HBox(`HSpacing (1.5), `VBox(
+        `VSpacing(0.5),
+	`Table(`id(`table), `opt(`notify), `header(
+	    // table header 1/2
+	    _("Attribute"),
+	    // table header 2/2
+	    _("Value")),
+	    table_items),
+        `HBox (
+            `PushButton(`id(`edit), `opt(`key_F4), EditButtonLabel()),
+	    `HStretch()
+	),
+	// label (table folows)
+	`Left(`Label (_("Default Values for New Objects"))),
+	`Table(`id(`defaults), `opt(`notify), `header(
+	    // table header 1/2
+	    _("Attribute of Object"),
+	    // table header 2/2
+	    _("Default Value")),
+	    default_items),
+        `HBox (
+            `PushButton(`id(`add_dfl), `opt(`key_F3), AddButtonLabel()),
+            `PushButton(`id(`edit_dfl), `opt(`key_F4), EditButtonLabel()),
+            `PushButton(`id(`delete_dfl), `opt(`key_F5), DeleteButtonLabel()),
+            `HStretch()
+	),
+	`VSpacing (0.5)
+	),
+	`HSpacing (1.5));
+
+    Wizard::OpenNextBackDialog ();
+    // dialog label
+    Wizard::SetContentsButtons(_("Object Template Configuration"),
+            contents, help_text, BackButtonLabel(), OKButtonLabel());
+    Wizard::ReplaceAbortButton (`Empty());
+
+    if (size (table_items) > 0)
+    {
+	UI::SetFocus (`id(`table));
+    }
+    any result = nil;
+    while (true)
+    {
+	result		= UI::UserInput ();
+	string attr	= UI::QueryWidget (`id(`table), `CurrentItem);
+
+	// edit attribute
+	if ((result == `edit || result == `table) && attr != "secondaryGroup")
+	{
+debug (template);
+	    term item		= UI::QueryWidget (`id(`table), `Item(attr));
+	    string value	= select (item, 2, "");
+	    value = EditAttributePopup (attr, value, []);
+	    if (value == template[attr]:"")
+		continue;
+	    UI::ChangeWidget (`id(`table), `Item (attr, 1), value);
+	    template = save_value (template, attr, value);
+	}
+	// edit "secondaryGroup" attribute
+	if ((result == `edit || result == `table) && attr == "secondaryGroup")
+	{
+	    term item		= UI::QueryWidget (`id(`table), `Item(attr));
+	    string value	= select (item, 2, "");
+	    list groups		= Ldap::GetGroupsDN (Ldap::GetDomain());
+	    value = EditSecondaryGroupPopup (value, groups);
+	    if (value == select (item, 2, ""))
+		return;
+	    UI::ChangeWidget (`id(`table), `Item (attr, 1), value);
+	    template [attr] = splitstring (value, " ");
+	}
+	// add default value
+	if (result == `add_dfl)
+	{
+	    list conflicts = maplist (`attr, `val, default_values, ``{
+		return attr;
+	    });
+	    list classes = template["defaultObjectClass"]:[];
+	    list available = Ldap::GetObjectAttributes (classes);
+	    map dfl = AddDefaultValuePopup (available, conflicts);
+	    if (dfl["value"]:"" == "")
+		continue;
+	    string attr = dfl["attr"]:"";
+	    default_values [attr] = dfl["value"]:"";
+	    default_items = add (default_items,
+		`item (`id(attr), attr, dfl["value"]:""));
+	    UI::ChangeWidget (`id(`defaults), `Items, default_items);
+	}
+	// edit default value
+	if (result == `edit_dfl || result == `defaults)
+	{
+	    attr		= UI::QueryWidget (`id(`defaults),`CurrentItem);
+	    string value	= default_values [attr]:"";
+	    value = EditAttributePopup (attr, value, []);
+	    if (value == template[attr]:"")
+		continue;
+	    UI::ChangeWidget (`id(`defaults), `Item (attr, 1), value);
+	    default_values [attr] = value;
+	}
+	// delete default value
+	if (result == `delete_dfl)
+	{
+	    attr		= UI::QueryWidget (`id(`defaults),`CurrentItem);
+	    // yes/no popup, %1 is name
+	    if (!UI::YesNoPopup (sformat (_("Are you sure to delete default attribute \"%1\"?"), attr)))
+		continue;
+	    default_values = remove (default_values, attr);
+	    default_items = filter (`it, default_items, ``(
+		select (it, 1, "") != attr));
+	    UI::ChangeWidget (`id(`defaults), `Items, default_items);
+	}
+	if (contains ([`back, `cancel, `abort], result))
+	    break;
+	if (result == `next)
+	{
+	    template ["default_values"] = default_values;
+	    break;
+	}
+    }
+    Wizard::CloseDialog ();
+    return template;
 }
 
 }//EOF
