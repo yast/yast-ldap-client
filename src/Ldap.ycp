@@ -300,8 +300,6 @@
 	ldap_v2 = (ReadLdapConfEntry ("ldap_version", "3") == "2");
 	ldap_tls = (ReadLdapConfEntry ("ssl", "no") == "start_tls");
 
-        bind_dn = ReadLdapConfEntry ("binddn", "");
-
         nss_base_passwd = ReadLdapConfEntry ("nss_base_passwd", "");
         nss_base_shadow = ReadLdapConfEntry ("nss_base_passwd", "");
         nss_base_group = ReadLdapConfEntry ("nss_base_group", "");
@@ -318,6 +316,9 @@
 
 	file_server = (SCR::Read (.sysconfig.ldap.FILE_SERVER) == "yes");
 
+	bind_dn = SCR::Read (.sysconfig.ldap.BIND_DN);
+	if (bind_dn == nil || bind_dn == "")
+	    bind_dn = ReadLdapConfEntry ("binddn", "");
 
 	return true;
     }
@@ -398,9 +399,6 @@
 
 	    SCR::Write(.etc.ldap_conf.pam_password, pam_password);
 
-	    if (bind_dn != "")
-		SCR::Write (.etc.ldap_conf.binddn, bind_dn);
-
 	    // save the user and group bases (check the LDAP config before)
 	    user_base = domain;
 	    group_base = domain;
@@ -460,6 +458,8 @@
 	SCR::Write (.sysconfig.ldap.FILE_SERVER, file_server? "yes": "no");
 
 	SCR::Write (.sysconfig.ldap.BASE_CONFIG_DN, base_config_dn);
+
+	SCR::Write (.sysconfig.ldap.BIND_DN, bind_dn);
 
 	// -------------------- start services
 	Progress::NextStage ();

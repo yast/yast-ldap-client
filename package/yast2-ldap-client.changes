@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Jul 15 13:32:33 CEST 2003 - jsuchome@suse.de
+
+- bind DN and config base DN stored in /etc/sysconfig/ldap
+
+-------------------------------------------------------------------
 Mon Jul 14 17:23:48 CEST 2003 - jsuchome@suse.de
 
 - used /etc/ldap.conf instead of /etc/openldap/ldap.conf to store

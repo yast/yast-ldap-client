@@ -8,7 +8,8 @@ yncludedir = @yncludedir@/ldap
 
 client_DATA =		\
 	ldap.ycp	\
-	ldap_auto.ycp
+	ldap_auto.ycp	\
+	ldap-client.ycp
 
 ynclude_DATA =		\
 	ui.ycp		\

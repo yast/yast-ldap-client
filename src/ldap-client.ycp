@@ -1,0 +1,8 @@
+/**
+ * Author:  Jiri Suchomel <jsuchome@suse.cz>
+ * Summary: Just a redirection
+ */
+{
+    string target = "ldap";
+    return WFM::CallFunction (target, WFM::Args ());
+}

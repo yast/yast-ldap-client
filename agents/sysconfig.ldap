@@ -13,6 +13,18 @@ BASE_CONFIG_DN=""
 
 ## Path:	System/Yast2/Ldap
 ## Description:	YaST2 Ldap-client configuration
+## Type:	string
+## Default:	none
+#
+# Administrator bind DN. With this DN you will bind to LDAP server to
+# configure directory contens.
+#
+#
+BIND_DN=""
+
+
+## Path:	System/Yast2/Ldap
+## Description:	YaST2 Ldap-client configuration
 ## Type:        yesno
 ## Default:     no
 #
