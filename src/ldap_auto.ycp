@@ -99,6 +99,6 @@
 	    Ldap::Set(settings);
 	    set_contents();
 	}
-    } until (ret == `back || ret == `next || ret ==`key || ret ==`ret);
+    } until (ret == `back || ret == `next || ret ==`key || ret ==`abort);
     return [ret, settings];
 }
