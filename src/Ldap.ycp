@@ -21,6 +21,8 @@
     import "Popup";
     import "Mode";
 
+    import "PamSettings";
+
     include "ldap/routines.ycp";
 
     /**
@@ -419,9 +421,9 @@
 	    SCR::Write(.etc.ldap_conf, nil);
 
 	    // pam settigs
-	    SCR::Write(.pam.all.account.pam_unix2, "+use_ldap");
-	    SCR::Write(.pam.all.auth.pam_unix2, "+use_ldap");
-	    SCR::Write(.pam.all.password.pam_unix2, "+use_ldap");
+	    foreach (`type, [ "account", "auth", "password" ], ``{
+		PamSettings::AddValue ("pam_unix2", type, "use_ldap");
+	    });
 
 	    // modify sources in /etc/nsswitch.conf
 	    foreach (`entry, `value, nsswitch, ``{
@@ -448,10 +450,9 @@
 	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
 	    SCR::Write(.etc.nsswitch_conf, nil);
 
-	    SCR::Write(.pam.all.account.pam_unix2, "-use_ldap");
-	    SCR::Write(.pam.all.auth.pam_unix2, "-use_ldap");
-	    SCR::Write(.pam.all.password.pam_unix2, "-use_ldap");
-
+	    foreach (`type, [ "account", "auth", "password" ], ``{
+		PamSettings::RemoveValue ("pam_unix2", type, "use_ldap");
+	    });
 	}
 
 	// write sysconfig values

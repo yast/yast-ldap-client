@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Jul 17 15:53:17 CEST 2003 - jsuchome@suse.de
+
+- updated to new PamSettings interface
+
+-------------------------------------------------------------------
 Tue Jul 15 13:32:33 CEST 2003 - jsuchome@suse.de
 
 - bind DN and config base DN stored in /etc/sysconfig/ldap
