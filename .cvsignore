@@ -11,3 +11,8 @@ stamp-h
 config.log
 config.h.in
 aclocal.m4
+install-sh
+missing
+mkinstalldirs
+autom4te.cache
+agents/Makefile.in
