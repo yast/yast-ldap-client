@@ -205,8 +205,8 @@ automatically.</p>
 	if (Mode::cont)
 	{
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
-	    Wizard::ReplaceAbortButton (
-		`PushButton(`id(`abort), Label::AbortInstallationButton()));
+	    // sh: We don't use "Abort Installation" any more. Stick with the normal "Abort" button.
+	    // Wizard::SetAbortButton(`abort, Label::AbortInstallationButton() );
 	}
 
 	symbol result = nil;
@@ -350,8 +350,10 @@ directories.</p>
     // dialog label
     Wizard::SetContentsButtons(_("Advanced Configuration"),
             contents, help_text, Label::BackButton(), Label::NextButton());
-    if (Mode::cont) Wizard::ReplaceAbortButton (
-	    `PushButton(`id(`abort), Label::AbortInstallationButton()));
+
+    // sh: We don't use "Abort Installation" any more. Stick with the normal "Abort" button.
+    // if (Mode::cont)
+    //     Wizard::SetAbortButton(`abort, Label::AbortInstallationButton() );
 
     symbol result = nil;
 
@@ -823,8 +825,9 @@ click <b>Configure Template</b>.
     // dialog label
     Wizard::SetContentsButtons(_("Module Configuration"),
             contents, help_text, Label::BackButton(), Label::NextButton());
-    if (Mode::cont) Wizard::ReplaceAbortButton (
-	    `PushButton(`id(`abort), Label::AbortInstallationButton()));
+    // sh: We don't use "Abort Installation" any more. Stick with the normal "Abort" button.
+    // if (Mode::cont)
+    //     Wizard::SetAbortButton(`abort, Label::AbortInstallationButton() );
 
     if (size (modules_attrs_items[current_cn]:[]) > 0)
     {
