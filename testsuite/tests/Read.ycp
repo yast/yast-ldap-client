@@ -8,7 +8,7 @@
 {
 
     include "testsuite.ycp";
-    import "Ldap";
+    // testedfiles: Ldap.ycp
 
     map READ = $[
 	"etc": $[
@@ -49,7 +49,10 @@
 	    "passwd": $[
 		"plusline": "+"
 	    ]
-	]
+	],
+	"product" : $[ "features" :
+	    $[ "EVMS_CONFIG" : "nazdar" ],
+	],
     ];
 
     map EX = $[
@@ -60,6 +63,9 @@
 	    "init": true
 	]
     ];
+    TESTSUITE_INIT([READ,$[],$[]], nil);
+
+    import "Ldap";
 
     DUMP ("==== reading... ============================");
 

@@ -8,16 +8,23 @@
 {
 
     include "testsuite.ycp";
-    import "Ldap";
+    // testedfiles: Ldap.ycp
 
     map READ =	$[ "ldap": $[
 	"error": $[
 	    "msg": "Initialization failed",
 	    "code": 11
-	]
+	],
+	"product" : $[ "features" :
+	    $[ "EVMS_CONFIG" : "nazdar" ],
+	],
     ]];
     map EX =	$[ "ldap": true  ];
     map EX_F =	$[ "ldap": false ];
+
+    TESTSUITE_INIT([READ,$[],$[]], nil);
+
+    import "Ldap";
 
     DUMP ("==== init (one server, no port set) ==============");
 

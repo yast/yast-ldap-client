@@ -8,7 +8,7 @@
 {
 
     include "testsuite.ycp";
-    import "Ldap";
+    // testedfiles: Ldap.ycp
 
     map READ1 =	$[ "ldap": $[
 	"schema": $[
@@ -20,7 +20,13 @@
 		"sup":["objecttemplate"]
 	    ],
 	],
+	"product" : $[ "features" :
+	    $[ "EVMS_CONFIG" : "nazdar" ],
+	],
     ]];
+
+    TESTSUITE_INIT([READ1,$[],$[]], nil);
+    import "Ldap";
 
     Ldap::object_classes = $[
 	"objecttemplate": $[

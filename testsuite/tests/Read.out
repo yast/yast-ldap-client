@@ -15,11 +15,8 @@ Read	.sysconfig.ldap.BASE_CONFIG_DN nil
 Read	.sysconfig.ldap.FILE_SERVER "no"
 Read	.sysconfig.ldap.BIND_DN "uid=manager,dc=suse,dc=cz"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_map_attribute" 0
-Read	.init.scripts.exists "autofs" false
-Log	Service autofs does not exist.
 Execute	.passwd.init $["base_directory":"/etc"] true
 Read	.passwd.passwd.plusline "+"
-Read	.sysconfig.displaymanager.DISPLAYMANAGER 0
 Return	true
 Dump	============================================
 Dump	ldap used: -true-

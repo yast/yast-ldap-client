@@ -8,7 +8,7 @@
 {
 
     include "testsuite.ycp";
-    import "Ldap";
+    // testedfiles: Ldap.ycp
 
     map READ = $[
 	"etc": $[
@@ -21,8 +21,15 @@
 		    ]
 		]
 	    ],
-	]
+	],
+	"product" : $[ "features" :
+	    $[ "EVMS_CONFIG" : "nazdar" ],
+	],
     ];
+
+    TESTSUITE_INIT([READ,$[],$[]], nil);
+
+    import "Ldap";
 
     TEST(``(Ldap::ReadLdapConfEntry ("host", "localhost")), [ READ, $[], $[] ],0);
 

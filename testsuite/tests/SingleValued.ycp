@@ -8,6 +8,15 @@
 {
 
     include "testsuite.ycp";
+    // testedfiles: Ldap.ycp
+
+    map READ = $[
+	"product" : $[ "features" :
+	    $[ "EVMS_CONFIG" : "nazdar" ],
+	],
+    ];
+    TESTSUITE_INIT([READ,$[],$[]], nil);
+
     import "Ldap";
 
     DUMP ("==================================================");
