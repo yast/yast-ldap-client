@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Sep  2 17:02:10 CEST 2003 - jsuchome@suse.cz
+
+- added check for allowed object classes in "defaultObjectClass"
+  template entry
+- Abort Installation button during installation
+
+-------------------------------------------------------------------
 Tue Sep  2 10:52:42 CEST 2003 - jsuchome@suse.cz
 
 - basic command-line interface (+ new texts)

@@ -178,7 +178,11 @@ removed.</p>") +
 
 	// during installation, only enabling makes sence
 	if (Mode::cont)
+	{
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
+	    Wizard::ReplaceAbortButton (
+		`PushButton(`id(`abort), Label::AbortInstallationButton()));
+	}
 
 	any result = nil;
 	do {
@@ -306,6 +310,8 @@ directories.</p>
     // dialog label
     Wizard::SetContentsButtons(_("Advanced Configuration"),
             contents, help_text, Label::BackButton(), Label::NextButton());
+    if (Mode::cont) Wizard::ReplaceAbortButton (
+	    `PushButton(`id(`abort), Label::AbortInstallationButton()));
 
     any result = nil;
 
@@ -524,6 +530,8 @@ click <b>Configure Template</b>.
     // dialog label
     Wizard::SetContentsButtons(_("Module Configuration"),
             contents, help_text, Label::BackButton(), Label::NextButton());
+    if (Mode::cont) Wizard::ReplaceAbortButton (
+	    `PushButton(`id(`abort), Label::AbortInstallationButton()));
 
     if (size (modules_attrs_items[current_cn]:[]) > 0)
     {
@@ -826,6 +834,10 @@ removing current ones.</p>
 	    if (attr == "requiredAttribute")
 		offer		= Ldap::GetObjectAttributes (
 		    template["defaultObjectClass"]:[]);
+	    /* TODO offer available object classes
+	    if (attr == "defaultObjectClass")
+		offer		= available_object_classes;
+	    */
 	    if (attr == "cn")
 	    {
 		string base = substring (template_dn, find (template_dn,",")+1);
@@ -897,6 +909,21 @@ removing current ones.</p>
 	if (result == `next)
 	{
 	    template ["default_values"] = default_values;
+
+	    boolean cont = false;
+	    // check the object classes in defaultObjectClass entry:
+	    foreach (string oc, template["defaultObjectClass"]:[], ``{
+		if (!cont && !Ldap::ObjectClassExists (oc))
+		{
+		    y2warning ("no object class %1 in schema", oc);
+		    // error message: not supported class (%1)
+		    Popup::Error (sformat (_("The object class \"%1\" is not supported by current schema.
+Correct the value of \"defaultObjectClass\" entry."), oc));
+		    UI::SetFocus (`id(`table));
+		    cont = true;
+		}
+	    });
+	    if (cont) continue;
 	    break;
 	}
     }
