@@ -13,6 +13,7 @@ Read	.etc.nsswitch_conf.group "compat ldap"
 Read	.sysconfig.ldap.BASE_CONFIG_DN nil
 Read	.sysconfig.ldap.FILE_SERVER "no"
 Read	.sysconfig.ldap.BIND_DN "uid=manager,dc=suse,dc=cz"
+Read	.sysconfig.displaymanager.DISPLAYMANAGER 0
 Return	true
 Dump	============================================
 Dump	ldap used: -true-
