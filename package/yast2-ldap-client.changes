@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Feb  9 15:35:36 CET 2004 - jsuchome@suse.cz
+
+- API for setting global variables (e.g. password)
+
+-------------------------------------------------------------------
 Mon Feb  2 15:15:51 CET 2004 - jsuchome@suse.cz
 
 - fixed testsuite
