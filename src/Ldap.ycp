@@ -672,7 +672,7 @@ Value of DN is missing or invalid."),
     // this is a hack
     global define string GetFirstServer (string servers) ``{
 
-	list l_servers = splitstring (servers, " ");
+	list l_servers = splitstring (servers, " \t");
 	string srv = l_servers[0]:"";
 	return substring (srv, 0, find (srv, ":"));
     }
@@ -680,7 +680,7 @@ Value of DN is missing or invalid."),
     // this is a hack
     global define integer GetFirstPort (string servers) ``{
 
-	list l_servers = splitstring (servers, " ");
+	list l_servers = splitstring (servers, " \t");
 	string srv = l_servers[0]:"";
 	if (!issubstring (srv, ":"))
 	    return default_port;
