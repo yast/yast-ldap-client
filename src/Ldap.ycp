@@ -198,7 +198,6 @@
 	    SCR::Write(.pam.all.password.pam_unix2, "+use_ldap");
 
         foreach (`entry, `value, nsswitch, ``{
-            y2milestone ("entry: %1, value: %2", entry, value);
             new_nsswitch [entry] = mergestring ( add (value, "ldap"), " " );
         });
 	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
@@ -206,7 +205,6 @@
 	} else {
 
         foreach (`entry, `value, nsswitch, ``{
-            y2milestone ("entry: %1, value: %2", entry, value);
             new_nsswitch [entry] = mergestring (
                 filter (`v, value, ``(v != "ldap")), " ");
         });
