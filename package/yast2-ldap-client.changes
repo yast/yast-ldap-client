@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Wed Aug  6 17:58:09 CEST 2003 - jsuchome@suse.de
+
+- removed agent for editing /etc/cpu.conf
+
+-------------------------------------------------------------------
 Mon Aug  4 14:13:54 CEST 2003 - jsuchome@suse.de
 
 - added .desktop file
