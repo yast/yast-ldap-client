@@ -1,7 +1,7 @@
 /**
  *  LDAPInit.ycp
  *  Test of Ldap:LDAPInit, LDAPError, GetFirstServer, GetFirstPort functions
- *  Jiri Suchomel <jsuchome@suse.cz>
+ *  Author:	Jiri Suchomel <jsuchome@suse.cz>
  *  $Id$
  */
 

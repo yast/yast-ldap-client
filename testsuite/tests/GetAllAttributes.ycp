@@ -1,7 +1,7 @@
 /**
  *  GetAllAttributes.ycp
  *  Test of Ldap::GetAllAttributes.ycp function
- *  Jiri Suchomel <jsuchome@suse.cz>
+ *  Author:	Jiri Suchomel <jsuchome@suse.cz>
  *  $Id$
  */
 

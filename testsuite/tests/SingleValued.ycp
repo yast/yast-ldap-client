@@ -1,7 +1,7 @@
 /**
  *  SingleValued.ycp
  *  Test of Ldap::SingleValued function
- *  Jiri Suchomel <jsuchome@suse.cz>
+ *  Author:	Jiri Suchomel <jsuchome@suse.cz>
  *  $Id$
  */
 
