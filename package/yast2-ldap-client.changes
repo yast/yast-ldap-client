@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Jan 31 11:34:45 CET 2005 - jsuchome@suse.cz
+
+- install also architecture-specific packages (#49808)
+- 2.11.7 
+
+-------------------------------------------------------------------
 Fri Jan 21 15:29:17 CET 2005 - jsuchome@suse.cz
 
 - detect configuration Kerberos client and offer conflict resolution

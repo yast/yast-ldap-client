@@ -13,6 +13,7 @@
     module "Ldap";
     textdomain "ldap-client";
 
+    import "Arch";
     import "Autologin";
     import "Label";
     import "Message";
@@ -44,7 +45,7 @@
      * Required packages for this module to operate
      * -- they are now required only when LDAP is set for authentication
      */
-    global list required_packages = [];
+    global list<string> required_packages = [];
 
     /**
      * Write only, used during autoinstallation.
@@ -256,6 +257,26 @@
      */
     global boolean restart_sshd		= false;
 
+    // packages to install for specific arhitectures (#49808)
+    global map arch_packages	= $[
+	"pam_ldap"	: $[
+	    "ia64"	: [ "pam_ldap-x86" ],
+	    "ppc"	: [ "pam_ldap-64bit" ],
+	    "ppc64"	: [ "pam_ldap-32bit" ],
+	    "s390_64"	: [ "pam_ldap-32bit" ],
+	    "x86_64"	: [ "pam_ldap-32bit" ],
+	],
+	"nss_ldap"	: $[
+	    "ia64"	: [ "nss_ldap-x86" ],
+	    "ppc"	: [ "nss_ldap-64bit" ],
+	    "ppc64"	: [ "nss_ldap-32bit" ],
+	    "s390_64"	: [ "nss_ldap-32bit" ],
+	    "x86_64"	: [ "nss_ldap-32bit" ],
+
+	]
+    ];
+
+
     //----------------------------------------------------------------
 
     /**
@@ -321,7 +342,8 @@
 	_autofs_allowed = haskey (settings, "start_autofs");
 	_start_autofs	= settings["start_autofs"]:false;
 	if (_start_autofs)
-	    required_packages = union (required_packages, ["autofs"]);
+	    required_packages = (list<string>)
+		union (required_packages, ["autofs"]);
 
 	old_domain		= domain;
 	old_server		= server;
@@ -2096,6 +2118,20 @@ exists on the LDAP server. Create it now?
 	return true;
     }
 
+    /**
+     * Return list of architecture specific packages (derived from package list
+     * given as parameter) merged with the packages in parameter
+     */
+    global define list<string> UpdatedArchPackages (list<string> packages) {
+
+	list<string> ret	= packages;
+	string arch		= Arch::architecture ();
+
+	foreach (string package, packages, {
+	    ret	= (list<string>) union (ret, arch_packages[package,arch]:[]);
+	});
+	return ret;
+    }
 
     /**
      * Return needed packages and packages to be removed
@@ -2103,7 +2139,7 @@ exists on the LDAP server. Create it now?
      * @return map of lists.
      */
     global  define map AutoPackages() ``{
-      list<string> install_pkgs = (list<string>) required_packages;
+      list<string> install_pkgs = UpdatedArchPackages (required_packages);
       list remove_pkgs = [];
       return ($["install": install_pkgs, "remove": remove_pkgs]);
     }

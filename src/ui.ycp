@@ -365,22 +365,23 @@ What do you want to use as a primary authentication service?"),
 		    }
 		}
 
-		if (start && !Package::InstalledAll (
-			    ["pam_ldap","nss_ldap"]))
+		list<string> needed_packages =
+		    Ldap::UpdatedArchPackages (["pam_ldap", "nss_ldap"]);
+
+		if (start && !Package::InstalledAll (needed_packages))
 		{
-		    Ldap::required_packages = union (
-			Ldap::required_packages, [ "pam_ldap","nss_ldap"]);
+		    Ldap::required_packages = (list<string>) union (
+			Ldap::required_packages, needed_packages);
 		}
 
 		if (autofs && !Package::InstalledAny(["autofs", "autofs4"]))
 		{
-		    Ldap::required_packages = union (
+		    Ldap::required_packages = (list<string>) union (
 			Ldap::required_packages, ["autofs"]);
 		}
-		if (!Package::InstallAll((list<string>)Ldap::required_packages))
+		if (!Package::InstallAll(Ldap::required_packages))
 		{
-		    if (start && !Package::InstalledAll (
-			    ["pam_ldap","nss_ldap"]))
+		    if (start && !Package::InstalledAll (needed_packages))
 		    {
 			Popup::Error (Message::FailedToInstallPackages ());
 			start = false;
