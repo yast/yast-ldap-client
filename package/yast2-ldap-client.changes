@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Sun Sep 14 20:43:18 CEST 2003 - adrian@suse.de
+
+- make it working inside of kcontrol
+
+-------------------------------------------------------------------
 Tue Sep  9 01:08:49 CEST 2003 - nashif@suse.de
 
 - #30291: return required packages for autoinstallation
