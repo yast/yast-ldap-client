@@ -42,8 +42,9 @@ make check
 %dir @YAST2DIR@/clients
 %dir @YAST2DIR@/menuentries
 @YAST2DIR@/menuentries/menuentry_ldap_client.y2cc
+@YAST2DIR@/include/*
+@YAST2DIR@/modules/Ldapclient.ycp
 @YAST2DIR@/clients/ldap_client.ycp
-@YAST2DIR@/clients/ldap_client_write.ycp
-@YAST2DIR@/images/ldap_client.png
+@YAST2DIR@/clients/ldap_client_*.ycp
 %dir @DOCDIR@
 @DOCDIR@/*

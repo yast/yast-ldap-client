@@ -1,0 +1,64 @@
+/**
+ * File:
+ *   ldap_auto.ycp
+ *
+ * Package:
+ *   Configuration of LDAP
+ *
+ * Summary:
+ *   Client for autoinstallation
+ *
+ * Authors:
+ *   Martin Vidner <mvidner@suse.cz>
+ *
+ * $Id$
+ *
+ * This is a client for autoinstallation. It takes its arguments,
+ * goes through the configuration and return the setting.
+ * Does not do any changes to the configuration.
+ */
+
+/**
+ * @param first a map of LDAP settings
+ * @return map edited settings or an empty map if canceled
+ * @example map mm = $[ "FAIL_DELAY" : "77" ];
+ * @example map ret = CallModule ("ldap_auto", [ mm ]);
+ */
+
+{
+    textdomain "ldap_client";
+
+    import "Ldapclient";
+    import "Wizard";
+    include "ldap_client/ui.ycp";
+
+    Ldapclient::auto = true;
+    list args = Args ();
+    if ( size (args) <= 0 )
+    {
+	y2error ("Did not get the settings, probably some mistake...");
+	return false;
+    }
+    if ( !is ( Args (0), map ) )
+    {
+	y2error ("Bad argument for ldap_auto: %1", Args (0));
+	return false;
+    }
+
+    // The settings are in the first argument
+    map settings = select (args, 0, $[]);
+    y2milestone("Imported: (%1)", settings);
+
+    Ldapclient::Import ( settings );
+
+    Wizard::CreateDialog ();
+    Wizard::ReplaceAbortButton(`Empty ());
+    symbol ret = LdapDialog ();
+    UI::CloseDialog ();
+
+    if (ret == `next)
+    {
+	return Ldapclient::Export ();
+    }
+    return $[];
+}

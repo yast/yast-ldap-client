@@ -1,56 +1,44 @@
-/* ldap_client_write.ycp - Module for writing the configuration of
- *                         the LDAP client
+/**
+ * File:
+ *   ldap_write.ycp
  *
- * Author: Thorsten Kukuk <kukuk@suse.de>
+ * Module:
+ *   Configuration of LDAP
+ *
+ * Summary:
+ *   Writing only client
+ *
+ * Authors:
+ *   Martin Vidner <mvidner@suse.cz>
+ *
  * $Id$
  *
- * The configuration to save is in the firts argument. It looks like:
- *
- * $[ "start_ldap"    : true|false, // true/false - start/don't start LDAP client when booting
- *    "ldap_domain"   : <string>,  // written only when "start_ldap" is true
- *    "ldap_address"  : <string>  // written only when "start_ldap" is true
- * ]
+ * This is a write-only client. It takes its arguments and just
+ * write the settings.
  */
 
+/**
+ * @param first a map of LDAP settings
+ * @see Ldap#Import
+ * @return boolean success of operation
+ */
 {
 
-  textdomain "ldap_client";
-  map ldap_conf = Args(0);
+    textdomain "ldap";
 
-  boolean start_ldap = lookup(ldap_conf, "start_ldap", false);
-  boolean nscd_is_running = (SCR (`Execute (.target.bash, "/etc/init.d/nscd status")) == 0);
+    import "Ldapclient";
 
-  /* The end of the definitions */
+    if (size (Args ()) != 1)
+    {
+	y2error ("Exactly one argument required.");
+	return false;
+    }
+    if (! is (Args (0), map))
+    {
+	y2error ("The argument must be a map.");
+	return false;
+    }
 
-  if (start_ldap) {
-    SCR::Write(.etc.openldap.ldap_conf.host, lookup(ldap_conf, "ldap_address"));
-    SCR::Write(.etc.openldap.ldap_conf.base, lookup(ldap_conf, "ldap_domain"));
-    SCR::Write(.etc.openldap.ldap_conf, nil);
-
-    SCR::Write(.etc.nsswitch_conf.passwd, "files ldap");
-    SCR::Write(.etc.nsswitch_conf.group, "files ldap");
-    SCR::Write(.etc.nsswitch_conf, nil);
-
-    if (nscd_is_running)
-      SCR::Execute(.target.bash, "/etc/init.d/nscd restart");
-
-    SCR::Execute(.target.bash, "/bin/mkdir -p /var/lib/yast2-config-ldap_client");
-    SCR::Execute(.target.bash, "/bin/cp -a /etc/pam.d/* /var/lib/yast2-config-ldap_client");
-    SCR::Execute(.target.bash, "/bin/cp -a /usr/share/doc/packages/pam_ldap/pam.d/* /etc/pam.d/");
-
-    } else {
-
-    SCR::Write(.etc.nsswitch_conf.passwd, "compat");
-    SCR::Write(.etc.nsswitch_conf.group, "compat");
-    SCR::Write(.etc.nsswitch_conf, nil);
-
-    if (nscd_is_running)
-      SCR::Execute(.target.bash, "/etc/init.d/nscd restart");
-
-    SCR::Execute(.target.bash, "/bin/cp -a /var/lib/yast2-config-ldap_client/* /etc/pam.d");
-    SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
-
-  }
-
-  return true;
+    // The write is a simple one so we don't use Progress
+    return Ldapclient::Import (Args (0)) && Ldapclient::Write ();
 }

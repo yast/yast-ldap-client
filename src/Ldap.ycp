@@ -1,0 +1,172 @@
+/**
+ * File:
+ *   modules/Ldapclient.ycp
+ *
+ * Module:
+ *   Configuration of LDAP client
+ *
+ * Summary:
+ *   LDAP client configuration data, I/O functions.
+ *
+ * Authors:
+ 
+ *
+ * $Id$
+ *
+ */
+
+{
+    module "Ldapclient";
+    textdomain "ldap_client";
+
+    import "Runlevel";
+    import "Report";
+
+    /**
+     * Should ypbind be started at boot?
+     * If not, other settings are not touched.
+     */
+    global boolean start = false;
+
+    /**
+     * IP addresses of LDAP server.
+     */
+    global string  server = "";
+
+    global boolean auto = false;
+
+    string domain = "";
+    string old_domain = nil;
+    boolean domain_changed = false;
+
+    /**
+     * If the domain has changed from a nonempty one, it may only be
+     * changed at boot time. Use this to warn the user.
+     * @return whether changed by SetDomain
+     */
+    global define boolean DomainChanged () ``{
+	return domain_changed;
+    }
+
+    /**
+     * @return Get the LDAP domain.
+     */
+    global define string GetDomain () ``{
+	return domain;
+    }
+
+    /**
+     * Set the LDAP domain.
+     * @param new_domain a new domain
+     */
+    global define void SetDomain (string new_domain) ``{
+	domain = new_domain;
+	if (domain != old_domain && old_domain != "")
+	{
+	    domain_changed = true;
+	}
+    }
+
+    /* ---------------------------------------------------------------- */
+
+    /**
+     * Get all the LDAP configuration from a map.
+     * When called by ldap_auto (preparing autoinstallation data)
+     * the map may be empty.
+     * @param settings	$["start": "domain": "servers":[...] ]
+     * @return	success
+     */
+    global define boolean Import (map settings) ``{
+	if (size (settings) == 0)
+	{
+	    //Provide defaults for autoinstallation editing:
+	    //Leave empty.
+	    old_domain = domain;
+	    return true;
+	}
+
+	boolean missing = false;
+	foreach (`k, ["start", "domain", "server"], ``{
+	    if (! haskey (settings, k))
+	    {
+		y2error ("Missing at Import: '%1'.", k);
+		missing = true;
+	    }
+	});
+	if (missing)
+	{
+	    return false;
+	}
+
+	start = lookup (settings, "start", false);
+	server = lookup (settings, "server", "");
+	domain = lookup (settings, "domain", "");
+	old_domain = domain;
+	return true;
+    }
+
+    /**
+     * Dump the LDAP settings to a map, for autoinstallation use.
+     * @return $["start":, "servers":[...], "domain":]
+     */
+    global define map Export () ``{
+	return $[
+	    "start": start,
+	    "server": server,
+	    "domain": domain,
+	    ];
+    }
+
+    /**
+     * Reads LDAP settings from the SCR
+     * @return success
+     */
+    global define boolean Read () ``{
+	start = (SCR::Execute (.target.bash, "/usr/bin/grep '^passwd:.*ldap' /etc/nsswitch.conf") == 0);
+	server = SCR::Read(.etc.openldap.ldap_conf.host);
+	domain  = SCR::Read(.etc.openldap.ldap_conf.host);
+	old_domain = domain;
+	return true;
+    }
+
+    /**
+     * Saves LDAP configuration.
+     * (No parameters because it is too short to abort)
+     * @return true on success
+     */
+    global define boolean Write () ``{
+	Runlevel::RunInitScript ("ypbind", "stop");
+	  if (start) {
+	      SCR::Write(.etc.openldap.ldap_conf.host, server);
+	      SCR::Write(.etc.openldap.ldap_conf.base, domain);
+	      SCR::Write(.etc.openldap.ldap_conf, nil);
+
+	      SCR::Write(.etc.nsswitch_conf.passwd, "files ldap");
+	      SCR::Write(.etc.nsswitch_conf.group, "files ldap");
+	      SCR::Write(.etc.nsswitch_conf, nil);
+	      if (Runlevel::ServiceStatus ("nscd") == 0) {
+		  Runlevel::RunInitScript ("nscd", "restart");
+	      }
+	    
+
+	      SCR::Execute(.target.bash, "/bin/mkdir -p /var/lib/yast2-config-ldap_client");
+	      SCR::Execute(.target.bash, "/bin/cp -a /etc/pam.d/* /var/lib/yast2-config-ldap_client");
+	      SCR::Execute(.target.bash, "/bin/cp -a /usr/share/doc/packages/pam_ldap/pam.d/* /etc/pam.d/");
+
+	  } else {
+
+	      SCR::Write(.etc.nsswitch_conf.passwd, "compat");
+	      SCR::Write(.etc.nsswitch_conf.group, "compat");
+	      SCR::Write(.etc.nsswitch_conf, nil);
+	      if (Runlevel::ServiceStatus ("nscd") == 0) {
+		  Runlevel::RunInitScript ("nscd", "restart");
+	      }	  
+
+	      SCR::Execute(.target.bash, "/bin/cp -a /var/lib/yast2-config-ldap_client/* /etc/pam.d");
+	      SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
+
+	  }
+	
+	return true;
+    }
+}
