@@ -2,7 +2,7 @@
  * File:
  *   ldap_conf.scr
  * Summary:
- *   SCR Agent for reading/writing /etc/openldap/ldap.conf using the ini-agent
+ *   SCR Agent for reading/writing /etc/ldap.conf using the ini-agent
  * Access:
  *   read/write
  * Authors:
@@ -12,24 +12,24 @@
  *   libscr
  *   man ldap.conf
  * Example:
- *   Dir(.etc.openldap.ldap_conf)
+ *   Dir(.etc.ldap_conf)
  *   (["base", "host"])
  **
- *   Read(.etc.openldap.ldap_conf.host)
+ *   Read(.etc.ldap_conf.host)
  *   ("10.10.0.149")
  **
- *   Write(.etc.openldap.ldap_conf.base, "dc=myodmain, dc=com")
+ *   Write(.etc.ldap_conf.base, "dc=myodmain, dc=com")
  *   (true)
  *
  * $Id$
  *
- *    .etc.openldap.ldap_conf
+ *    .etc.ldap_conf
  */
-.etc.openldap.ldap_conf
+.etc.ldap_conf
 
 `ag_ini(
   IniAgent(
-    "/etc/openldap/ldap.conf",
+    "/etc/ldap.conf",
     $[ "options" : [ "ignore_case", "global_values", "flat" ],
        "comments" : [ "^#.*", "^[ \t]*$", ],
        "params" : [

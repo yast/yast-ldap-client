@@ -273,14 +273,14 @@
     /* ------------- read/write functions ------------------------------- */
 
     /**
-     * Read single entry from /etc/openldap/ldap.conf file
+     * Read single entry from /etc/ldap.conf file
      * @param entry entry name
      * @param defvalue default value if entry is not present
      * @return entry value
      */
     define string ReadLdapConfEntry (string entry, string defvalue) ``{
 
-	string ret = SCR::Read(add (.etc.openldap.ldap_conf, entry));
+	string ret = SCR::Read(add (.etc.ldap_conf, entry));
 	if (ret == nil)
 	    ret = defvalue;
 	return ret;
@@ -302,13 +302,9 @@
 
         bind_dn = ReadLdapConfEntry ("binddn", "");
 
-        base_config_dn = ReadLdapConfEntry ("admintool_dn", "");
-
         nss_base_passwd = ReadLdapConfEntry ("nss_base_passwd", "");
         nss_base_shadow = ReadLdapConfEntry ("nss_base_passwd", "");
         nss_base_group = ReadLdapConfEntry ("nss_base_group", "");
-
-	file_server = (SCR::Read (.sysconfig.ldap.FILE_SERVER) == "yes");
 
 	pam_password = ReadLdapConfEntry ("pam_password", "crypt");
 
@@ -316,6 +312,12 @@
 	    (SCR::Read(.etc.nsswitch_conf.passwd)," ");
 	nsswitch["group"] = splitstring
 	    (SCR::Read(.etc.nsswitch_conf.group), " ");
+
+	// read sysconfig values
+	base_config_dn = SCR::Read (.sysconfig.ldap.BASE_CONFIG_DN);
+
+	file_server = (SCR::Read (.sysconfig.ldap.FILE_SERVER) == "yes");
+
 
 	return true;
     }
@@ -382,25 +384,22 @@
 	if (start) // ldap used
 	{
 	    // update ldap.conf
-	    SCR::Write(.etc.openldap.ldap_conf.host, server);
-	    SCR::Write(.etc.openldap.ldap_conf.base, domain);
+	    SCR::Write(.etc.ldap_conf.host, server);
+	    SCR::Write(.etc.ldap_conf.base, domain);
 	    if (ldap_v2)
-		SCR::Write(.etc.openldap.ldap_conf.ldap_version, "2");
+		SCR::Write(.etc.ldap_conf.ldap_version, "2");
 	    else
-		SCR::Write(.etc.openldap.ldap_conf.ldap_version, "3");
+		SCR::Write(.etc.ldap_conf.ldap_version, "3");
 
 	    if (ldap_tls)
-		SCR::Write(.etc.openldap.ldap_conf.ssl, "start_tls");
+		SCR::Write(.etc.ldap_conf.ssl, "start_tls");
 	    else
-		SCR::Write(.etc.openldap.ldap_conf.ssl, "no");
+		SCR::Write(.etc.ldap_conf.ssl, "no");
 
-	    SCR::Write(.etc.openldap.ldap_conf.pam_password, pam_password);
+	    SCR::Write(.etc.ldap_conf.pam_password, pam_password);
 
 	    if (bind_dn != "")
-		SCR::Write (.etc.openldap.ldap_conf.binddn, bind_dn);
-
-	    if (base_config_dn != "")
-		SCR::Write(.etc.openldap.ldap_conf.admintool_dn,base_config_dn);
+		SCR::Write (.etc.ldap_conf.binddn, bind_dn);
 
 	    // save the user and group bases (check the LDAP config before)
 	    user_base = domain;
@@ -411,15 +410,15 @@
 		if (contains (mod["objectClass"]:[], "groupConfiguration"))
 		    group_base = mod["defaultBase",0]:user_base;
 	    });
-	    SCR::Write(.etc.openldap.ldap_conf.nss_base_passwd,
+	    SCR::Write(.etc.ldap_conf.nss_base_passwd,
 		(nss_base_passwd != "")? nss_base_passwd : user_base);
-	    SCR::Write(.etc.openldap.ldap_conf.nss_base_shadow,
+	    SCR::Write(.etc.ldap_conf.nss_base_shadow,
 		(nss_base_shadow != "")? nss_base_shadow : user_base);
-	    SCR::Write(.etc.openldap.ldap_conf.nss_base_group,
+	    SCR::Write(.etc.ldap_conf.nss_base_group,
 		(nss_base_group != "")? nss_base_group : group_base);
 
 	    // write the changes in ldap.conf now
-	    SCR::Write(.etc.openldap.ldap_conf, nil);
+	    SCR::Write(.etc.ldap_conf, nil);
 
 	    // pam settigs
 	    SCR::Write(.pam.all.account.pam_unix2, "+use_ldap");
@@ -457,8 +456,10 @@
 
 	}
 
-	// write sysconfig
+	// write sysconfig values
 	SCR::Write (.sysconfig.ldap.FILE_SERVER, file_server? "yes": "no");
+
+	SCR::Write (.sysconfig.ldap.BASE_CONFIG_DN, base_config_dn);
 
 	// -------------------- start services
 	Progress::NextStage ();
