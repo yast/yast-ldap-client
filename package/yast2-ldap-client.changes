@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Feb  5 12:49:28 CET 2003 - jsuchome@suse.de
+
+- added return value of client (for installation usage)
+- corrected helptext
+- 2.7.3
+
+-------------------------------------------------------------------
 Wed Jan 29 15:02:07 CET 2003 - jsuchome@suse.cz
 
 - merged proofreaded texts

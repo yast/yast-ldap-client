@@ -30,7 +30,7 @@ the <b>%1</b> packages must be installed.</p>
               {
 		  UI::MessagePopup(_("The configuration of the LDAP client
 cannot be completed without the mentioned packages."));
-		  return;
+		  return `auto;
               }
 
     Wizard::CreateDialog ();
@@ -57,6 +57,7 @@ client was saved."));
 	}
     }
 
-    return UI::CloseDialog();
+    UI::CloseDialog();
+    return result;
 
 }

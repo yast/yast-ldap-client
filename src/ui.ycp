@@ -58,7 +58,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 
 // help text 5/5
 	help_text = help_text + UI(_("<p>For later configuration of users and
-groups on the LDAP server, click <b>Set up User Configuration</b> and complete the settings.</p>
+groups on the LDAP server, click <b>Set up User Configuration Tool</b> and complete the settings.</p>
 "));
 
 	boolean start = Ldap::start;
@@ -100,7 +100,7 @@ groups on the LDAP server, click <b>Set up User Configuration</b> and complete t
 				     ),
                 `VSpacing (1),
                 // PushButton label
-                `PushButton (`id(`cpu), _("&Set up User Configuration..."))
+                `PushButton (`id(`cpu), _("&Set up User Configuration Tool"))
                 )
 	);
 
