@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Mar 10 16:49:31 CET 2005 - jsuchome@suse.cz
+
+- fixed typo in summary text 
+
+-------------------------------------------------------------------
 Thu Mar  3 11:13:11 CET 2005 - jsuchome@suse.cz
 
 - do not default to 'always start' when called from users 
