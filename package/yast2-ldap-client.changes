@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Sat Feb 15 08:24:47 CET 2003 - kukuk@suse.de
+
+- Use "example" instead of "mydomain" as domainname in help text.
+
+-------------------------------------------------------------------
 Thu Feb 13 15:20:44 CET 2003 - jsuchome@suse.de
 
 - 'Next' instead of 'Finish' when Mode::cont is true

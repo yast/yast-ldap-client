@@ -31,7 +31,7 @@
 // help text 1/5
 	string help_text = UI(_("<p>Here, your machine can be set up as an
 <b>LDAP client</b> to authenticate your user with an OpenLDAP server.
-Enter the name of the search base (base DN, such as dc=mydomain,dc=com)
+Enter the name of the search base (base DN, such as dc=example,dc=com)
 in the first entry and the LDAP server's address (e.g., ldap.example.com
 or 10.20.0.2) in the second. Specify multiple servers by separating their
 addresses with spaces.
