@@ -463,6 +463,14 @@
 	}
 	else // ldap is not used
 	{
+	    // update ldap.conf -- currently only in cmd-line change is possible
+	    if (server != old_server || domain != old_domain)
+	    {
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".host, server);
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".base, domain);
+
+		WriteOpenLdapConf();
+	    }
 
 	    foreach (`entry, `value, nsswitch, ``{
 		new_nsswitch [entry] = mergestring (

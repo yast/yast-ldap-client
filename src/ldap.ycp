@@ -19,26 +19,33 @@
     import "Require";
     import "Popup";
     import "Ldap";
+    import "RichText";
 
     include "ldap/wizards.ycp";
 
     include "commandline/commandline.ycp";
 
     if (!Require::RequireAndConflict (Ldap::required_packages, [],
+			     // popup: requred applications (%1)
 			     _("<p>To configure and access LDAP services,
 the <b>%1</b> packages must be installed.<br>
 Install these packages now?</p>
 ")))
     {
+	// popup: requred applications were not installed
 	Popup::Message(_("The configuration of the LDAP client
 cannot be completed without the mentioned packages."));
 	return `auto;
     }
-//    return LdapSequence();
 
 // --------------------------------------------------------------------------
-// ----------------------------------------- pokusy s cmd-line
+// --------------------------------- cmd-line handlers
 
+/**
+ * Enable or disable LDAP authentication
+ * @param options  a list of parameters passed as args
+ * @return boolean true on success
+ */
 global define boolean LdapEnableHandler( map options ) ``{
     // check the "command" to be present exactly once
     string command = CommandLine::UniqueOption( options,
@@ -46,16 +53,40 @@ global define boolean LdapEnableHandler( map options ) ``{
     if( command == nil ) return false;
 
     Ldap::start = ( command == "enable" );
-    // TODO: save pam settings + nss_switch now
-    // (currently works only for "verbose")
     return true;
 }
 
-global define boolean LdapSummaryHandler( map options ) ``{
+/**
+ * Print summary of basic options
+ * @return boolean false
+ */
+global define boolean LdapSummaryHandler (map options ) ``{
 
-    import "RichText";
     CommandLine::Print (RichText::Rich2Plain ("<br>" + Ldap::ShortSummary ()));
-    return true;
+    return false; // do not call Write...
+}
+
+/**
+ * Change basic configuration of LDAP client (server, base DN)
+ * @param options  a list of parameters passed as args
+ * @return boolean true on success
+ */
+global define boolean LdapChangeConfiguration (map options ) ``{
+
+    boolean ret = false;
+    string server = options["server"]:nil;
+    if( server != nil )
+    {
+	Ldap::server = server;
+	ret = true;
+    }
+    string base = options["base"]:nil;
+    if( base != nil )
+    {
+	Ldap::SetDomain (base);
+	ret = true;
+    }
+    return ret;
 }
 
 global define boolean LdapWrite () ``{
@@ -65,41 +96,55 @@ global define boolean LdapWrite () ``{
 
 /* the command line description map */
 map cmdline = $[
-    "id"		: "ldap-client",
+    "id"		: "ldap",
     // translators: command line help text for Ldap client module
     "help"		: _("Ldap client configuration module."),
     "guihandler"	: ``(LdapSequence()),
     "initialize"	: ``(Ldap::Read()),
-//    "finish"		: ``(Ldap::Write(``{ return false; })),
     "finish"		: ``(LdapWrite()),
     "actions"		: $[
 	"pam" :$[
 	    "handler"	: ``(LdapEnableHandler()),
-	    // translators: command line help text for winbind action
-	    "help"	: _("Enable or disable the LDAP authentication")
+	    // translators: command line help text for pam action
+	    "help"	: _("Enable or disable authentication with LDAP")
 	],
 	"summary" :$[
 	    "handler"	: ``(LdapSummaryHandler()),
-	    // translators: command line help text for winbind action
+	    // translators: command line help text for summary action
 	    "help"	: _("Configuration summary of LDAP client")
 	],
+	"configure"	: $[
+	    "handler"	: ``(LdapChangeConfiguration()),
+	    // translators: command line help text for configure action
+	    "help"	: _("Change the global settings of LDAP client")
+	]
     ],
     "options"		: $[
 	"enable"	:$[
-	    // translators: command line help text for winbind enable option
+	    // translators: command line help text for pam enable option
 	    "help"	: _("Enable the service")
 	],
 	"disable"	:$[
-	    // translators: command line help text for winbind disable option
+	    // translators: command line help text for pam disable option
 	    "help"	: _("Disable the service")
+	],
+	"server"	:$[
+	    // translators: command line help text for the server option
+	    "help"	: _("The LDAP server name"),
+	    "type"	: "string"
+	],
+	"base"	:$[
+	    // translators: command line help text for the base option
+	    "help"	: _("Distinguished Name (DN) of the search base"),
+	    "type"	: "string"
 	],
     ],
     "mappings"		: $[
 	"pam"		: [ "enable", "disable" ],
 	"summary"	: [],
+	"configure"	: [ "server", "base" ],
     ]
 ];
-
 
    return CommandLineRun( cmdline );
 }

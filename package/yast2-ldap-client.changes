@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Sep  2 10:52:42 CEST 2003 - jsuchome@suse.cz
+
+- basic command-line interface (+ new texts)
+- 2.8.9
+
+-------------------------------------------------------------------
 Mon Sep  1 16:59:23 CEST 2003 - jsuchome@suse.cz
 
 - added test for object class existence
