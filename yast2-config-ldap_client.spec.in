@@ -14,7 +14,7 @@ License:	(c) 2001 SuSE GmbH
 Group:		System Environment/YaST
 Requires:	yast2 yast2-trans-ldap_client
 Requires:       yast2-lib-wizard yast2-lib-sequencer yast2-lib-network
-Requires:       yast2-agent-pam
+Requires:       yast2-agent-pam yast2-agent-ini
 Requires:       yast2-config-package-manager
 BuildArchitectures:	noarch
 
@@ -47,5 +47,6 @@ make check
 @YAST2DIR@/modules/Ldapclient.ycp
 @YAST2DIR@/clients/ldap_client.ycp
 @YAST2DIR@/clients/ldap_client_*.ycp
+@YAST2DIR@/scrconf/ldap_conf.scr
 #%dir @DOCDIR@
 #@DOCDIR@/*

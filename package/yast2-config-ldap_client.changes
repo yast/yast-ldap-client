@@ -2,6 +2,7 @@
 Thu Feb  7 13:15:30 CET 2002 - kukuk@suse.de
 
 - Allow setting of LDAP protocol version [Bug #12503]
+- Add ldap_conf.scr
 - Version 2.5.3
 
 -------------------------------------------------------------------
