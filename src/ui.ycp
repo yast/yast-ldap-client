@@ -95,18 +95,10 @@
 
 	string servers	= "";
 
-	UI::OpenDialog (`VBox(
-	    `HSpacing (36),
-	    `ReplacePoint (`id (`rp),
-		`MultiSelectionBox (`id(`sel),
-		// multiselection box label
-		_("LDAP &Servers Provided by SLP:"), [])
-	    ),
-	    `HBox (
-		`PushButton (`id(`ok), Label::OKButton()),
-		`PushButton (`id(`cancel), Label::CancelButton())
-	    )
-	));
+	UI::OpenDialog (
+	    // popup window
+	    `Label (_("Scanning for LDAP servers provided by SLP...")));
+
 	UI::BusyCursor ();
 
 	list items	= [];
@@ -114,11 +106,19 @@
 	    string s	= service["pcHost"]:service["srvurl"]:"";
 	    items	= add (items, s);
 	});
-	UI::ReplaceWidget (`id(`rp),`MultiSelectionBox (`id(`sel),
-	    // selection box label
-	     _("LDAP &Servers Provided by SLP:"),items)
-	);
-
+	UI::CloseDialog ();
+	UI::OpenDialog (`VBox(
+	    `HSpacing (36),
+	    `ReplacePoint (`id (`rp),
+		`MultiSelectionBox (`id(`sel),
+		// multiselection box label
+		_("LDAP &Servers Provided by SLP:"), items)
+	    ),
+	    `HBox (
+		`PushButton (`id(`ok), Label::OKButton()),
+		`PushButton (`id(`cancel), Label::CancelButton())
+	    )
+	));
 	UI::NormalCursor ();
 	any ret = "";
 	do
@@ -189,9 +189,9 @@ automatically.</p>
 
 
 	// during installation, starting ldap is default
-	boolean start		= Ldap::start;
-	if (Stage::cont () && !contains (WFM::Args (), "from_users"))
-	    start		= true;
+	boolean installation	=
+	    Stage::cont () && !contains (WFM::Args (), "from_users");
+	boolean start		= Ldap::start || installation;
 
 	string domain		= Ldap::GetDomain ();
 	string server		= Ldap::server;
@@ -271,7 +271,7 @@ automatically.</p>
 	Wizard::RestoreAbortButton ();
 
 	// during installation, only enabling makes sence
-	if (Stage::cont () && !contains (WFM::Args (), "from_users"))
+	if (installation)
 	{
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
 	}
@@ -391,7 +391,8 @@ Which should be used as the primary authentication service?
 			Popup::Error (Message::FailedToInstallPackages ());
 			start = false;
 			result = `not_next;
-			UI::ChangeWidget(`id(`rd), `CurrentButton, `ldapno);
+			if (!installation)
+			    UI::ChangeWidget(`id(`rd), `CurrentButton, `ldapno);
 			continue;
 		    }
 		}

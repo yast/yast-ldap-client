@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Apr  1 14:07:21 CEST 2005 - jsuchome@suse.cz
+
+- unified server searching popup (#66591)
+- do not Change Widget when it is disabled
+- 2.12.0
+
+-------------------------------------------------------------------
 Thu Mar 10 16:49:31 CET 2005 - jsuchome@suse.cz
 
 - fixed typo in summary text 
