@@ -1,7 +1,7 @@
 -------------------------------------------------------------------
 Wed Feb 12 17:47:43 CET 2003 - kukuk@suse.de
 
-- Use "start_tls yes/no" instead of "ssl start_tls" in ldap.conf
+- Set ssl to "no" if no "start_tls" is selected.
 
 -------------------------------------------------------------------
 Thu Feb  6 12:54:29 CET 2003 - jsuchome@suse.de
