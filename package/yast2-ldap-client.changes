@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Apr 20 10:15:04 CEST 2004 - jsuchome@suse.cz
+
+- on LDAP error, show also additional message produced by server (#38668)
+
+-------------------------------------------------------------------
 Mon Apr  5 10:05:32 CEST 2004 - jsuchome@suse.cz
 
 - fix: really write /etc/sysconfig/ldap (#38249)

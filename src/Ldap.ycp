@@ -681,7 +681,12 @@ Value of DN is missing or invalid."),
     global define string LDAPError () ``{
 
 	map err_map = LDAPErrorMap ();
-	return err_map["msg"]:"";
+	string error	= err_map["msg"]:"";
+	if (err_map["server_msg"]:"" != "")
+	{
+	    error = sformat ("%1\n%2", error, err_map["server_msg"]:"");
+	}
+	return error;
     }
 
     // this is a hack
@@ -1366,7 +1371,6 @@ Select another one.
 		string new_dn	= dn;
 		dn		= object["old_dn"]:dn;
 		object		= remove (object, "old_dn");
-
 		if (!(boolean)SCR::Write (.ldap.modify, $[
 			"dn"		: dn,// the original DN
 			"rdn"		: rdn,
@@ -1403,7 +1407,12 @@ Select another one.
 	{
 	    error = WriteToLDAP (objects);
 	    if (error != $[])
-		LDAPErrorMessage ("write", error["msg"]:"");
+	    {
+		string msg	= error["msg"]:"";
+		if (error["server_msg"]:"" != "")
+		    msg		= msg + "\n" + error["server_msg"]:"";
+		LDAPErrorMessage ("write", msg);
+	    }
 	}
 	return (error == $[] && bind_pass != nil);
     }
