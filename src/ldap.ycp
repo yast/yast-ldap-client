@@ -30,9 +30,10 @@
     include "ldap_client/ui.ycp";
 
     if (!RequireAndConflict (["pam_ldap","nss_ldap"], [],
-			     _("<p>To configure and access the LDAP Services, the
-<b>%1</b> packages must be installed.</p>
-<p>Do you wish to install these packages now?</p>")))
+			     _("<p>To configure and access LDAP services, 
+the <b>%1</b> packages must be installed.</p>
+<p>Do you want to install these packages now?</p>
+")))
               {
 		  UI::MessagePopup(_("The configuration of the LDAP client
 cannot be completed without the mentioned packages."));
