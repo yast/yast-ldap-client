@@ -17,6 +17,7 @@
     import "Label";
     import "Ldap";
     import "LdapPopup";
+    import "Message";
     import "Mode";
     import "Package";
     import "Popup";
@@ -255,29 +256,31 @@ you cannot retrieve the data from NIS.  Are you sure?")))
 		    }
 		}
 
+		if (start && !Package::InstalledAll (
+			    ["pam_ldap","nss_ldap"]))
+		{
+		    Ldap::required_packages = union (
+			Ldap::required_packages, [ "pam_ldap","nss_ldap"]);
+		}
+
+		if (autofs && !Package::InstalledAny(["autofs", "autofs4"]))
+		{
+		    Ldap::required_packages = union (
+			Ldap::required_packages, ["autofs"]);
+		}
+		if (!Package::InstallAll((list<string>)Ldap::required_packages))
+		{
 		    if (start && !Package::InstalledAll (
 			    ["pam_ldap","nss_ldap"]))
 		    {
-			Ldap::required_packages = union (
-			    Ldap::required_packages, [ "pam_ldap","nss_ldap"]);
+			Popup::Error (
+			    Message::CannotContinueWithoutPackagesInstalled ());
+			start = false;
+			result = `not_next;
+			UI::ChangeWidget(`id(`rd), `CurrentButton, `ldapno);
+			continue;
 		    }
-		    if (autofs && !Package::InstalledAny(["autofs", "autofs4"]))
-		    {
-			Ldap::required_packages = union (
-			    Ldap::required_packages, ["autofs"]);
-		    }
-		    if (!Package::InstallAll (
-			    (list<string>) Ldap::required_packages))
-		    {
-			if (start && !Package::InstalledAll (
-			    ["pam_ldap","nss_ldap"]))
-			{
-			    start = false;
-			    result = `not_next;
-			    UI::ChangeWidget(`id(`rd), `CurrentButton, `ldapno);
-			    continue;
-			}
-		    }
+		}
 	    }
 	} while (!contains ([`back, `next, `cancel, `abort, `advanced], result));
 
