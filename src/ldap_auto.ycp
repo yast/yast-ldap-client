@@ -16,7 +16,7 @@
  * @param first a map of LDAP settings
  * @return map edited settings or an empty map if canceled
  * @example map mm = $[ "FAIL_DELAY" : "77" ];
- * @example map ret = CallModule ("ldap_auto", [ mm ]);
+ * @example map ret = WFM::CallModule ("ldap_auto", [ mm ]);
  */
 
 {
@@ -29,15 +29,15 @@
     include "ldap/ui.ycp";
 
     Ldap::auto = true;
-    list args = Args ();
+    list args = WFM::Args ();
     if ( size (args) <= 0 )
     {
 	y2error ("Did not get the settings, probably some mistake...");
 	return false;
     }
-    if ( !is ( Args (0), map ) )
+    if ( !is ( WFM::Args (0), map ) )
     {
-	y2error ("Bad argument for ldap_client_auto: %1", Args (0));
+	y2error ("Bad argument for ldap_client_auto: %1", WFM::Args (0));
 	return false;
     }
 
@@ -46,9 +46,9 @@
 
     {
 	integer i = 0;
-	while (i < size (Args()))
+	while (i < size (WFM::Args()))
 	{
-	    if (is (Args (i), map) && nil != Args (i))	settings = Args (i);
+	    if (is (WFM::Args (i), map) && nil != WFM::Args (i))	settings = WFM::Args (i);
 	    i = i + 1;
 	}
     }

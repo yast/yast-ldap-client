@@ -23,18 +23,18 @@ textdomain "ldap-client";
 
 import "Ldap";
 
-if(size(Args()) != 1) {
+if(size(WFM::Args()) != 1) {
     y2error("Exactly one argument required.");
     return false;
 }
 
-if(!is(Args(0), map)) {
+if(!is(WFM::Args(0), map)) {
     y2error("The argument must be a map.");
     return false;
 }
 
 // The write is a simple one so we don't use Progress
-return Ldap::Import(Args(0)) && Ldap::WriteOnly();
+return Ldap::Import(WFM::Args(0)) && Ldap::WriteOnly();
 
 /* EOF */
 }
