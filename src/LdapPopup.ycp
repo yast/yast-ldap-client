@@ -219,11 +219,11 @@ global define list<string> EditAttribute (map settings)
     string help_text = _("<p>Set the new value for the current attribute.</p>") +
 
     // help text 2/3
-    _("<p>If the attribute can have more values, you can add new entries
+    _("<p>If the attribute can have more values, add new entries
 with <b>Add Value</b>. Sometimes the button contains the list of
 possible values to use for the current attribute.
-If the value of edited attribute should be distinguished name (DN),
-it is possible to choose it from LDAP tree using <b>Browse</b> option.
+If the value of the edited attribute should be a distinguished name (DN),
+it is possible to choose it from LDAP tree using <b>Browse</b>.
 </p>
 ");
 
