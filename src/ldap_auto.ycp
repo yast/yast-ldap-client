@@ -28,7 +28,7 @@ y2milestone("Ldap auto started");
 import "Ldap";
 import "Wizard";
 import "Summary";
-include "ldap/ui.ycp";
+include "ldap/wizards.ycp";
 
 
 any ret = nil;
@@ -61,10 +61,7 @@ else if (func == "Reset") {
 }
 /* Change configuration (run AutoSequence) */
 else if (func == "Change") {
-	Wizard::CreateDialog ();
-	Wizard::ReplaceAbortButton(`Empty ());
-	ret = LdapDialog ();
-	UI::CloseDialog ();
+	ret = LdapAutoSequence ();
 }
 /* Return actual state */
 else if (func == "Export") {
