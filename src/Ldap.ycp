@@ -575,8 +575,6 @@
 
 	// Now check if previous configuration of LDAP server didn't proposed
 	// some better values:
-	// (FIXME this should be done after Read, (R.is called also in other
-	// situations)
 	if (Stage::cont ())
 	{
 	    if (size (initial_defaults) > 0)
