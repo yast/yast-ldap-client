@@ -157,7 +157,7 @@ groups on the LDAP server, push <b>Set up users configuration</b> button and fil
 
         if (result == `cpu)
         {
-            CallFunction (`cpu_configure());
+            CallFunction (`cpu_configure(false));
         }
 
 	    if (result == `next)

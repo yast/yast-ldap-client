@@ -16,7 +16,14 @@
     string user_base = Ldap::user_base;
     string group_base = Ldap::group_base;
     string user_filter = Ldap::user_filter;
+    string user_class = Ldap::user_class;
     string bind_dn = Ldap::bind_dn;
+
+    boolean propose_values = false;
+
+    if( size(Args()) > 0 && is(Args(0), boolean)) {
+        propose_values = WFM::Args(0);
+    }
 
     // check for presence of cpu
     if (SCR::Execute(.target.bash, "rpm -q cpu") !=0)
@@ -28,27 +35,45 @@
 
         include "require.ycp";
         DoInstallAndRemove(["cpu"], []);
+        propose_values = true;
+    }
+
+    if (propose_values)
+    {
         // propose some values
         user_base = Ldap::GetDomain();
         group_base = user_base;
         user_filter = "objectclass=person";
+        user_class = "person,posixAccount,top,shadowAccount,inetOrgPerson";
         bind_dn = "";
     }
 
-    // help text "cpu" is the utility name, not processor!
-	string help_text = _("<p>Here you can configure \"cpu\" - the LDAP user management utility, which is used by YaST2 Users module.</p>") +
+    // help text 1/7 "cpu" is the utility name, not processor!
+	string help_text = _("<p>Here you can configure <i>cpu</i> - the LDAP user management utility, which is used by YaST2 Users module.</p>") +
 
+    // help text 2/7
     _("<p><b>User base</b><br>
 This is the base to which users will be added. Is of the form: <i>ou=People,o=dbaseiv.net,c=US</i>. If you are not sure, use your <b>base DN</b> value.</p>") +
 
+    // help text 3/7
     _("<p><b>Group base</b><br>
 This is the base to which groups will be added. It may be the same as user base but is still required.</p>") +
 
+    // help text 4/7
+    _("<p><b>User object class</b><br>
+Object classes to add to user entry. It is in the form:
+<i>person,posixAccount,top,shadowAccount,inetOrgPerson</i>.</p>") +
+
+    // help text 5/7
     _("<p><b>User filter</b><br>
 Filter for searching. Default of <i>objectclass=person</i> is fine.</p>") +
 
+    // help text 6/7
     _("<p><b>Bind DN</b><br>
-Required to get the acces to LDAP database. Is of the form: <i>cn=Manager,o=dbaseiv.net,c=US</i></p>");
+Required to get the acces to LDAP database. Is of the form: <i>cn=Manager,o=dbaseiv.net,c=US</i></p>") +
+
+    // help text 7/7
+    _("<p>For more information, see man page of <i>cpu</i> or <i>cpu.cfg</i></p>");
 
     term con = `HVSquash(
         `VBox (
@@ -65,6 +90,10 @@ Required to get the acces to LDAP database. Is of the form: <i>cn=Manager,o=dbas
                     // textentry label
                     `TextEntry (`id (`groupb), _("&Group base"),
                          group_base)),
+                `HSquash(
+                    // textentry label
+                    `TextEntry (`id (`userc), _("User &object class:"),
+                         user_class)),
                 `HSquash(
                     // textentry label
                     `TextEntry (`id (`userf), _("Default user fi&lter"),
@@ -94,6 +123,7 @@ Required to get the acces to LDAP database. Is of the form: <i>cn=Manager,o=dbas
 		    user_base = UI::QueryWidget(`id(`userb), `Value);
 		    group_base = UI::QueryWidget(`id(`groupb), `Value);
 		    user_filter = UI::QueryWidget(`id(`userf), `Value);
+		    user_class = UI::QueryWidget(`id(`userc), `Value);
 		    bind_dn = UI::QueryWidget(`id(`binddn), `Value);
 
 		    if (bind_dn == "")
@@ -107,6 +137,13 @@ Required to get the acces to LDAP database. Is of the form: <i>cn=Manager,o=dbas
             {
 		        // error popup label
                 Report::Error(_("Enter the user base."));
+                result = nil;
+                continue;
+            }
+            if (user_class == "")
+            {
+		        // error popup label
+                Report::Error(_("Enter the user class."));
                 result = nil;
                 continue;
             }
@@ -126,6 +163,7 @@ Required to get the acces to LDAP database. Is of the form: <i>cn=Manager,o=dbas
         Ldap::user_base = user_base;
         Ldap::group_base = group_base;
         Ldap::user_filter = user_filter;
+        Ldap::user_class = user_class;
         Ldap::bind_dn = bind_dn;
         Ldap::cpu_modified = true;
 	}

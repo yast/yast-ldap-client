@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Jan 15 17:46:39 CET 2003 - jsuchome@suse.cz
+
+- helptexts for cpu_configure dialog
+- proposing values for cpu.cfg
+- 2.7.1
+
+-------------------------------------------------------------------
 Tue Jan 14 17:11:10 CET 2003 - jsuchome@suse.cz
 
 - added agent and dialog for /etc/cpu.cfg handling

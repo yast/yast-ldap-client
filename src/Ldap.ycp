@@ -49,6 +49,7 @@
     global string user_base = "";
     global string group_base = "";
     global string user_filter = "";
+    global string user_class = "";
     global string bind_dn = "";
 
     // save cpu settings
@@ -251,15 +252,16 @@
     /**
      * Write settings to /etc/cpu.cfg
      */
-    global define boolean WriteCpuSettings () ``{
+    global define void WriteCpuSettings () ``{
 
         SCR::Write (.etc.cpu_cfg."ldap_host", server);
         SCR::Write (.etc.cpu_cfg."base_dn", domain);
         SCR::Write (.etc.cpu_cfg."user_base", user_base);
         SCR::Write (.etc.cpu_cfg."user_filter", user_filter);
+        SCR::Write (.etc.cpu_cfg."user_object_class", user_class);
         SCR::Write (.etc.cpu_cfg."group_base", group_base);
         SCR::Write (.etc.cpu_cfg."bind_dn", bind_dn);
-
+        SCR::Write (.etc.cpu_cfg, "force");
     }
 
     /**
@@ -272,6 +274,7 @@
             user_base = SCR::Read(.etc.cpu_cfg."user_base");
             group_base = SCR::Read(.etc.cpu_cfg."group_base");
             user_filter = SCR::Read(.etc.cpu_cfg."user_filter");
+            user_class = SCR::Read(.etc.cpu_cfg."user_object_class");
             bind_dn = SCR::Read(.etc.cpu_cfg."bind_dn");
         }
     }
@@ -280,10 +283,10 @@
     /**
      * Summary()
      * returns html formated configuration summary
-     * @return string
+     * @return summary
      */
 
-    global define Summary ()
+    global define string Summary ()
 	``{
 	string summary = "";
 	summary = Summary::AddHeader(summary, _("LDAP Client enabled"));
