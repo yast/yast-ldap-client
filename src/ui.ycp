@@ -91,7 +91,7 @@ and the client will be restarted.")))
 	if (Modified())
 	{
 	    // help text
-	    Wizard::RestoreHelp(_("Writing LDAP Client settings"));
+	    Wizard::RestoreHelp(_("Writing LDAP Client Settings"));
 	    return Ldap::Write (abort);
 	}
 	return `next;
@@ -110,8 +110,9 @@ Enter the <b>Distinguished Name</b> of the search base (\"base DN\", such as
 dc=example,dc=com) in the first entry and the LDAP server's address
 (e.g., ldap.example.com or 10.20.0.2) in the second. Specify multiple servers
 by separating their addresses with spaces. It must be possible to resolve the
-addresses without using LDAP. You can also specify the port on which the server is running using the syntax \"server:port\", e.g. ldap.example.com:379.
-</p>") +
+addresses without using LDAP. You can also specify the port on which the server is running using the syntax \"server:port\", for example, ldap.example.com:379.
+</p>
+") +
 
 	// help text 2/6
 	_("<p>Some LDAP servers support StartTLS [RFC2830].
@@ -120,12 +121,14 @@ to encrypt your communication with the LDAP server.</p>") +
 
 	// help text 3/6
 	_("<p>Normally, the LDAP version 3 protocol will be used. If you have
-a LDAP server using protocol 2 (for example OpenLDAP v1), you should activate
-<b>LDAP Version 2</b>.</p>") +
+an LDAP server using protocol 2 (for example, OpenLDAP v1), activate
+<b>LDAP Version 2</b>.</p>
+") +
 
 	// help text 4/6
 	_("<p>If you activate LDAP, NSS and PAM will be configured accordingly
-to use LDAP for user authentification.</p>") +
+to use LDAP for user authentication.</p>
+") +
 
 	// help text 5/6
 	_("<p>To deactivate LDAP services, click <b>Do Not Use LDAP</b>.
@@ -135,7 +138,8 @@ removed.</p>") +
 
 	// help text 6/6
 	_("<p>For configuration of advanced LDAP settings, click
-<b>Advanced Configuration</b> button.</p>");
+<b>Advanced Configuration</b>.</p>
+");
 
 	// during installation, only starting ldap is enabled
 	boolean start		= Mode::cont || Ldap::start;
@@ -151,14 +155,14 @@ removed.</p>") +
 		`Left(`HVSquash(`VBox (
 		    `Left (`RadioButton(`id(`ldapno), `opt (`notify),
 			// radio button label
-			_("Do n&ot use LDAP"), !start)),
+			_("Do N&ot Use LDAP"), !start)),
 		    `Left(`RadioButton(`id(`ldapyes), `opt (`notify),
 			// radio button label
 			_("&Use LDAP"), start)))))),
 	    // text entry label
 	    `HSquash(`TextEntry (`id (`ldapd), _("LDAP base &DN"), domain)),
 	    // text entry label
-	    `HSquash(`TextEntry (`id (`ldapa), _("Addresses of LDAP &servers"),
+	    `HSquash(`TextEntry (`id (`ldapa), _("Addresses of LDAP &Servers"),
 		server)),
 	    `VSpacing (0.2),
 	    // check box label
@@ -170,7 +174,7 @@ removed.</p>") +
 	    )),
 	    `VSpacing(1),
 	    // pushbutton label
-	    `PushButton (`id(`advanced), _("&Advanced configuration..."))
+	    `PushButton (`id(`advanced), _("&Advanced Configuration..."))
         ));
 
 	Wizard::SetContentsButtons (
@@ -251,24 +255,28 @@ removed.</p>") +
 global define symbol AdvancedConfigurationDialog () ``{
 
     // help text 1/4
-    string help_text = _("<p>First, you should set <b>Configuration Base DN</b>.
-It is the base for storing your configuration data, which are saved on LDAP
-server.</p>") +
+    string help_text = _("<p>First, set <b>Configuration Base DN</b>.
+It is the base for storing your configuration data, which is saved on the LDAP
+server.</p>
+") +
 
     // help text 2/4
-    _("<p>To access the data stored on server, you have to fill the
-<b>Bind DN</b> (e.g. ou=Managerer,dc=mydomain,dc=com).</p>") +
+    _("<p>To access the data stored on the server, enter the
+<b>Bind DN</b> (e.g., ou=Management,dc=mydomain,dc=com).</p>
+") +
 
     // help text 3/4
-    _("<p>Push the <b>Configure</b> button to configure settings stored at
-LDAP server. You will be asked for password if you are not connected yet or
-if you have changed your configuration.</p>") +
+    _("<p>Press <b>Configure</b> to configure settings stored on the
+LDAP server. You will be asked for the password if you are not connected yet or
+have changed your configuration.</p>
+") +
 
     // help text 4/4
-    _("<p><b>File Server</b> indicates, that home directories of users are
-stored on this machine. Changing this value does not cause any direct action,
-it is only information for YaST Users module, which can manage user home
-directories.</p>");
+    _("<p><b>File Server</b> indicates that home directories of users are
+stored on this machine. Changing this value does not cause any direct action.
+It is only information for the YaST Users module, which can manage user home
+directories.</p>
+");
 
 
 
@@ -304,7 +312,7 @@ directories.</p>");
         `VSpacing(2),
 	`PushButton (`id(`configure),
 	    // pushbutton label
-	    _("Configure settings stored on &server..."))
+	    _("Configure Settings Stored on &Server..."))
 	),
 	`HSpacing (5));
 
@@ -335,7 +343,7 @@ directories.</p>");
 	    if (result == `configure && base_config_dn == "")
 	    {
 		// error popup label
-                Report::Error(_("Enter the Configuration Base DN"));
+                Report::Error(_("Enter the configuration base DN"));
 		UI::SetFocus (`id (`base_config_dn));
 		continue;
 	    }
@@ -375,8 +383,9 @@ global define symbol LDAPReadDialog () ``{
 	if (!Ldap::binded || (Ldap::modified && !Ldap::ldap_modified) ||
 	    (Ldap::ldap_modified && Popup::AnyQuestion( Popup::NoHeadline(),
 // yes/no popup
-_("Re-read settings from server?
-All changes will be lost."), Label::YesButton(), Label::NoButton(), `focus_no))
+_("Reread settings from server?
+All changes will be lost.
+"), Label::YesButton(), Label::NoButton(), `focus_no))
 	)
 	{
 	    Ldap::ReadConfigModules ();
@@ -455,23 +464,26 @@ global define symbol ModuleConfigurationDialog () ``{
     }
 
     // helptext 1/4
-    string help_text = _("<p>Here you can manage the configuration stored in LDAP directory.</p>") +
+    string help_text = _("<p>Here, manage the configuration stored in LDAP directory.</p>") +
 
     // helptext 2/4
-    _("<p>Each configuration set is called <b>configuration module</b>. If there
+    _("<p>Each configuration set is called a <b>configuration module</b>. If there
 is no configuration module in the provided location (Base Configuration),
-you can create new one with <b>New</b> button. You can delete current module
-using <b>Delete</b> button.</p>") +
+create one with <b>New</b>. Delete the current module
+using <b>Delete</b>.</p>
+") +
 
     // helptext 3/4
-    _("<p>Edit the values of attributes in table with <b>Edit</b> button.
-Some values have special meaning - e.g. changing the <b>cn</b> value renames the
-current module.</p>") +
+    _("<p>Edit the values of attributes in the table with <b>Edit</b>.
+Some values have special meanings, for example, changing the <b>cn</b> value renames the
+current module.</p>
+") +
 
     // helptext 4/4
-    _("<p>If you want to configure the default template of current module,
-click the <b>Configure Template</b> button to go to Template Configuration
-Dialog.</p>");
+    _("<p>To configure the default template of the current module,
+click <b>Configure Template</b>.
+</p>
+");
 
     string current_dn		= Ldap::current_module_dn;
     map  modules_attrs_items	= $[]; // map of list (table items), index is cn
@@ -547,7 +559,7 @@ Dialog.</p>");
 	if (result == `delete)
 	{
 	    // yes/no popup, %1 is name
-	    if (!Popup::YesNo (sformat (_("Are you sure to delete module \"%1\"?"), current_cn)))
+	    if (!Popup::YesNo (sformat (_("Really delete module \"%1\"?"), current_cn)))
 		continue;
 	    modules_attrs_items = remove (modules_attrs_items, current_cn);
 	    if (modules [current_dn, "modified"]:"" != "added")
@@ -714,17 +726,20 @@ of each type, so you cannot add a new one."));
 global define map TemplateConfigurationDialog (map templ) ``{
 
     // help text 1/3
-    string help_text = _("<p>Here you can configure the template used for
-creating new objects (like users or groups).</p>") +
+    string help_text = _("<p>Here, configure the template used for
+creating new objects (like users or groups).</p>
+") +
 
     // help text 2/3
-    _("<p>Edit the template attribute values in with <b>Edit</b> button.
-Changing the <b>cn</b> value renames the template.</p>") +
+    _("<p>Edit the template attribute values with <b>Edit</b>.
+Changing the <b>cn</b> value renames the template.</p>
+") +
 
     // help text 3/3
-    _("<p>In the second table there is a list of <b>default values</b>, used
-for new objects. You can modify the list by adding new values and editing or
-removing current ones.</p>");
+    _("<p>The second table contains a list of <b>default values</b>, used
+for new objects. Modify the list by adding new values and editing or
+removing current ones.</p>
+");
 
     string template_dn = Ldap::current_template_dn;
 
@@ -876,7 +891,7 @@ removing current ones.</p>");
 	    if (attr == nil)
 		continue;
 	    // yes/no popup, %1 is name
-	    if (!Popup::YesNo (sformat (_("Are you sure to delete default attribute \"%1\"?"), attr)))
+	    if (!Popup::YesNo (sformat (_("Really delete default attribute \"%1\"?"), attr)))
 		continue;
 	    default_values = remove (default_values, attr);
 	    default_items = filter (`it, default_items, ``(

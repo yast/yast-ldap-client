@@ -42,13 +42,13 @@ global define list EditAttribute (string attr, list value, list conflicts, boole
 	{
 	    ret = add (ret, `TextEntry (`id (0),
 		// textentry label
-		sformat(_("&Value of \"%1\" attribute"), attr), value[0]:""));
+		sformat(_("&Value of \"%1\" Attribute"), attr), value[0]:""));
 	}
 	else
 	{
 	    ret = add (ret, `TextEntry (`id (0),
 		// textentry label
-		sformat(_("&Values of \"%1\" attribute"), attr), value[0]:""));
+		sformat(_("&Values of \"%1\" Attribute"), attr), value[0]:""));
 	    integer i = 1;
 	    while (i < value_size)
 	    {
@@ -61,18 +61,25 @@ global define list EditAttribute (string attr, list value, list conflicts, boole
 	return ret;
     }
     // help text 1/3
-    string help_text = _("<p>Set the new value for current attribute.</p>") +
+    string help_text = _("<p>Set the new value for the current attribute.</p>") +
 
     // help text 2/3
     _("<p>If the attribute can have more values, you can add new entries
-with the <b>Add Value</b> button. Sometimes the button contains the list of
-possible values you can use for currently edited attribute.</p>");
+with <b>Add Value</b>. Sometimes the button contains the list of
+possible values to use for the current attribute.</p>
+");
 
     string desc = Ldap::AttributeDescription (attr);
 
     if (desc != "")
-	// help text 3/3, %1 is attribute name, %2 description (not translated)
-	help_text = help_text + sformat (_("<p>The description of attribute \"%1\"<br>(available only in english):</p>"), attr) +
+	// help text 3/3, %1 is attribute name, description follows.
+	// The description will be not translated: maybe add a note
+	// "available only in english" to the sentence for other languages?
+	// Exaple:
+	// "<p>The description of attribute \"%1\"<br>(available only in english):</p>"
+	// or:
+	// "<p>The description (only in english) of attribute \"%1\":<br></p>"
+	help_text = help_text + sformat (_("<p>The description of attribute \"%1\":<br></p>"), attr) +
 
 	sformat ("<p><i>%1</i></p>", desc);
 
@@ -88,7 +95,7 @@ possible values you can use for currently edited attribute.</p>");
     if (size (offer) > 0)
     {
 	// menubutton item
-	list mb = [ `item(`id(`new), _("&Empty entry")) ];
+	list mb = [ `item(`id(`new), _("&Empty Entry")) ];
 	foreach (`item, offer, ``{
 	    mb = add (mb, `item(`id(item), item));
 	});
@@ -174,8 +181,9 @@ Please select another one."), v));
 	    if (new_value == [] && attr == "cn")//TODO how to get from schema?
 	    {
 		//error popup
-		Popup::Error (_("The \"cn\" attribute is mandatory, please enter
-non-empty value."));
+		Popup::Error (_("The \"cn\" attribute is mandatory. Enter
+a value.
+"));
 		continue;
 	    }
 	    break;
@@ -249,7 +257,8 @@ global define map NewModule (list available, list conflicts) ``{
 	    {
 		//error popup
 		Popup::Error (_("The entered value already exists.
-Please select another one."));
+Select another one.
+"));
 		continue;
 	    }
 	    if (new_value == "")
@@ -275,20 +284,23 @@ Please select another one."));
 global define map AddDefaultValue (list available, list conflicts) ``{
 
     // help text 1/3
-    string help_text = _("<p>Here you can set the values of attributes belonging
-to object which uses current template. Such value will be used as default when
-the new object is created.</p>") +
+    string help_text = _("<p>Here, set the values of attributes belonging
+to an object using the current template. Such values will be used as defaults when
+the new object is created.</p>
+") +
 
     // help text 2/3 do not translate "defaultObjectClass"
-    _("<p>The list of attributes provided in <b>Attribute Name</b> entry is the
-list of allowed attributes for objects described in \"defaultObjectClass\"
-entry of current template.</p>") +
+    _("<p>The list of attributes provided in <b>Attribute Name</b> is the
+list of allowed attributes for objects described in the \"defaultObjectClass\"
+entry of the current template.</p>
+") +
 
     // help text 3/3 do not translate "homeDirectory"
     _("<p>You can use special syntax to create attribute
 values from existing ones. The expression <i>%attr_name</i> will be replaced
-by the value of attribute \"attr_name\" (for example, you can use \"/home/%uid\"
-as a value of \"homeDirectory\" attribute).</p>");
+with the value of attribute \"attr_name\" (for example, use \"/home/%uid\"
+as a value of \"homeDirectory\").</p>
+");
 
     available = filter (`attr, available, ``( !contains (conflicts, attr)));
 

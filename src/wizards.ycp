@@ -47,7 +47,7 @@ global define symbol LdapSequence() ``{
     ];
 
     // label
-    string caption = _("Ldap Client Configuration");
+    string caption = _("LDAP Client Configuration");
     // label
     term contents = `Label(_("Initializing ..."));
 
@@ -68,7 +68,7 @@ global define symbol LdapSequence() ``{
  */
 global define symbol LdapAutoSequence() ``{
 
-    string caption = _("Ldap Client Configuration");
+    string caption = _("LDAP Client Configuration");
     term contents = `Label(_("Initializing ..."));
 
     Wizard::CreateDialog();

@@ -334,7 +334,7 @@
     global define symbol Write (block abort) ``{
 
 	// progress caption
-	string caption = _("Writing LDAP configuration...");
+	string caption = _("Writing LDAP Configuration...");
 	integer no_of_steps = 4;
 
 	Progress::New (caption, " ", no_of_steps, [
@@ -513,17 +513,17 @@ Server could be down or unreachable."),
 Value of DN is missing or invalid."),
 
 	// error message:
-	"at_not_found": _("
-Attribute Type not found."),
+	"at_not_found": _("\nAttribute type not found.
+"),
 
 	// error message:
-	"oc_not_found": _("
-Object Class not found."),
+	"oc_not_found": _("\nObject class not found.
+"),
 	];
 
         map error_type = $[
 	    // error message, more specific description follows
-	    "init": _("Connection to LDAP server can not be established."),
+	    "init": _("Connection to LDAP server cannot be established."),
 	    // error message, more specific description follows
 	    "bind": _("Problem with connecting to the LDAP server."),
 	    // error message, more specific description follows
@@ -922,9 +922,10 @@ Object Class not found."),
 	if (object == $[])
 	{
 	    // error message, %1 is DN
-	    Popup::Error (sformat (_("In LDAP directory there does not exist direct parent for DN
-'%1'.
-The object with selected DN cannot be created."), dn));
+	    Popup::Error (sformat (_("A direct parent for DN '%1' 
+does not exist in the LDAP directory.
+The object with the selected DN cannot be created.
+"), dn));
 	    return false;
 	}
 	return true;
@@ -945,7 +946,8 @@ The object with selected DN cannot be created."), dn));
 	{
 	    // yes/no popup, %1 is value of DN
 	    if (Popup::YesNo (sformat (_("No entry with DN '%1'
-exists at LDAP server. Create it now?"), dn)))
+exists on the LDAP server. Create it now?
+"), dn)))
 	    {
 		if (!ParentExists (dn))
 		    return false;
@@ -1123,8 +1125,9 @@ exists at LDAP server. Create it now?"), dn)))
 	else
 	{
 	    // error message
-	    Popup::Error (_("Object with selected DN exists, but it is not Template Object!
-Please select another one."));
+	    Popup::Error (_("Object with selected DN exists, but it is not a template object.
+Select another one.
+"));
 	    return nil;
 	}
     }
