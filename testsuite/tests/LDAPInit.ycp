@@ -1,0 +1,51 @@
+/**
+ *  LDAPInit.ycp
+ *  Test of Ldap:LDAPInit, LDAPError, GetFirstServer, GetFirstPort functions
+ *  Jiri Suchomel <jsuchome@suse.cz>
+ *  $Id$
+ */
+
+{
+
+    include "testsuite.ycp";
+    import "Ldap";
+
+    map READ =	$[ "ldap": $[
+	"error": $[
+	    "msg": "Initialization failed",
+	    "code": 11
+	]
+    ]];
+    map EX =	$[ "ldap": true  ];
+    map EX_F =	$[ "ldap": false ];
+
+    DUMP ("==== init (one server, no port set) ==============");
+
+    Ldap::server = "localhost";
+
+    DUMP (sformat ("==== value of server: \"%1\"", Ldap::server));
+
+    TEST(``(Ldap::LDAPInit ()), [ [], [], EX ], 0);
+
+    DUMP ("==== init (one server, nonsence port set) ========");
+
+    Ldap::server = "localhost:sdgfd#$";
+
+    DUMP (sformat ("==== value of server: \"%1\"", Ldap::server));
+
+    TEST(``(Ldap::LDAPInit ()), [ [], [], EX ], 0);
+
+    DUMP ("==== init (more servers set) =====================");
+
+    Ldap::server = "chimera.suse.cz:333 localhost";
+    Ldap::ldap_v2 = true;
+
+    DUMP (sformat ("==== value of server: \"%1\"", Ldap::server));
+
+    TEST(``(Ldap::LDAPInit ()), [ [], [], EX ], 0);
+
+    DUMP ("==== init failed =================================");
+
+    TEST(``(Ldap::LDAPInit ()), [ READ, [], EX_F ], 0);
+
+}

@@ -1,0 +1,88 @@
+/**
+ *  SingleValued.ycp
+ *  Test of Ldap::SingleValued function
+ *  Jiri Suchomel <jsuchome@suse.cz>
+ *  $Id$
+ */
+
+{
+
+    include "testsuite.ycp";
+    import "Ldap";
+
+    DUMP ("==================================================");
+    DUMP ("===== single attribute ===========================");
+    map READ1 =	$[ "ldap": $[
+	"schema": $[
+	    "at": $[
+		"desc": "uid desc",
+		"single": true
+	    ]
+	]
+    ]];
+
+    TEST(``(Ldap::SingleValued ("uid")), [ READ1, [], [] ], 0);
+
+    DUMP ("==================================================");
+    DUMP ("===== non-existent attribute =====================");
+
+    map READ2 =	$[ "ldap": $[
+	"schema": $[
+	    "at": nil
+	]
+    ]];
+
+    TEST(``(Ldap::SingleValued ("skelDi")), [ READ2, [], [] ], 0);
+
+    DUMP ("==================================================");
+    DUMP ("===== non-single attribute =======================");
+
+    map READ3 =	$[ "ldap": $[
+	"schema": $[
+	    "at": $[
+		"desc": "skelDir desc",
+	    ]
+	]
+    ]];
+    TEST(``(Ldap::SingleValued ("skelDir")), [ READ3, [], [] ], 0);
+
+    DUMP ("==================================================");
+    DUMP ("===== skelDir once again (already in cache) ======");
+
+    TEST(``(Ldap::SingleValued ("skelDir")), [ READ3, [], [] ], 0);
+
+    DUMP ("==================================================");
+    DUMP ("===== cn (always single) =========================");
+
+    map READ4 =	$[ "ldap": $[
+	"schema": $[
+	    "at": $[
+		"desc": "cn attribute description",
+		"oid": "1.2.3.4.5",
+		"single": false
+	    ]
+	]
+    ]];
+
+    TEST(``(Ldap::SingleValued ("cn")), [ READ4, [], [] ], 0);
+
+    DUMP ("==================================================");
+    DUMP ("===== description of new attribute ===============");
+
+    map READ5 =	$[ "ldap": $[
+	"schema": $[
+	    "at": $[
+		"desc": "The DN of a template that should be used by default",
+		"single": false
+	    ]
+	]
+    ]];
+
+    TEST(``(Ldap::AttributeDescription ("defaultTemplate")), [ READ5, [], [] ], 0);
+    DUMP ("==================================================");
+    DUMP ("===== description of used attribute (in cache) ===");
+
+    TEST(``(Ldap::AttributeDescription ("cn")), [ READ5, [], [] ], 0);
+
+
+}

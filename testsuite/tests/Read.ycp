@@ -1,0 +1,57 @@
+/**
+ *  Read.ycp
+ *  Test of Ldap:Read function
+ *  Jiri Suchomel <jsuchome@suse.cz>
+ *  $Id$
+ */
+
+{
+
+    include "testsuite.ycp";
+    import "Ldap";
+
+    map READ = $[
+	"etc": $[
+	    "nsswitch_conf" : $[
+		"passwd" : "compat ldap",
+		"group"  : "compat ldap"
+	    ],
+	    "ldap_conf" : $[
+		"host" : "localhost",
+		"base" : "dc=suse,dc=cz",
+		"nss_base_passwd" : nil,
+		"nss_base_shadow" : nil,
+		"nss_base_group" : nil,
+		"ldap_version": nil,
+		"ssl": nil,
+		"pam_password": "crypt",
+	    ],
+	],
+	"sysconfig": $[
+	    "ldap": $[
+		"BASE_CONFIG_DN": nil,
+		"BIND_DN": "uid=manager,dc=suse,dc=cz",
+	    ]
+	]
+    ];
+
+    map EX = $[
+	"target": $[
+	    "bash": 0,
+	]
+    ];
+
+    DUMP ("==== reading... ============================");
+
+    TEST(``(Ldap::Read ()), [ READ, [], EX ], 0);
+
+    DUMP ("============================================");
+
+    DUMP ( sformat ("ldap used: -%1-", Ldap::start) );
+
+    DUMP ( sformat ("nsswitch: -%1-", Ldap::nsswitch) );
+
+    DUMP ( sformat ("base config DN: -%1-", Ldap::base_config_dn) );
+
+    DUMP ( sformat ("bind DN: -%1-", Ldap::bind_dn) );
+}

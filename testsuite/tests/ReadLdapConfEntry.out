@@ -1,0 +1,6 @@
+Read	.etc.ldap_conf."host" nil
+Return	localhost
+Read	.etc.ldap_conf."base" "dc=suse,dc=cz"
+Return	dc=suse,dc=cz
+Read	.etc.ldap_conf."nss_base_passwd" nil
+Return	

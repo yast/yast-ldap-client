@@ -1,6 +1,6 @@
 @HEADER-COMMENT@
 
-# neededforbuild  yast2-devel-packages
+# neededforbuild  yast2-devel-packages yast2-pam yast2-packager
 
 @HEADER@
 PreReq:         %fillup_prereq

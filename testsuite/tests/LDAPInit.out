@@ -1,0 +1,16 @@
+Dump	==== init (one server, no port set) ==============
+Dump	==== value of server: "localhost"
+Execute	.ldap $["hostname":"localhost", "port":389, "version":3] true
+Return	
+Dump	==== init (one server, nonsence port set) ========
+Dump	==== value of server: "localhost:sdgfd#$"
+Execute	.ldap $["hostname":"localhost", "port":0, "version":3] true
+Return	
+Dump	==== init (more servers set) =====================
+Dump	==== value of server: "chimera.suse.cz:333 localhost"
+Execute	.ldap $["hostname":"chimera.suse.cz", "port":333, "version":2] true
+Return	
+Dump	==== init failed =================================
+Execute	.ldap $["hostname":"chimera.suse.cz", "port":333, "version":2] false
+Read	.ldap.error $["code":11, "msg":"Initialization failed"]
+Return	Initialization failed

@@ -1,0 +1,38 @@
+/**
+ *  LDAPBind.ycp
+ *  Test of Ldap:LDAPBind function
+ *  Jiri Suchomel <jsuchome@suse.cz>
+ *  $Id$
+ */
+
+{
+
+    include "testsuite.ycp";
+    import "Ldap";
+
+    map READ =	$[ "ldap": $[
+	"error": $[
+	    "msg": "Bind failed",
+	]
+    ]];
+    map EX =	$[ "ldap": true  ];
+    map EX_F =	$[ "ldap": false ];
+
+    DUMP ("==== bind anonymously ==============================");
+
+    Ldap::anonymous = true;
+
+    TEST(``(Ldap::LDAPBind ("pw")), [ [], [], EX ], 0);
+
+    Ldap::anonymous = false;
+    Ldap::bind_dn = "uid=manager,dc=suse,dc=cz";
+
+    DUMP ("==== bind failed ====================================");
+
+    TEST(``(Ldap::LDAPBind ("p")), [ READ, [], EX_F ], 0);
+
+    DUMP ("==== bind ok ========================================");
+
+    TEST(``(Ldap::LDAPBind ("pw")), [ [], [], EX ], 0);
+
+}

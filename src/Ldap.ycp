@@ -26,6 +26,11 @@
     include "ldap/routines.ycp";
 
     /**
+     * Required packages for this module to operate
+     */
+    global list required_packages = ["pam_ldap","nss_ldap"];
+
+    /**
      * Write only, used during autoinstallation.
      * Don't run services and SuSEconfig, it's all done at one place.
      */
@@ -316,7 +321,7 @@
 	ldap_tls = (ReadLdapConfEntry ("ssl", "no") == "start_tls");
 
         nss_base_passwd = ReadLdapConfEntry ("nss_base_passwd", "");
-        nss_base_shadow = ReadLdapConfEntry ("nss_base_passwd", "");
+        nss_base_shadow = ReadLdapConfEntry ("nss_base_shadow",nss_base_passwd);
         nss_base_group = ReadLdapConfEntry ("nss_base_group", "");
 
 	pam_password = ReadLdapConfEntry ("pam_password", "crypt");
@@ -328,6 +333,8 @@
 
 	// read sysconfig values
 	base_config_dn = SCR::Read (.sysconfig.ldap.BASE_CONFIG_DN);
+	if (base_config_dn == nil)
+	    base_config_dn = "";
 
 	file_server = (SCR::Read (.sysconfig.ldap.FILE_SERVER) == "yes");
 
