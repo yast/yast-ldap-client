@@ -535,7 +535,7 @@ removing current ones.</p>
     // dialog label
     Wizard::SetContentsButtons(_("Object Template Configuration"),
             contents, help_text, Label::BackButton(), Label::OKButton());
-    Wizard::ReplaceAbortButton (`Empty());
+    Wizard::HideAbortButton();
 
     if (size (table_items) > 0)
     {
