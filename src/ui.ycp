@@ -336,22 +336,22 @@ The default value for <b>Group Member Attribute</b> is <i>%1</i>.</p>"),
     // help text caption 2
      _("<p><b>Access to Server</b></p>") +
 
-    // help text 1/3
+    // help text 1/4
     _("<p>First, set <b>Configuration Base DN</b>.
 It is the base for storing your configuration data, which is saved on the LDAP
 server.</p>
 ") +
 
-    // help text 2/3
+    // help text 2/4
     _("<p>To access the data stored on the server, enter the
 <b>Administrator DN</b> (e.g., cn=Administrator,dc=mydomain,dc=com).</p>
 ") +
 
-    // help text 2.5/3
+    // help text 3/4
     _("<p>To create the default configuration objects for LDAP users and groups,
-check <b>Create Default Configuration Objects</b>.</p>") +
+check <b>Create Default Configuration Objects</b>. The objects will be created only when they don't exist yet.</p>") +
 
-    // help text 3/3
+    // help text 4/4
     _("<p>Press <b>Configure</b> to configure settings stored on the
 LDAP server. You will be asked for the password if you are not connected yet or
 have changed your configuration.</p>
