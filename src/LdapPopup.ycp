@@ -97,7 +97,7 @@ possible values to use for the current attribute.</p>
     {
 	// menubutton item (default value)
 	list mb = [ `item(`id(`new), _("&Empty Entry")) ];
-	foreach (string it, offer, ``{
+	foreach (string it, (list<string>) offer, ``{
 	    mb = add (mb, `item(`id(it), it));
 	});
 	// button label
@@ -143,7 +143,7 @@ possible values to use for the current attribute.</p>
 	    value = [];
 	    while (j < value_size)
 	    {
-		value = add (value, UI::QueryWidget (`id(j), `Value) );
+		value = add (value, (string) UI::QueryWidget (`id(j), `Value) );
 		j = j + 1;
 	    }
 	    if (contains (offer, result) && value[value_size-1]:"" == "")
@@ -210,7 +210,7 @@ global define map NewModule (list available, list conflicts) ``{
     ];
     // label
     term r_buttons = `VBox( `Left(`Label (_("Object Class of New Module"))));
-    foreach (string class, available, ``{
+    foreach (string class, (list<string>) available, ``{
 	string desc = class;
 	if (descriptions [class]:"" != "")
 	    desc = sformat ("%1 (%2)", class, descriptions [class]:"");
@@ -295,7 +295,7 @@ with the value of attribute \"attr_name\" (for example, use \"/home/%uid\"
 as a value of \"homeDirectory\").</p>
 ");
 
-    available = filter (string attr, available, ``(!contains (conflicts,attr)));
+    available = filter (string attr, (list<string>) available, ``(!contains (conflicts,attr)));
 
     UI::OpenDialog( `opt(`decorated), `HBox(
 	`HSpacing(1),

@@ -768,7 +768,7 @@ Value of DN is missing or invalid."),
     global define list GetObjectAttributes (list classes) ``{
 
 	list ret = [];
-	foreach (string class, classes, ``{
+	foreach (string class, (list<string>) classes, ``{
 	    ret = union (ret, GetAllAttributes (class));
 	});
 	return ret;
@@ -783,7 +783,7 @@ Value of DN is missing or invalid."),
     global define map AddMissingAttributes (map object) ``{
 
 	foreach (string class, object["objectClass"]:[], ``{
-	    foreach (string attr, GetAllAttributes (class), ``{
+	    foreach (string attr, (list<string>) GetAllAttributes (class), ``{
 		if (!haskey (object, attr))
 		    object = add (object, attr, []);
 	    });
@@ -850,7 +850,7 @@ Value of DN is missing or invalid."),
 	    return LDAPError();
 	}
 	// create a helper map of default values inside ...
-	templates = mapmap (string dn, map templ, all, ``{
+	templates = mapmap (string dn, map templ, (map<string, map<string,any> >)all, ``{
 	    map template = ConvertDefaultValues (templ);
 	    template = AddMissingAttributes (template);
 	    return $[dn : template];
@@ -878,7 +878,7 @@ Value of DN is missing or invalid."),
 	{
 	    return LDAPError ();
 	}
-	config_modules = mapmap (string dn, map mod, modules, ``{
+	config_modules = mapmap (string dn, map mod, (map<string, map<string,any> >) modules, ``{
 	    return $[dn : AddMissingAttributes (mod)];
 	});
 	return "";
@@ -998,7 +998,7 @@ The object with the selected DN cannot be created.
 	string default_base = "";
 	if (class == "userConfiguration")
 	{
-	    foreach (string dn, map t, templates, ``{
+	    foreach (string dn, map t, (map<string,map<string,any> >)templates, ``{
 		if (contains (t["objectClass"]:[], "userTemplate"))
 		    templs = add (templs, dn);
 	    });
@@ -1008,7 +1008,7 @@ The object with the selected DN cannot be created.
 	}
 	if (class == "groupConfiguration")
 	{
-	    foreach (string dn, map t, templates, ``{
+	    foreach (string dn, map t, (map<string,map<string,any> >)templates, ``{
 		if (contains (t["objectClass"]:[], "groupTemplate"))
 		    templs = add (templs, dn);
 	    });
@@ -1114,7 +1114,7 @@ Select another one.
      */
     global define boolean CommitConfigModules (map modules) ``{
 
-	foreach (string dn, map modmap, modules, ``{
+	foreach (string dn, map modmap, (map<string,map<string,any> >)modules, ``{
 
 	    if (!haskey (config_modules, dn))
 	    {
@@ -1123,7 +1123,7 @@ Select another one.
 		return;
 	    }
 	    // 'val' can be list (most time), map (default_values), string
-	    foreach (string attr, any val, modmap, ``{
+	    foreach (string attr, any val, (map<string,any>) modmap, ``{
 		if (config_modules [dn, attr]:[] != val)
 		{
 		    config_modules [dn, attr] = val;
@@ -1142,7 +1142,7 @@ Select another one.
      */
     global define boolean CommitTemplates (map templs) ``{
 
-	foreach (string dn, map template, templs, ``{
+	foreach (string dn, map template, (map<string,map<string,any> >)templs, ``{
 
 	    if (!haskey (templates, dn))
 	    {
@@ -1152,7 +1152,7 @@ Select another one.
 		return;
 	    }
 	    // 'val' can be list (most time), map (default_values), string
-	    foreach (string attr, any val, template, ``{
+	    foreach (string attr, any val, (map<string,any>) template, ``{
 		if (templates [dn, attr]:nil != val)
 		{
 		    templates [dn, attr] = val;
@@ -1176,7 +1176,7 @@ Select another one.
     global define map WriteToLDAP (map objects) ``{
 
 	map ret = $[];
-	foreach (string dn, map object, objects, ``{
+	foreach (string dn, map object, (map<string,map<string,any> >)objects, ``{
 
 	    if (ret != $[])
 		return;
@@ -1188,7 +1188,7 @@ Select another one.
 	    if (haskey (object, "default_values"))
 	    {
 		object["defaultValue"] = maplist (string key, string val,
-		    object["default_values"]:$[], ``{
+		    (map<string,string>) object["default_values"]:$[], ``{
 		    return sformat ("%1=%2", key, val);
 		});
 		object = remove (object, "default_values");
@@ -1371,7 +1371,7 @@ Select another one.
 	    // save the user and group bases (check the LDAP config before)
 	    user_base = domain;
 	    group_base = domain;
-	    foreach (string dn, map mod, config_modules, ``{
+	    foreach (string dn, map mod, (map<string,map<string,any> >)config_modules, ``{
 		if (contains (mod["objectClass"]:[], "userConfiguration"))
 		    user_base = mod["defaultBase",0]:domain;
 		if (contains (mod["objectClass"]:[], "groupConfiguration"))
@@ -1393,8 +1393,8 @@ Select another one.
 	    });
 
 	    // modify sources in /etc/nsswitch.conf
-	    foreach (string entry, list value, nsswitch, ``{
-		new_nsswitch [entry] = mergestring ( (list<string>)value, " " );
+	    foreach (string entry, list<string> value, (map<string,list<string> >)nsswitch, ``{
+		new_nsswitch [entry] = mergestring ( value, " " );
 		if (!contains (value, "ldap"))
 		    new_nsswitch [entry] = new_nsswitch [entry]:"" + " ldap";
 	    });
@@ -1415,7 +1415,7 @@ Select another one.
 		WriteOpenLdapConf();
 	    }
 
-	    foreach (string entry, list value, nsswitch, ``{
+	    foreach (string entry, list<string> value, (map<string,list<string> >) nsswitch, ``{
 		new_nsswitch [entry] = mergestring (
 		    (list<string>)filter (string v, value, ``(v != "ldap")), " ");
 		// just to make sure that something remains...
