@@ -22,6 +22,7 @@
     import "Package";
     import "Popup";
     import "Report";
+    import "Stage";
     import "Wizard";
 
     include "ldap/routines.ycp";
@@ -38,7 +39,7 @@
     define symbol ReallyAbort () ``{
 
 	boolean ret = true;
-	if (!Mode::cont)
+	if (!Stage::cont ())
 	{
 	    ret = Popup::ReallyAbort (Modified());;
 	}
@@ -139,7 +140,7 @@ automatically.</p>
 
 
 	// during installation, starting ldap is default
-	boolean start		= Mode::cont || Ldap::start;
+	boolean start		= Stage::cont () || Ldap::start;
 	string domain		= Ldap::GetDomain ();
 	string server		= Ldap::server;
 	boolean ldap_tls	= Ldap::ldap_tls;
@@ -199,10 +200,10 @@ automatically.</p>
 	    // dialog title
 	    _("LDAP Client Configuration"), con, help_text,
 	    Label::BackButton(),
-	    Mode::cont ? Label::NextButton(): Label::FinishButton());
+	    Stage::cont () ? Label::NextButton(): Label::FinishButton());
 
 	// during installation, only enabling makes sence
-	if (Mode::cont)
+	if (Stage::cont ())
 	{
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
 	}
@@ -445,7 +446,7 @@ have changed your configuration.</p>
     symbol result = `notnext;
 
     // in autoyast-config mode, don't attach to server...
-    if (Mode::config)
+    if (Mode::config ())
 	UI::ChangeWidget (`id(`configure), `Enabled, false);
 
     if (!Ldap::start)
@@ -547,7 +548,7 @@ define symbol LDAPReadDialog () ``{
 	    if (!Ldap::bound || Ldap::old_server != Ldap::server)
 	    {
 		// Ldap::bind_pass might exist from server proposal...
-		if (Mode::cont && Ldap::bind_pass != nil)
+		if (Stage::cont () && Ldap::bind_pass != nil)
 		{
 		    msg = Ldap::LDAPBind (Ldap::bind_pass);
 		    if (msg != "")

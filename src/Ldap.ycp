@@ -24,6 +24,7 @@
     import "Progress";
     import "Report";
     import "Service";
+    import "Stage";
     import "Summary";
 
     /**
@@ -570,7 +571,7 @@
 	// some better values:
 	// (FIXME this should be done after Read, (R.is called also in other
 	// situations)
-	if (Mode::cont)
+	if (Stage::cont ())
 	{
 	    if (size (initial_defaults) > 0)
 	    {
@@ -1769,7 +1770,7 @@ Select another one.
 	    ypbind_running = (Service::Status ("ypbind") == 0);
 	    Service::RunInitScript ("ypbind", "stop");
 	}
-	else if (write_only && Mode::autoinst )
+	else if (write_only && Mode::autoinst () )
 	{
 	    // Read existing nsswitch in autoinstallation mode
 	    foreach (string db,
@@ -1976,7 +1977,7 @@ Select another one.
 
 	// now clear the initial default values, so next time Read will read
 	// real values
-	if (Mode::cont && size (initial_defaults) > 0)
+	if (Stage::cont () && size (initial_defaults) > 0)
 	{
 	    if (start && ldap_ok &&
 		domain == initial_defaults["ldap_domain"]:"" &&
