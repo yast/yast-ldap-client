@@ -189,7 +189,10 @@ automatically.</p>
 
 
 	// during installation, starting ldap is default
-	boolean start		= Stage::cont () || Ldap::start;
+	boolean start		= Ldap::start;
+	if (Stage::cont () && !contains (WFM::Args (), "from_users"))
+	    start		= true;
+
 	string domain		= Ldap::GetDomain ();
 	string server		= Ldap::server;
 	boolean ldap_tls	= Ldap::ldap_tls;

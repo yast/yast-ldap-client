@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Mar  3 11:13:11 CET 2005 - jsuchome@suse.cz
+
+- do not default to 'always start' when called from users 
+- initialize /etc/passwd when writing during autoinstallation (#65858)
+- 2.11.10
+
+-------------------------------------------------------------------
 Fri Feb 18 14:41:03 CET 2005 - jsuchome@suse.cz
 
 - enable setting of autofs in autoyast

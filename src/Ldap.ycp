@@ -257,6 +257,9 @@
      */
     global boolean restart_sshd		= false;
 
+    // if /etc/passwd was read
+    boolean passwd_read			= false;
+
     // packages to install for specific arhitectures (#49808)
     global map arch_packages	= $[
 	"pam_ldap"	: $[
@@ -596,6 +599,7 @@
 	}
 	else
 	{
+	    passwd_read		= true;
 	    plus_lines_passwd	=
 		(list<string>) SCR::Read (.passwd.passwd.pluslines);
 	    foreach (string plus_line, plus_lines_passwd, ``{
@@ -1615,6 +1619,21 @@ Select another one.
 	string what	= "+::::::";
 	if (!login)
 	    what	= "+::::::/sbin/nologin";
+
+	if (!passwd_read)
+	{
+	    if (!(boolean)SCR::Execute(.passwd.init,$["base_directory":"/etc"]))
+	    {
+		y2error ("error: %1", SCR::Read (.passwd.error));
+		return false;
+	    }
+	    else
+	    {
+		passwd_read		= true;
+		plus_lines_passwd	=
+		    (list<string>) SCR::Read (.passwd.passwd.pluslines);
+	    }
+	}
 
 	list<string> plus_lines	= plus_lines_passwd;
 
