@@ -20,8 +20,10 @@
     }
     y2debug ("param=%1", param);
 
-    if (param != "late_dialog")
+    if (param != "late_dialog") {
 	Wizard::CreateDialog();
+        Wizard::SetDesktopIcon("ldap");
+    }
 
     ReadDialog (); // TODO not necessary when already done...
 
@@ -29,8 +31,10 @@
     if (ret != `next)
 	return ret;
 
-    if (param == "late_dialog")
+    if (param == "late_dialog") {
 	Wizard::CreateDialog();
+        Wizard::SetDesktopIcon("ldap");
+    }
 
     ret = ModuleConfigurationDialog ();
 

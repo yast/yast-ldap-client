@@ -80,6 +80,7 @@ define symbol LdapAutoSequence() ``{
     term contents = `Label(_("Initializing ..."));
 
     Wizard::CreateDialog();
+    Wizard::SetDesktopIcon("ldap");
     Wizard::SetContentsButtons(caption, contents, "",
 	    Label::BackButton(), Label::NextButton());
 
