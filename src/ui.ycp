@@ -100,7 +100,7 @@ groups on the LDAP server, click <b>Set up User Configuration Tool</b> and compl
 				     ),
                 `VSpacing (1),
                 // PushButton label
-                `PushButton (`id(`cpu), _("&Set up User Configuration Tool"))
+                `PushButton (`id(`cpu), _("&Set up User Configuration Tool..."))
                 )
 	);
 

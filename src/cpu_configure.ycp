@@ -34,7 +34,8 @@
             return `back;
 
         include "require.ycp";
-        DoInstallAndRemove(["cpu"], []);
+        if (!DoInstallAndRemove(["cpu"], []))
+            return `back; // message?
         propose_values = true;
     }
 
