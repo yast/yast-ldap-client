@@ -9,7 +9,7 @@
 
 {
 
-textdomain "ldap";
+textdomain "ldap-client";
 
 import "Wizard";
 import "Label";
