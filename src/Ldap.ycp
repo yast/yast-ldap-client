@@ -16,6 +16,7 @@
     import "Autologin";
     import "Label";
     import "Mode";
+    import "Nsswitch";
     import "PamSettings";
     import "Popup";
     import "Progress";
@@ -479,27 +480,13 @@
     }
 
     /**
-     * Reads a database entry from nsswitch_conf and returns it as a list
-     * @param db eg. "passwd"
-     * @return   eg. ["files", "nis"]
-     */
-    define list<string> ReadNssDb (string db) ``{
-	string db_s = (string) SCR::Read (add (.etc.nsswitch_conf, db));
-	if (db_s == nil)
-	{
-	    db_s = "";
-	}
-	return filter (string s, splitstring (db_s, " \t"), ``(s != ""));
-    }
-
-    /**
      * Reads LDAP settings from the SCR
      * @return success
      */
     global define boolean Read () ``{
 
 	foreach (string db,["passwd","group","passwd_compat","group_compat"],``{
-	    nsswitch[db]	= ReadNssDb (db);
+	    nsswitch[db]	= Nsswitch::ReadDb (db);
 	});
 
 	start = contains (nsswitch["passwd"]:[], "ldap") ||
@@ -601,54 +588,6 @@
 	}
 
 	return true;
-    }
-
-    /**
-     * Writes a database entry as a list to nsswitch_conf
-     * @param db eg. "passwd"
-     * @param entries eg. ["files", "nis"]
-     * @return success?
-     */
-    define boolean WriteNssDb (string db, list<string> entries) ``{
-	// if there are no entries, delete the key using nil
-	string entry = mergestring (entries, " ");
-	return SCR::Write (add (.etc.nsswitch_conf, db),
-			   entry == ""? nil: entry);
-    }
-    /**
-     * Configures the name service switch for autofs
-     * according to chosen settings
-     * @return success?
-     */
-    global define boolean WriteNssAutofs () ``{
-	boolean ok = true;
-
-	// nsswitch automount:
-	// bracket options not allowed, order does not matter
-	list<string> automount_l = ReadNssDb ("automount");
-	boolean enabled = contains (automount_l, "ldap");
-	// enable it if it is not enabled yet and both services run
-	if (start && _start_autofs && !enabled)
-	{
-	    automount_l = add (automount_l, "ldap");
-	    ok = WriteNssDb ("automount", automount_l);
-	    ok = ok && SCR::Write (.etc.nsswitch_conf, nil);
-	}
-	// disable it if it is enabled and either service does not run
-	else if (!(start && _start_autofs) && enabled)
-	{
-	    automount_l = filter (string s, automount_l, ``(s != "ldap"));
-	    ok = WriteNssDb ("automount", automount_l);
-	    ok = ok && SCR::Write (.etc.nsswitch_conf, nil);
-	}
-
-	if (!ok)
-	{
-	    // error popup
-	    Report::Error (sformat (_("Error writing file %1."),
-				    "/etc/nsswitch.conf"));
-	}
-	return ok;
     }
 
     /* ------------- functions for work with LDAP tree contents ------------ */
@@ -960,7 +899,7 @@ Value of DN is missing or invalid."),
 	if (!haskey (object_classes, class))
 	{
 	    map object_class = (map)SCR::Read(.ldap.schema.oc, $["name":class]);
-	    if (object_class == nil)
+	    if (object_class == nil)//TODO return from function?
 		object_class = $[];
 	    object_class ["all"] = union (object_class["may"]:[],
 		object_class["must"]:[]);
@@ -1808,7 +1747,7 @@ Select another one.
 	    // Read existing nsswitch in autoinstallation mode
 	    foreach (string db,
 		["passwd","group","passwd_compat","group_compat"],``{
-		nsswitch[db]	= ReadNssDb (db);
+		nsswitch[db]	= Nsswitch::ReadDb (db);
 	    });
 	}
 
@@ -1878,11 +1817,12 @@ Select another one.
 	    foreach (string db, [ "passwd", "group" ], ``{
 		string new_db		= db+"_compat";
 		nsswitch [new_db]	= union (nsswitch[new_db]:[], ["ldap"]);
-		WriteNssDb (db, ["compat"]);
-		WriteNssDb (new_db, nsswitch[new_db]:["ldap"]);
+		Nsswitch::WriteDb (db, ["compat"]);
+		Nsswitch::WriteDb (new_db, nsswitch[new_db]:["ldap"]);
 	    });
 
 	    SCR::Write(.etc.nsswitch_conf, nil);
+	    // TODO Nsswitch::Write ()
 
 	    Autologin::Write (write_only);
 	}
@@ -1897,8 +1837,8 @@ Select another one.
 		    nsswitch [db]	= ["compat"];
 		nsswitch [new_db]	= filter (
 		    string v, nsswitch[new_db]:[], ``(v != "ldap"));
-		WriteNssDb (db, nsswitch[db]:["compat"]);
-		WriteNssDb (new_db, nsswitch[new_db]:[]);
+		Nsswitch::WriteDb (db, nsswitch[db]:["compat"]);
+		Nsswitch::WriteDb (new_db, nsswitch[new_db]:[]);
 	    });
 	    SCR::Write(.etc.nsswitch_conf, nil);
 
@@ -1931,7 +1871,7 @@ Select another one.
 
 	if (_autofs_allowed)
 	{
-	    if (WriteNssAutofs ())
+	    if (Nsswitch::WriteAutofs (start && _start_autofs, "ldap"))
 	    {
 		if (_start_autofs)
 		{

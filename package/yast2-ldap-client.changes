@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Mon Jul 12 20:40:40 CEST 2004 - jsuchome@suse.cz
+
+- used Nsswitch module for handling /etc/nsswitch.conf
+- yast2-network is not required now
+- 2.10.1
+
+-------------------------------------------------------------------
 Mon Jun 28 14:58:23 CEST 2004 - jsuchome@suse.cz
 
 - updated for current yast2-pam usage
