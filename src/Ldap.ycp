@@ -241,6 +241,11 @@
 
     global boolean ldap_initialized	= false;
 
+    /**
+     * if sshd should be restarted during write phase
+     */
+    global boolean restart_sshd		= false;
+
     //----------------------------------------------------------------
 
     /**
@@ -1170,7 +1175,7 @@ The object with the selected DN cannot be created.
     global define list GetDefaultObjectClasses (map template) {
 
 	list ocs = maplist (string c,template["objectclass"]:[],``(tolower(c)));
-	y2internal ("ocs: %1", ocs);
+
 	if (contains (ocs, "susegrouptemplate"))
 	{
 	    return ["top", "posixgroup", "groupofnames"];
@@ -1730,7 +1735,7 @@ Select another one.
      * @param abort block for abort
      * @return symbol
      */
-    global define symbol Write (block<boolean> abort) ``{
+    global define symbol Write (block<boolean> abort) {
 
 	// progress caption
 	string caption = _("Writing LDAP Configuration...");
@@ -1768,7 +1773,7 @@ Select another one.
 	if (!write_only)
 	{
 	    ypbind_running = (Service::Status ("ypbind") == 0);
-	    Service::RunInitScript ("ypbind", "stop");
+	    Service::Stop ("ypbind");
 	}
 	else if (write_only && Mode::autoinst () )
 	{
@@ -1919,31 +1924,30 @@ Select another one.
 	if (eval(abort))
 	    return `abort;
 
-	if (Service::Status ("nscd") == 0 && !write_only)
+	if (!write_only)
 	{
-	    Service::RunInitScript ("nscd", "restart");
-	}
-
-	if (ypbind_running)
-	{
-	    Service::RunInitScript ("ypbind", "restart");
-	}
-
-	if (start && !old_start && !write_only && Service::Status ("sshd") == 0)
-	{
-	    y2milestone ("restarting sshd so it will know about LDAP users...");
-	    Service::Restart ("sshd");
-	}
-
-	if (_autofs_allowed)
-	{
-	    if (!write_only)
+	    if (Service::Status ("nscd") == 0)
 	    {
-		Service::RunInitScript ("autofs", "stop");
+		Service::Restart ("nscd");
+	    }
+
+	    if (ypbind_running)
+	    {
+		Service::Restart ("ypbind");
+	    }
+
+	    if (restart_sshd)
+	    {
+		Service::Restart ("sshd");
+	    }
+
+	    if (_autofs_allowed)
+	    {
+		Service::Stop ("autofs");
 
 		if (_start_autofs)
 		{
-		    Service::RunInitScript ("autofs", "start");
+		    Service::Start ("autofs");
 		}
 	    }
 	}
@@ -2057,5 +2061,12 @@ exists on the LDAP server. Create it now?
      */
     global define void SetGUI (boolean gui) ``{
 	use_gui	= gui;
+    }
+
+    /**
+     * Set the value of restart_sshd (= restart sshd during write)
+     */
+    global define void RestartSSHD (boolean restart) {
+	restart_sshd	= restart;
     }
 }

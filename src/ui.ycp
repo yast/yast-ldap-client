@@ -22,6 +22,7 @@
     import "Package";
     import "Popup";
     import "Report";
+    import "Service";
     import "Stage";
     import "Wizard";
 
@@ -296,6 +297,14 @@ you cannot retrieve the data from NIS.  Are you sure?")))
 		    {
 			// popup text
 			Autologin::AskForDisabling(_("Now you have enabled LDAP."));
+			if (Service::Status ("sshd") == 0 && ! Mode::config())
+			{
+			    // yes/no popup
+			    Ldap::RestartSSHD (Stage::cont () || Popup::YesNo (_("To enable remote login for LDAP users,
+restart of 'sshd' service is necessary.
+Do the restart during writing?
+")));
+			}
 		    }
 		}
 		Ldap::SetDomain (domain);

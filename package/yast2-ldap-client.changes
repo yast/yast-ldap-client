@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Nov  2 10:56:16 CET 2004 - jsuchome@suse.cz
+
+- ask for restarting sshd (better fix for #45000)
+- 2.11.1
+
+-------------------------------------------------------------------
 Fri Oct 29 09:41:47 CEST 2004 - jsuchome@suse.cz
 
 - adapted for new Mode:: interface

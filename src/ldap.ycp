@@ -38,6 +38,9 @@ define boolean LdapEnableHandler( map<string,string> options ) ``{
 	["enable", "disable" ] );
     if( command == nil ) return false;
 
+    Ldap::RestartSSHD (
+	command == "enable" && !Ldap::start && Service::Status ("sshd") == 0);
+
     Ldap::start = ( command == "enable" );
     return true;
 }
