@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Aug 21 11:31:23 CEST 2001 - kukuk@suse.de
+
+- Check for necessary packages before we write new configuration
+
+-------------------------------------------------------------------
 Sat Aug 18 22:43:45 CEST 2001 - kukuk@suse.de
 
 - Initial release

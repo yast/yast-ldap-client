@@ -30,7 +30,7 @@
 
 // help text 1/3
     string help_text = UI(_("<p>Here your machine can be set up as
- <b>LDAP client</b> to authenticate your user with an OpenLDAP server. 
+ <b>LDAP client</b> to authenticate your user with an OpenLDAP server.
  Enter the name of the search base (base DN, e.g, dc=mydomain,dc=com)
  in the first entry and the IP address of the LDAP server (e.g., 10.20.0.2)
  in the second.
@@ -46,7 +46,6 @@
     help_text = help_text + UI(_("<p>If you activate LDAP, NSS and PAM
     will be configured accordingly to use LDAP for user authentification.</p>"));
 
-    // XXX Look if ldap is configured
     boolean ldap_client = (SCR (`Execute (.target.bash, "grep '^passwd:.*ldap' /etc/nsswitch.conf")) == 0);
     string ldap_domain   = ""; //SCR::Read(.etc.openldap.ldap_conf.base);
     string ldap_address  = ""; //SCR::Read(.etc.openldap.ldap_conf.host);
@@ -111,15 +110,11 @@
     } while (result != `back && result != `next && result != `cancel);
 
     if (result == `next)
-    {
-       if (CallFunction(`ldap_client_write($[ "start_ldap" : ldap_client,
-                                          "ldap_domain" : ldap_domain,
-					  "ldap_address" : ldap_address])))
-       {
-         if (ldap_client)
-           {
-              if (!RequireAndConflict (["pam_ldap","nss_ldap"], [],
-                  _("<p>To configure and access the LDAP Services, the
+      {
+        if (ldap_client)
+          {
+            if (!RequireAndConflict (["pam_ldap","nss_ldap"], [],
+		 _("<p>To configure and access the LDAP Services, the
 <b>%1</b> packages must be installed.</p>
 <p>Do you wish to install now?</p>")))
               {
@@ -127,15 +122,18 @@
 cannot be completed without this packages.");
 	         return;
               }
+	   }
 
-               UI::MessagePopup("The configuration of the LDAP client
-was saved and is ready for use.");
-           }
-         else
-           UI::MessagePopup("The configuration of the LDAP
-client was saved.");
-       }
-    }
+       if (CallFunction(`ldap_client_write($[ "start_ldap" : ldap_client,
+                                          "ldap_domain" : ldap_domain,
+					  "ldap_address" : ldap_address])))
+         {
+           if (ldap_client)
+             UI::MessagePopup("The configuration of the LDAP client was saved and is ready for use.");
+           else
+             UI::MessagePopup("The configuration of the LDAP client was saved.");
+         }
+      }
 
     return UI::CloseDialog();
 }
