@@ -31,8 +31,9 @@
 	string help_text = UI(_("<p>Here your machine can be set up as
 <b>LDAP client</b> to authenticate your user with an OpenLDAP server.
 Enter the name of the search base (base DN, e.g, dc=mydomain,dc=com)
-in the first entry and the IP address of the LDAP server (e.g., 10.20.0.2)
-in the second.
+in the first entry and the LDAP server's address (e.g., ldap.example.com
+or 10.20.0.2) in the second. Specify multiple servers by separating their
+addresses with spaces.
 To deactivate LDAP services, click the button <b>Do not use LDAP</b>.</p>"));
 
 // help text 2/5
@@ -81,7 +82,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 					    // text entry label
 					    `HSquash(`TextEntry (`id (`ldapd), _("LDAP base &DN"), domain)),
 					    // text entry label
-					    `HSquash(`TextEntry (`id (`ldapa), _("&IP address of the LDAP server"), server)
+					    `HSquash(`TextEntry (`id (`ldapa), _("&Addresses of LDAP servers"), server)
 						     ),
 					    `VSpacing (0.2),
 					    // check box label
@@ -125,10 +126,18 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 		ldap_v2 = UI::QueryWidget(`id(`ldapv), `Value);
 		ldap_tls = UI::QueryWidget(`id(`ldaps), `Value);
 
-		if (!check_ip4 (server))
+		if (domain == "")
+		{
+		   // error popup label
+                    Report::Error(_("You need to enter a LDAP base DN."));
+                    result = nil;
+                    continue;
+                }
+
+		if (server == "")
 		{
 		    // error popup label
-		    Report::Error(_("The IP address is incorrect."));
+		    Report::Error(_("You need to enter at least one address of a LDAP server."));
 		    result = nil;
 		    continue;
 		}
