@@ -21,6 +21,7 @@
     import "Popup";
     import "Mode";
     import "Require";
+    import "Autologin";
 
     import "PamSettings";
 
@@ -345,6 +346,8 @@
 	if (bind_dn == nil || bind_dn == "")
 	    bind_dn = ReadLdapConfEntry ("binddn", "");
 
+	Autologin::Read ();
+
 	return true;
     }
 
@@ -461,7 +464,7 @@
 	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
 	    SCR::Write(.etc.nsswitch_conf, nil);
 
-	    DisableAutologin();
+	    Autologin::Write (write_only);
 	}
 	else // ldap is not used
 	{
@@ -560,24 +563,6 @@
 	    y2milestone ("file /etc/openldap/ldap.conf was modified");
 	}
 	return write_openldap_conf;
-    }
-
-    /**
-     * Disable autologin feature when LDAP is started
-     */
-    global define boolean DisableAutologin () ``{
-
-	if (SCR::Read (.sysconfig.displaymanager.DISPLAYMANAGER) == "kdm" &&
-	    SCR::Read (.sysconfig.displaymanager.DISPLAYMANAGER_AUTOLOGIN)!="")
-	{
-	    SCR::Write (.sysconfig.displaymanager.DISPLAYMANAGER_AUTOLOGIN, "");
-	    SCR::Write (.sysconfig.displaymanager.DISPLAYMANAGER_PASSWORD_LESS_LOGIN, "no");
-	    SCR::Write(.sysconfig.displaymanager, nil);
-
-	    if (!write_only)
-		SCR::Execute (.target.bash, "/sbin/SuSEconfig --module kdm3");
-	}
-	return true;
     }
 
     /* ------------- functions for work with LDAP tree contents ------------ */

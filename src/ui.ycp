@@ -18,6 +18,7 @@
     import "Report";
     import "Ldap";
     import "LdapPopup";
+    import "Autologin";
 
     import "Label";
     import "Popup";
@@ -235,6 +236,9 @@ removed.</p>") +
 		Ldap::ldap_v2	= ldap_v2;
 		Ldap::ldap_tls	= ldap_tls;
 		Ldap::modified = true;
+		if (result == `next)
+		    // popup text FIXME something more descriptive...
+		    Autologin::AskForDisabling(_("Now you have enabled LDAP."));
 	    }
 	}
 	return result;

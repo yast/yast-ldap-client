@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Oct  1 14:25:11 CEST 2003 - jsuchome@suse.cz
+
+- adapted to new Autologin interface
+- 2.9.0
+
+-------------------------------------------------------------------
 Tue Sep 23 12:31:12 CEST 2003 - jsuchome@suse.cz
 
 - disable autologin when LDAP is enabled (#31470)
