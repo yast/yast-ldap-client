@@ -1005,11 +1005,12 @@ Value of DN is missing or invalid."),
      * @param templ original template map
      * @return updated template map
      */
-    global define map ConvertDefaultValues (map templ) ``{
+    global define map ConvertDefaultValues (map templ) {
 
         map template = add (templ, "default_values", $[]);
-	foreach (string value, templ["susedefaultvalue"]:[], ``{
-	    string at = tolower (select (splitstring (value, "="), 0, ""));
+	foreach (string value, templ["susedefaultvalue"]:[], {
+	    list<string> lvalue	= splitstring (value, "=");
+	    string at = tolower (lvalue[0]:"");
 	    string v = substring (value, find (value, "=") + 1);
 	    template ["default_values", at] = v;
 	});
@@ -1512,17 +1513,16 @@ Select another one.
 	map out = (map)SCR::Execute(.target.bash_output,
 	    "/bin/rpm -V openldap2-client");
 
+	list open_host	= (list) SCR::Read
+	    (.etc.ldap_conf.v."/etc/openldap/ldap.conf".host);
+	list open_base	= (list) SCR::Read
+	    (.etc.ldap_conf.v."/etc/openldap/ldap.conf".base);
+
 	// if the config file was not modified by user yet
 	if (!issubstring(out["stdout"]:"", "/etc/openldap/ldap.conf"))
 	    write_openldap_conf = true;
 	// if there are same values as in /etc/ldap.conf
-	else if (
-	    (old_server == select ((list) SCR::Read
-		(.etc.ldap_conf.v."/etc/openldap/ldap.conf".host),0, ""))
-	    &&
-	    (old_domain == select ((list) SCR::Read
-		(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base),0,""))
-	)
+	else if (old_server == open_host[0]:"" && old_domain == open_base[0]:"")
 	{
 	    write_openldap_conf = true;
 	}

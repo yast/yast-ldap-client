@@ -19,6 +19,7 @@
     import "CommandLine";
     import "Ldap";
     import "RichText";
+    import "Service";
 
     include "ldap/wizards.ycp";
 

@@ -103,18 +103,18 @@ import "Wizard";
 	define list<term> update_items (list<term> its) {
 
 	    return maplist (term it, its, {
-		string dn	= select (it, 0, "");
+		string dn	= it[0]:"";
 		if (dn == current_dn)
 		{
 		    return `item (dn, true, maplist (string k,
 			subdns, ``(`item (k, false, []))));
 		}
 		integer last = size (it) - 1;
-		if (size (select (it, last, [])) == 0)
+		if (size (it[last]:[]) == 0)
 		    return it;
 		// `OpenItems doesn't work in ncurses...
 		boolean open = haskey (open_items, dn) && !textmode;
-		return `item (dn, open, update_items (select(it,last,[])));
+		return `item (dn, open, update_items (it[last]:[]));
 	    });
 	}
 

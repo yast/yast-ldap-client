@@ -791,7 +791,7 @@ removing current ones.</p>
 		continue;
 	    default_values = remove (default_values, attr);
 	    default_items = filter (term it, default_items, ``(
-		select (it, 1, "") != attr));
+		it[1]:"" != attr));
 	    UI::ChangeWidget (`id(`defaults), `Items, default_items);
 	    UI::ChangeWidget (`id(`edit_dfl), `Enabled, default_items != []);
 	    UI::ChangeWidget (`id(`delete_dfl), `Enabled, default_items != []);
@@ -876,8 +876,9 @@ click <b>Configure Template</b>.
 		return;
 	    if (is (value, list))
 	    {
+		list lvalue	= (list) value;
 		if (Ldap::SingleValued (attr))
-		    val = select ((list)value, 0, "");
+		    val = lvalue[0]:"";
 		else
 		    val = mergestring ((list<string>)value, ",");
 	    }
