@@ -55,7 +55,7 @@
       `helptext     : UI(_("LDAP client configuration")),
    
       ////////////////////////////////////////////////////////////////////////////////
-      // leaf nil, experts only ;-)
+      // leave nil, experts only ;-)
       `codefragment : nil 
    
    ]
