@@ -224,14 +224,9 @@
 	domain = lookup (settings, "ldap_domain", "");
 	ldap_v2 = lookup (settings, "ldap_v2", false);
 	ldap_tls = lookup (settings, "ldap_tls", false);
-	pam_password = lookup (settings, "pam_password", "crypt");
-
 	bind_dn		= settings ["bind_dn"]:"";
 	file_server	= settings ["file_server"]:false;
 	base_config_dn	= settings ["base_config_dn"]:"";
-        nss_base_passwd = settings ["nss_base_passwd"]:"";
-        nss_base_shadow = settings ["nss_base_passwd"]:"";
-        nss_base_group	= settings ["nss_base_group"]:"";
 	return;
     }
 
@@ -246,12 +241,9 @@
 	    "ldap_domain": domain,
 	    "ldap_v2": ldap_v2,
 	    "ldap_tls": ldap_tls,
-	    "pam_password": pam_password,
 	    "bind_dn": bind_dn,
 	    "file_server": file_server,
-	    "base_config_dn": base_config_dn,
-	    "nss_base_passwd": nss_base_passwd,
-	    "nss_base_group" : nss_base_group,
+	    "base_config_dn": base_config_dn
 	    ];
     }
 
