@@ -70,7 +70,7 @@
 
     DUMP ("==================================================");
     DUMP (sformat ("===== current object_classes (keys):\n %1",
-	maplist (string k, map v, Ldap::object_classes, ``(k))));
+	maplist (string k, map v, (map<string,map<string,any> >) Ldap::object_classes, ``(k))));
     DUMP ("==================================================");
     DUMP ("===== looking for 'userTemplate'==================");
     DUMP ("===== (superior classes already in cache) ========");
@@ -81,7 +81,7 @@
 
     DUMP ("==================================================");
     DUMP (sformat ("===== updated object_classes (keys):\n %1",
-	maplist (string k, map v, Ldap::object_classes, ``(k))));
+	maplist (string k, map v, (map<string,map<string,any> >) Ldap::object_classes, ``(k))));
 
     DUMP ("==================================================");
     DUMP ("===== looking for non-existent class =============");
@@ -97,6 +97,6 @@
 
     DUMP ("==================================================");
     DUMP (sformat ("===== updated object_classes (keys):\n %1",
-	maplist (string k, map v, Ldap::object_classes, ``(k))));
+	maplist (string k, map v, (map<string,map<string,any> >) Ldap::object_classes, ``(k))));
 
 }
