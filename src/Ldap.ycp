@@ -1068,7 +1068,7 @@ Select another one.
 	    }
 	    // 'val' can be list (most time), map (default_values), string
 	    foreach (string attr, any val, template, ``{
-		if (templates [dn, attr]:"" != val)
+		if (templates [dn, attr]:nil != val)
 		{
 		    templates [dn, attr] = val;
 		    if (!haskey (template, "modified"))
