@@ -1426,4 +1426,11 @@ exists on the LDAP server. Create it now?
       return ($["install": install_pkgs, "remove": remove_pkgs]);
     }
 
+    /**
+     * Set the value of bind_pass variable
+     * @param pass new password valure
+     */
+    global define void SetBindPassword (string pass) ``{
+	bind_pass = pass;
+    }
 }
