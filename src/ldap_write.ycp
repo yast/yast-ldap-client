@@ -22,20 +22,21 @@
   /* The end of the definitions */
 
   if (start_ldap) {
-    SCR::Execute(.target.bash, "echo base $DOMAIN > /etc/openldap/ldap.conf", $["DOMAIN" : lookup(ldap_conf, "ldap_domain")]);
-    SCR::Execute(.target.bash, "echo host $SERVER >> /etc/openldap/ldap.conf", $["SERVER" : lookup(ldap_conf, "ldap_address")]);
+    SCR::Write(.etc.openldap.ldap_conf, [$["value":lookup(ldap_conf, "ldap_address"),
+	"variable":"host"]]);
+    SCR::Write(.etc.openldap.ldap_conf, [$["value":lookup(ldap_conf, "ldap_domain"),
+	"variable":"base"]]);
+    SCR::Write(.etc.nsswitch_conf, [$["service":["files", "ldap"],
+	"database":"passwd"]]);
+
     SCR::Execute(.target.bash, "mkdir -p /var/lib/yast2-config-ldap_client");
     SCR::Execute(.target.bash, "cp /etc/pam.d/* /var/lib/yast2-config-ldap_client");
     SCR::Execute(.target.bash, "cp /usr/share/doc/packages/pam_ldap/pam.d/* /etc/pam.d/");
 
-    SCR::Execute(.target.bash, "if [ ! -f /etc/nsswitch.conf.no_ldap_client ]; then /bin/cp /etc/nsswitch.conf /etc/nsswitch.conf.no_ldap_client; fi", $[]);
-
-    // XXX SCR::Execute(.target.bash, "/bin/cp /etc/nsswitch.ldap_client /etc/nsswitch.conf", $[]);
-
     } else {
 
     // restore old nsswitch.conf
-    SCR::Execute(.target.bash, "if [ -f /etc/nsswitch.conf.no_ldap_client ]; then /bin/cp /etc/nsswitch.conf.no_ldap_client /etc/nsswitch.conf; fi", $[]);
+    SCR::Write(.etc.nsswitch_conf, [$["service":["compat"], "database":"passwd"]]);
     SCR::Execute(.target.bash, "cp /var/lib/yast2-config-ldap_client/* /etc/pam.d");
   }
 
