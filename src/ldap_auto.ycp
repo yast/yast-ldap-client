@@ -67,7 +67,8 @@
 			`PushButton(`id(`configure), _("&Configure LDAP client")),
 			`HStretch(),
 			`PushButton(`id(`reset), _("&Reset Configuration"))
-			)
+			),
+		  `VSpacing()
 
 		  );
 	Wizard::SetContents(_("LDAP Configuration"),
@@ -98,6 +99,6 @@
 	    Ldap::Set(settings);
 	    set_contents();
 	}
-    } until (ret == `back || ret == `next || ret ==`key);
+    } until (ret == `back || ret == `next || ret ==`key || ret ==`ret);
     return [ret, settings];
 }
