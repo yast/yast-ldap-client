@@ -9,7 +9,7 @@ all:
 	y2tool y2automake
 	aclocal
 	autoconf
-	automake -a
+	automake -a -c -f
 
 install: configure
 	make

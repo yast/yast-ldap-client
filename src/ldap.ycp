@@ -21,7 +21,7 @@
  */
 
 {
-    textdomain "ldap";
+    textdomain "ldap_client";
 
     import "Ldapclient";
     import "Wizard";

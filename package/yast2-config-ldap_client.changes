@@ -1,4 +1,25 @@
 -------------------------------------------------------------------
+Fri Apr  5 14:08:34 CEST 2002 - kukuk@suse.de
+
+- Merge with 8.0 branch
+- Add support for "start_tls" option in ldap.conf
+- Version 2.6.0
+
+-------------------------------------------------------------------
+Thu Mar 14 12:16:17 CET 2002 - pblahos@suse.cz
+
+- Fixed textdomain to "ldap_client" which matches to translation 
+  package [Bug #14979]
+- Version 2.5.5
+
+-------------------------------------------------------------------
+Thu Feb 21 18:12:34 CET 2002 - kukuk@suse.de
+
+- Check if entries exist in config file [Bug #13712]
+- Replace checkIP with check_ip4
+- Version 2.5.4
+
+-------------------------------------------------------------------
 Thu Feb  7 13:15:30 CET 2002 - kukuk@suse.de
 
 - Allow setting of LDAP protocol version [Bug #12503]

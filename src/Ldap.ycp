@@ -42,6 +42,7 @@
 
     /* Do we have an v2 or v3 ldap server? */
     global boolean ldap_v2 = false;
+    global boolean ldap_tls = false;
 
     /**
      * If the domain has changed from a nonempty one, it may only be
@@ -90,7 +91,7 @@
 	}
 
 	boolean missing = false;
-	foreach (`k, ["start_ldap", "ldap_domain", "ldap_server", "ldap_v2"], ``{
+	foreach (`k, ["start_ldap", "ldap_domain", "ldap_server", "ldap_v2", "ldap_tls"], ``{
 	    if (! haskey (settings, k))
 	    {
 		y2error ("Missing at Import: '%1'.", k);
@@ -106,6 +107,7 @@
 	server = lookup (settings, "ldap_server", "");
 	domain = lookup (settings, "ldap_domain", "");
 	ldap_v2 = lookup (settings, "ldap_v2", false);
+	ldap_tls = lookup (settings, "ldap_tls", false);
 	old_domain = domain;
 	return true;
     }
@@ -120,6 +122,7 @@
 	    "ldap_server": server,
 	    "ldap_domain": domain,
 	    "ldap_v2": ldap_v2,
+	    "ldap_tls": ldap_tls,
 	    ];
     }
 
@@ -130,8 +133,15 @@
     global define boolean Read () ``{
 	start = (SCR::Execute (.target.bash, "/usr/bin/grep '^passwd:.*ldap' /etc/nsswitch.conf") == 0);
 	server = SCR::Read(.etc.openldap.ldap_conf.host);
+	if (server == nil) {
+	  server = "";
+	}
 	domain  = SCR::Read(.etc.openldap.ldap_conf.base);
+	if (domain == nil) {
+	  domain = "";
+	}
 	ldap_v2 = (SCR::Read(.etc.openldap.ldap_conf.ldap_version) == "2");
+	ldap_tls = (SCR::Read(.etc.openldap.ldap_conf.ssl) == "start_tls");
 	old_domain = domain;
 	return true;
     }
@@ -160,6 +170,8 @@
 	      SCR::Write(.etc.openldap.ldap_conf.ldap_version, "2");
 	    else
 	      SCR::Write(.etc.openldap.ldap_conf.ldap_version, "3");
+	    if (ldap_tls)
+	      SCR::Write(.etc.openldap.ldap_conf.ssl, "start_tls");
 	    SCR::Write(.pam.all.account.pam_unix2, "+use_ldap");
 	    SCR::Write(.pam.all.auth.pam_unix2, "+use_ldap");
 	    SCR::Write(.pam.all.password.pam_unix2, "+use_ldap");

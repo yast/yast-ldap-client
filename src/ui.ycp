@@ -19,12 +19,13 @@
  */
 
 {
-    textdomain "ldap";
+    textdomain "ldap_client";
 
     import "Wizard";
     import "Ldapclient";
 
     include "ui/common_popups.ycp";
+    include "network/ip.ycp";
     // include "network/dns.ycp";
 
     /**
@@ -33,7 +34,7 @@
      */
     global define symbol LdapDialog () ``{
 
-// help text 1/4
+// help text 1/5
 	string help_text = UI(_("<p>Here your machine can be set up as
 <b>LDAP client</b> to authenticate your user with an OpenLDAP server.
 Enter the name of the search base (base DN, e.g, dc=mydomain,dc=com)
@@ -41,28 +42,36 @@ in the first entry and the IP address of the LDAP server (e.g., 10.20.0.2)
 in the second.
 To deactivate LDAP services, click the button <b>Do not use LDAP</b>.</p>"));
 
-// help text 2/4
+// help text 2/5
+	help_text = help_text + UI(_("<p>Some LDAP servers supports
+StartTLS [RFC2830]. If your server supports it and it is configured,
+you should activate <b>LDAP TLS/SSL</b> to encrypt your communication
+with the LDAP server.</p>"));
+
+// help text 3/5
 	help_text = help_text + UI(_("<p>Normally, the LDAP version 3 protocol
 will be used. If you have a LDAP server using protocol 2 (for example
 OpenLDAP v1), you should activate <b>LDAP Version 2</b>.</p>"));
 
-// help text 3/4
+// help text 4/5
 	help_text = help_text + UI(_("<p>If you deactivate LDAP, the current
 LDAP entry for passwd in /etc/nsswitch.conf will be removed and replaced
 with <i>compat</i>. The PAM configuration will be modified and
 the LDAP entry removed.</p>"));
 
-// help text 4/4
+// help text 5/5
 	help_text = help_text + UI(_("<p>If you activate LDAP, NSS and PAM
 will be configured accordingly to use LDAP for user authentification.</p>"));
 
 	boolean start = Ldapclient::start;
 	string domain  = Ldapclient::GetDomain ();
 	string server = Ldapclient::server;
+	boolean ldap_tls = Ldapclient::ldap_tls;
 	boolean ldap_v2 = Ldapclient::ldap_v2;
 	boolean old_start = start;
 	string old_domain = domain;
 	string old_server = server;
+	boolean old_ldap_tls = ldap_tls;
 	boolean old_ldap_v2 = ldap_v2;
 
 	term con = `HVSquash(
@@ -81,6 +90,10 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 					    // text entry label
 					    `HSquash(`TextEntry (`id (`ldapa), _("&IP address of the LDAP server"), server)
 						     ),
+					    `VSpacing (0.2),
+					    // check box label
+					    `CheckBox (`id(`ldaps), _("LDAP &TLS/SSL"), ldap_tls),
+					    `VSpacing (0.2),
 					    // check box label
 					    `CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2),
 					    `VSpacing (0.2)
@@ -97,6 +110,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 
 	UI::ChangeWidget (`id (`ldapd), `Enabled, start);
 	UI::ChangeWidget (`id (`ldapa), `Enabled, start);
+	UI::ChangeWidget (`id (`ldaps), `Enabled, start);
 	UI::ChangeWidget (`id (`ldapv), `Enabled, start);
 
 	any result = nil;
@@ -108,6 +122,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 	    if (result == `ldapyes || result == `ldapno) {
 		UI::ChangeWidget(`id(`ldapd), `Enabled, start);
 		UI::ChangeWidget(`id(`ldapa), `Enabled, start);
+		UI::ChangeWidget(`id(`ldaps), `Enabled, start);
 		UI::ChangeWidget (`id (`ldapv), `Enabled, start);
 	    }
 
@@ -115,8 +130,9 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 		domain = UI::QueryWidget(`id(`ldapd), `Value);
 		server = UI::QueryWidget(`id(`ldapa), `Value);
 		ldap_v2 = UI::QueryWidget(`id(`ldapv), `Value);
+		ldap_tls = UI::QueryWidget(`id(`ldaps), `Value);
 
-		if (!checkIP (server))
+		if (!check_ip4 (server))
 		{
 		    // error popup label
 		    Report::Error(_("The IP address is incorrect."));
@@ -131,6 +147,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 		if (old_start == start &&
 		    old_domain == domain &&
 		    old_server == server &&
+		    old_ldap_tls == ldap_tls &&
 		    old_ldap_v2 == ldap_v2)
 		    result = `back;
 		else
@@ -146,6 +163,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 	    Ldapclient::SetDomain (domain);
 	    Ldapclient::server = server;
 	    Ldapclient::ldap_v2 = ldap_v2;
+	    Ldapclient::ldap_tls = ldap_tls;
 	}
 
 	return result;
