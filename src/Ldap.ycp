@@ -205,12 +205,20 @@
 	      SCR::Write(.etc.openldap.ldap_conf.ldap_version, "3");
 	    if (ldap_tls)
 	      SCR::Write(.etc.openldap.ldap_conf.ssl, "start_tls");
+
+        if (user_base != "")
+            SCR::Write(.etc.openldap.ldap_conf.nss_base_passwd, user_base);
+        if (group_base != "")
+            SCR::Write(.etc.openldap.ldap_conf.nss_base_group, group_base);
+
 	    SCR::Write(.pam.all.account.pam_unix2, "+use_ldap");
 	    SCR::Write(.pam.all.auth.pam_unix2, "+use_ldap");
 	    SCR::Write(.pam.all.password.pam_unix2, "+use_ldap");
 
         foreach (`entry, `value, nsswitch, ``{
-            new_nsswitch [entry] = mergestring ( add (value, "ldap"), " " );
+            new_nsswitch [entry] = mergestring ( value, " " );
+            if (!contains (value, "ldap"))
+                new_nsswitch [entry] = new_nsswitch [entry]:"" + " ldap";
         });
 	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
 	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");

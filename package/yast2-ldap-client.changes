@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Jan 22 14:58:03 CET 2003 - jsuchome@suse.cz
+
+- fix: multiple "ldap" string in /etc/nsswitch.conf
+- saving user and group base to /etc/openldap/ldap.conf
+- 2.7.2
+
+-------------------------------------------------------------------
 Wed Jan 15 17:46:39 CET 2003 - jsuchome@suse.cz
 
 - helptexts for cpu_configure dialog
