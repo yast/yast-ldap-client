@@ -1,0 +1,31 @@
+@HEADER-COMMENT@
+# neededforbuild yast2-devel-packages
+
+@HEADER@
+Requires:	yast2 yast2-network yast2-pam
+# yast2-config-package-manager
+
+BuildArchitectures:	noarch
+
+Summary:	Configuration of LDAP client
+
+%description
+-
+
+@PREP@
+
+@BUILD-YCP@
+
+@INSTALL-YCP@
+
+@CLEAN@
+
+%files
+%defattr(-,root,root)
+@configdir@/ldap.y2cc
+%dir @yncludedir@/ldap
+@yncludedir@/ldap/*
+@moduledir@/Ldap.ycp
+@clientdir@/ldap*.ycp
+@scrconfdir@/ldap_conf.scr
+%doc @docdir@

@@ -1,19 +1,11 @@
 /**
- * File:
- *   ldap.ycp
- *
- * Module:
- *   Configuration of ldap
- *
- * Summary:
- *   Main file
- *
- * Authors:
- *   Thorsten Kukuk <kukuk@suse.de>
- *   Anas Nashif <nashif@suse.de>
+ * File:	clients/ldap.ycp
+ * Module:	Configuration of LDAP client
+ * Summary:	Main file
+ * Authors:	Thorsten Kukuk <kukuk@suse.de>
+ *		Anas Nashif <nashif@suse.de>
  *
  * $Id$
- *
  */
 
 /***
@@ -21,16 +13,17 @@
  */
 
 {
-    textdomain "ldap_client";
 
-    import "Ldapclient";
+    textdomain "ldap-client";
+
+    import "Ldap";
     import "Wizard";
     include "require.ycp";
 
-    include "ldap_client/ui.ycp";
+    include "ldap/ui.ycp";
 
     if (!RequireAndConflict (["pam_ldap","nss_ldap"], [],
-			     _("<p>To configure and access LDAP services, 
+			     _("<p>To configure and access LDAP services,
 the <b>%1</b> packages must be installed.</p>
 <p>Do you want to install these packages now?</p>
 ")))
@@ -38,23 +31,23 @@ the <b>%1</b> packages must be installed.</p>
 		  UI::MessagePopup(_("The configuration of the LDAP client
 cannot be completed without the mentioned packages."));
 		  return;
-              }   
+              }
 
     Wizard::CreateDialog ();
     Wizard::ReplaceAbortButton(`Empty ());
 
-    Ldapclient::Read ();
+    Ldap::Read ();
 
     symbol result = LdapDialog ();
 
     if (result == `next)
-    {	
-	if (Ldapclient::Write (false))
+    {
+	if (Ldap::Write (false))
 	{
-	    if (Ldapclient::start)
-	    {				
+	    if (Ldap::start)
+	    {
 		UI::MessagePopup(_("The configuration of the LDAP client
-was saved and can be used."));		
+was saved and can be used."));
 	    }
 	    else
 	    {

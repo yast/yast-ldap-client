@@ -1,24 +1,22 @@
 #
-# Makefile.am for y2c_ldap_client/src
+# Makefile.am for ldap-client/src
 #
 # $Id$
 #
 
-yincludedir = $(YAST2DIR)/include/ldap_client
-modulesdir = $(YAST2DIR)/modules
-menudir = $(YAST2DIR)/menuentries
+yncludedir = @yncludedir@/ldap
 
 client_DATA =		\
-	ldap_client.ycp		\
-	ldap_client_auto.ycp	\
-	ldap_client_write.ycp
+	ldap.ycp	\
+	ldap_auto.ycp	\
+	ldap_write.ycp
 
-yinclude_DATA =		\
+ynclude_DATA =		\
 	ui.ycp
 
 module_DATA =		\
-	Ldapclient.ycp
+	Ldap.ycp
 
-config_DATA = ldap_client.y2cc 
+config_DATA = ldap.y2cc 
 
-EXTRA_DIST = $(client_DATA) $(yinclude_DATA) $(module_DATA) $(config_DATA)
+EXTRA_DIST = $(client_DATA) $(ynclude_DATA) $(module_DATA) $(config_DATA)

@@ -5,7 +5,7 @@
 ; $Id$
 ;
 
-[Y2Module ldap_client]
+[Y2Module ldap]
 
 ; name of the entry, shown in y2cc
 Name = _("LDAP client")
@@ -33,7 +33,7 @@ Geometry =
 SortKey = 
 
 ; which textdomain to use for translations (important!)
-Textdomain = ldap_client
+Textdomain = ldap-client
 
 ; Autoinstall features
 Autoinst = all

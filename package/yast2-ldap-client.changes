@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Jun 28 20:57:46 CEST 2002 - msvec@suse.cz
+
+- renamed to yast2-ldap-client
+- fixes for new paths and devtools
+
+-------------------------------------------------------------------
 Fri Apr  5 14:08:34 CEST 2002 - kukuk@suse.de
 
 - Merge with 8.0 branch

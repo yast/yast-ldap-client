@@ -1,16 +1,9 @@
 /**
- * File:
- *   ldap_client_auto.ycp
- *
- * Package:
- *   Configuration of LDAP client
- *
- * Summary:
- *   Client for autoinstallation
- *
- * Authors:
- *   Thorsten Kukuk <kukuk@suse.de>
- *   Anas Nashif <nashif@suse.de>
+ * File:	clients/ldap_auto.ycp
+ * Package:	Configuration of LDAP client
+ * Summary:	Client for autoinstallation
+ * Authors:	Thorsten Kukuk <kukuk@suse.de>
+ *		Anas Nashif <nashif@suse.de>
  *
  * $Id$
  *
@@ -27,14 +20,15 @@
  */
 
 {
-    textdomain "ldap_client";
 
-    import "Ldapclient";
+    textdomain "ldap-client";
+
+    import "Ldap";
     import "Wizard";
     import "Summary";
-    include "ldap_client/ui.ycp";
+    include "ldap/ui.ycp";
 
-    Ldapclient::auto = true;
+    Ldap::auto = true;
     list args = Args ();
     if ( size (args) <= 0 )
     {
@@ -46,37 +40,37 @@
 	y2error ("Bad argument for ldap_client_auto: %1", Args (0));
 	return false;
     }
-    
+
     // The settings are in the first argument
     map settings = $[];
-    
+
     {
 	integer i = 0;
 	while (i < size (Args()))
 	{
-	    if (is (Args (i), map) && nil != Args (i))	settings = Args (i);	
+	    if (is (Args (i), map) && nil != Args (i))	settings = Args (i);
 	    i = i + 1;
 	}
     }
-      
+
     y2milestone("Imported: (%1)", settings);
 
-    Ldapclient::Import ( settings );
+    Ldap::Import ( settings );
 
-    define set_contents() ``{	
+    define set_contents() ``{
 	term contents =
 	    `VBox(
 		  `VSpacing(1),
-		  `RichText( `id(`summary), Ldapclient::Summary()),
+		  `RichText( `id(`summary), Ldap::Summary()),
 		  `VSpacing(),
 		  `HBox(
 			`PushButton(`id(`configure), _("&Configure LDAP client")),
 			`HStretch(),
 			`PushButton(`id(`reset), _("&Reset Configuration"))
 			)
-				
-		  );		
-	Wizard::SetContents(_("LDAP Configuration"),	
+
+		  );
+	Wizard::SetContents(_("LDAP Configuration"),
 			    contents, "", true, true);
     }
 
@@ -86,24 +80,24 @@
     repeat {
 	ret = UI::UserInput();
 	if (ret == `configure)
-	{	    
+	{
 	        Wizard::CreateDialog ();
 		Wizard::ReplaceAbortButton(`Empty ());
-		result = LdapDialog ();				
+		result = LdapDialog ();
 		UI::CloseDialog ();
 		if (result == `next || result == `finish)
 		{
-		     settings = Ldapclient::Export ();
-		} 
-		Ldapclient::Set(settings);
+		     settings = Ldap::Export ();
+		}
+		Ldap::Set(settings);
 		set_contents();
 	}
 	else if ( ret == `reset)
 	{
 	    settings= $[];
-	    Ldapclient::Set(settings);
+	    Ldap::Set(settings);
 	    set_contents();
-	}		
-    } until (ret == `back || ret == `next || ret ==`key);   
+	}
+    } until (ret == `back || ret == `next || ret ==`key);
     return [ret, settings];
 }

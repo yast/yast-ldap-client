@@ -1,28 +1,21 @@
 /**
- * File:
- *   include/ldap/ui.ycp
- *
- * Package:
- *   Configuration of LDAP
- *
- * Summary:
- *   User interface functions.
- *
- * Authors:
- *   Thorsten Kukuk <kukuk@suse.de>
- *   Anas Nashif <nashif@suse.de>
+ * File:	include/ldap/ui.ycp
+ * Package:	Configuration of LDAP
+ * Summary:	User interface functions.
+ * Authors:	Thorsten Kukuk <kukuk@suse.de>
+ *		Anas Nashif <nashif@suse.de>
  *
  * $Id$
  *
  * All user interface functions.
- *
  */
 
 {
-    textdomain "ldap_client";
+
+    textdomain "ldap-client";
 
     import "Wizard";
-    import "Ldapclient";
+    import "Ldap";
 
     include "ui/common_popups.ycp";
     include "network/ip.ycp";
@@ -63,11 +56,11 @@ the LDAP entry removed.</p>"));
 	help_text = help_text + UI(_("<p>If you activate LDAP, NSS and PAM
 will be configured accordingly to use LDAP for user authentification.</p>"));
 
-	boolean start = Ldapclient::start;
-	string domain  = Ldapclient::GetDomain ();
-	string server = Ldapclient::server;
-	boolean ldap_tls = Ldapclient::ldap_tls;
-	boolean ldap_v2 = Ldapclient::ldap_v2;
+	boolean start = Ldap::start;
+	string domain  = Ldap::GetDomain ();
+	string server = Ldap::server;
+	boolean ldap_tls = Ldap::ldap_tls;
+	boolean ldap_v2 = Ldap::ldap_v2;
 	boolean old_start = start;
 	string old_domain = domain;
 	string old_server = server;
@@ -151,7 +144,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 		    old_ldap_v2 == ldap_v2)
 		    result = `back;
 		else
-		    if (!Ldapclient::auto && ! UI::YesNoPopup(_("The configuration of the LDAP client will be saved\nand the client will be restarted.")))
+		    if (!Ldap::auto && ! UI::YesNoPopup(_("The configuration of the LDAP client will be saved\nand the client will be restarted.")))
 			result = nil;
 	    }
 
@@ -159,11 +152,11 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 
 	if (result == `next)
 	{
-	    Ldapclient::start = start;
-	    Ldapclient::SetDomain (domain);
-	    Ldapclient::server = server;
-	    Ldapclient::ldap_v2 = ldap_v2;
-	    Ldapclient::ldap_tls = ldap_tls;
+	    Ldap::start = start;
+	    Ldap::SetDomain (domain);
+	    Ldap::server = server;
+	    Ldap::ldap_v2 = ldap_v2;
+	    Ldap::ldap_tls = ldap_tls;
 	}
 
 	return result;

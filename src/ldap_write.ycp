@@ -1,16 +1,9 @@
 /**
- * File:
- *   ldap_client_write.ycp
- *
- * Module:
- *   Configuration of LDAP client
- *
- * Summary:
- *   Writing only client
- *
- * Authors:
- *   Thorsten Kukuk <kukuk@suse.de>
- *   Anas Nashif <nashif@suse.de>
+ * File:	clients/ldap_write.ycp
+ * Module:	Configuration of LDAP client
+ * Summary:	Writing only client
+ * Authors:	Thorsten Kukuk <kukuk@suse.de>
+ *		Anas Nashif <nashif@suse.de>
  *
  * $Id$
  *
@@ -23,23 +16,25 @@
  * @see Ldap#Import
  * @return boolean success of operation
  */
+
 {
 
-    textdomain "ldap_client";
+textdomain "ldap-client";
 
-    import "Ldapclient";
+import "Ldap";
 
-    if (size (Args ()) != 1)
-    {
-	y2error ("Exactly one argument required.");
-	return false;
-    }
-    if (! is (Args (0), map))
-    {
-	y2error ("The argument must be a map.");
-	return false;
-    }
+if(size(Args()) != 1) {
+    y2error("Exactly one argument required.");
+    return false;
+}
 
-    // The write is a simple one so we don't use Progress
-    return Ldapclient::Import (Args (0)) && Ldapclient::WriteOnly ();
+if(!is(Args(0), map)) {
+    y2error("The argument must be a map.");
+    return false;
+}
+
+// The write is a simple one so we don't use Progress
+return Ldap::Import(Args(0)) && Ldap::WriteOnly();
+
+/* EOF */
 }

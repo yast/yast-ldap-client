@@ -1,24 +1,17 @@
 /**
- * File:
- *   modules/Ldapclient.ycp
- *
- * Module:
- *   Configuration of LDAP client
- *
- * Summary:
- *   LDAP client configuration data, I/O functions.
- *
- * Authors:
- *   Thorsten Kukuk <kukuk@suse.de>
- *   Anas Nashif <nashif@suse.de>
+ * File:	modules/Ldap.ycp
+ * Module:	Configuration of LDAP client
+ * Summary:	LDAP client configuration data, I/O functions.
+ * Authors:	Thorsten Kukuk <kukuk@suse.de>
+ *		Anas Nashif <nashif@suse.de>
  *
  * $Id$
- *
  */
 
 {
-    module "Ldapclient";
-    textdomain "ldap_client";
+
+    module "Ldap";
+    textdomain "ldap-client";
 
     import "Runlevel";
     import "Report";
@@ -125,7 +118,7 @@
 	ldap_tls = lookup (settings, "ldap_tls", false);
 	return;
     }
-    
+
     /**
      * Dump the LDAP settings to a map, for autoinstallation use.
      * @return $["start":, "servers":[...], "domain":]
@@ -214,15 +207,15 @@
 	return true;
     }
 
-        
-    /** 
+
+    /**
      * Summary()
      * returns html formated configuration summary
      * @return string
      */
 
     global define Summary ()
-	``{	
+	``{
 	string summary = "";
 	summary = Summary::AddHeader(summary, _("LDAP Client enabled"));
 	summary = Summary::AddLine(summary, (start) ? "Yes" : Summary::NotConfigured());
@@ -234,7 +227,7 @@
 	summary = Summary::AddLine(summary, (ldap_v2) ? "Yes" : Summary::NotConfigured());
 	summary = Summary::AddHeader(summary, _("LDAP &TLS/SSL"));
 	summary = Summary::AddLine(summary, (ldap_tls) ? "Yes" : Summary::NotConfigured());
-	
-	return summary;	
+
+	return summary;
     }
 }
