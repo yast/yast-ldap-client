@@ -119,6 +119,10 @@ groups on the LDAP server, click <b>Set up User Configuration Tool</b> and compl
 	UI::ChangeWidget (`id (`ldapv), `Enabled, start);
 	UI::ChangeWidget (`id (`cpu), `Enabled, start);
 
+    // during installation, only enabling makes sence (#23831)
+    if (Mode::cont)
+	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
+
 	any result = nil;
 	do {
 	    result = UI::UserInput ();
