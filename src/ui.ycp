@@ -21,6 +21,7 @@
 
     import "Label";
     import "Popup";
+
     include "network/ip.ycp";
 
     include "ldap/routines.ycp";
@@ -44,8 +45,9 @@
 	}
 	else
 	{
-	    ret = CallFunction(`inst_confirm_abort(`incomplete));
+	    ret = Popup::ConfirmAbort (`incomplete);
 	}
+
 	if ( ret )	return `abort;
 	else		return `back;
     }

@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Sep 01 12:17:38 CEST 2003 - arvin@suse.de
+
+- use Popup::ConfirmAbort
+
+-------------------------------------------------------------------
 Fri Aug 29 11:19:27 CEST 2003 - jsuchome@suse.de
 
 - write basic settings also to /etc/openldap/ldap.conf (#29514)
@@ -78,7 +83,7 @@ Thu Jul 10 11:30:25 CEST 2003 - jsuchome@suse.de
 Tue Jul  8 17:17:14 CEST 2003 - nashif@suse.de
 
 - Read /etc/nsswitch.conf before writing configuration in autoinst
-  mode 
+  mode
 
 -------------------------------------------------------------------
 Wed Jul  2 13:19:17 CEST 2003 - jsuchome@suse.de
@@ -197,7 +202,7 @@ Wed Jan 15 17:46:39 CET 2003 - jsuchome@suse.cz
 Tue Jan 14 17:11:10 CET 2003 - jsuchome@suse.cz
 
 - added agent and dialog for /etc/cpu.cfg handling
-- check if passwd key in nsswitch.conf is not empty 
+- check if passwd key in nsswitch.conf is not empty
 
 -------------------------------------------------------------------
 Tue Dec 17 12:59:34 CET 2002 - jsuchome@suse.de
@@ -212,7 +217,7 @@ Tue Aug 27 20:00:00 CEST 2002 - jsuchome@suse.cz
 -------------------------------------------------------------------
 Thu Aug 15 11:41:35 CEST 2002 - jsuchome@suse.cz
 
-- Merged proofread texts for the second translation round. 
+- Merged proofread texts for the second translation round.
 
 -------------------------------------------------------------------
 Fri Jul 26 14:40:38 CEST 2002 - kukuk@suse.de
