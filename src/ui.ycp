@@ -205,11 +205,9 @@ automatically.</p>
 	if (Mode::cont)
 	{
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
-	    // sh: We don't use "Abort Installation" any more. Stick with the normal "Abort" button.
-	    // Wizard::SetAbortButton(`abort, Label::AbortInstallationButton() );
 	}
 
-	symbol result = nil;
+	symbol result = `not_next;
 	do {
 	    result = (symbol) UI::UserInput ();
 
@@ -236,7 +234,7 @@ automatically.</p>
 		{
 		    // error popup label
                     Report::Error(_("Enter an LDAP base DN."));
-                    result = `none;
+                    result = `not_next;
                     continue;
                 }
 
@@ -244,7 +242,7 @@ automatically.</p>
 		{
 		    // error popup label
 		    Report::Error(_("Enter at least one address of an LDAP server."));
-		    result = nil;
+		    result = `not_next;
 		    continue;
 		}
 	    }
@@ -252,6 +250,17 @@ automatically.</p>
 		ReallyAbort () != `abort)
 	    {
 		result = `not_next;
+	    }
+	    if (result == `next && start && !Ldap::start && Ldap::nis_available)
+	    {
+		// popup question: user enabled LDAP now, but probably has
+		// enabled NIS client before
+		if (!Popup::YesNo (_("When you configure your machine as an LDAP client,
+you cannot retrieve the data from NIS.  Are you sure?")))
+		{
+		    result = `not_next;
+		    continue;
+		}
 	    }
 	} while (!contains ([`back, `next, `cancel, `abort, `advanced], result));
 
@@ -261,13 +270,6 @@ automatically.</p>
 		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||
 		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs)
 	    {
-		Ldap::SetDomain (domain);
-		Ldap::start	= start;
-		Ldap::server	= server;
-		Ldap::ldap_v2	= ldap_v2;
-		Ldap::ldap_tls	= ldap_tls;
-		Ldap::_start_autofs = autofs;
-		Ldap::modified = true;
 		if (result == `next)
 		{
 		    if (autofs &&
@@ -277,9 +279,20 @@ automatically.</p>
 			// popup message
 			_("<p>The automounter package will be installed.</p>"));
 		    }
-		    // popup text FIXME something more descriptive...
-		    Autologin::AskForDisabling(_("Now you have enabled LDAP."));
+
+		    if (start && !Ldap::start)
+		    {
+			// popup text
+			Autologin::AskForDisabling(_("Now you have enabled LDAP."));
+		    }
 		}
+		Ldap::SetDomain (domain);
+		Ldap::start	= start;
+		Ldap::server	= server;
+		Ldap::ldap_v2	= ldap_v2;
+		Ldap::ldap_tls	= ldap_tls;
+		Ldap::_start_autofs = autofs;
+		Ldap::modified = true;
 	    }
 	}
 	return result;

@@ -49,10 +49,15 @@
     global boolean write_only = false;
 
     /**
-     * Should ypbind be started at boot?
-     * If not, other settings are not touched.
+     * Are LDAP services available via nsswitch.conf?
      */
     global boolean start = false;
+
+    /**
+     * Is NIS service available? If yes, and LDAP client will be enabled, warn
+     * user (see bug #36981)
+     */
+    global boolean nis_available	= false;
 
     /**
      * If no, automounter will not be affected.
@@ -443,6 +448,12 @@
 	start = contains (nsswitch["passwd"]:[], "ldap") ||
 		(contains (nsswitch["passwd"]:[], "compat") &&
 		 contains (nsswitch["passwd_compat"]:[], "ldap"));
+
+	nis_available	= contains (nsswitch["passwd"]:[], "nis") ||
+	    (contains (nsswitch["passwd"]:[], "compat") &&
+	    (contains (nsswitch["passwd_compat"]:[], "nis") ||
+	     size (nsswitch["passwd_compat"]:[]) == 0));
+	nis_available	= nis_available && (Service::Status ("ypbind") == 0);
 
 	server = ReadLdapConfEntry ("host", "");
 	domain  = ReadLdapConfEntry ("base", "");
@@ -1493,7 +1504,7 @@ Select another one.
 	if (!write_only)
 	{
 	    ypbind_running = (Service::Status ("ypbind") == 0);
-		Service::RunInitScript ("ypbind", "stop");
+	    Service::RunInitScript ("ypbind", "stop");
 	}
 	else if (write_only && Mode::autoinst )
 	{
