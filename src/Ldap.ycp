@@ -593,7 +593,7 @@ Value of DN is missing or invalid."),
 	if (init == nil)
 	{
 	    // error message
-	    ret = _("Unknown error - maybe 'yast2-ldap' is not available?");
+	    ret = _("Unknown error. Perhaps 'yast2-ldap' is not available.");
 	}
 	else if (!init)
 	{

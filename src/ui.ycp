@@ -128,12 +128,13 @@ removed.</p>") +
 <b>Advanced Configuration</b>.</p>
 ");
 	// help text 7/6 (additional)
-	string autofs_help_text = _("<p>Automounter is a daemon that mounts directories automatically,
+	string autofs_help_text = _("<p>Automounter is a daemon that automatically mounts directories,
 such as users' home directories.
 It is assumed that its configuration files (auto.*) already exist,
 either locally or over LDAP.<br>
 If it is not installed and you want to use it, it will be installed
-automatically.</p>");
+automatically.</p>
+");
 
 
 	// during installation, only starting ldap is enabled
