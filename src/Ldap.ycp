@@ -38,6 +38,9 @@
     global boolean ldap_v2 = false;
     global boolean ldap_tls = false;
 
+    /* stored values of /etc/nsswitch.conf */
+    map nsswitch = $[ "passwd" : [], "group": []];
+
     /**
      * If the domain has changed from a nonempty one, it may only be
      * changed at boot time. Use this to warn the user.
@@ -149,6 +152,10 @@
 	}
 	ldap_v2 = (SCR::Read(.etc.openldap.ldap_conf.ldap_version) == "2");
 	ldap_tls = (SCR::Read(.etc.openldap.ldap_conf.ssl) == "start_tls");
+
+    nsswitch["passwd"] = splitstring (SCR::Read(.etc.nsswitch_conf.passwd)," ");
+    nsswitch["group"] = splitstring (SCR::Read(.etc.nsswitch_conf.group), " ");
+
 	old_domain = domain;
 	return true;
     }
@@ -167,8 +174,15 @@
      * @return true on success
      */
     global define boolean Write (boolean writeonly) ``{
+
+    boolean ypbind_running = false;
+
 	if (!writeonly)
+    {
+        ypbind_running = (Runlevel::ServiceStatus ("ypbind") == 0);
 	    Runlevel::RunInitScript ("ypbind", "stop");
+    }
+    map new_nsswitch = $[ "passwd":"", "group": ""];
 
 	if (start) {
 	    SCR::Write(.etc.openldap.ldap_conf.host, server);
@@ -183,26 +197,38 @@
 	    SCR::Write(.pam.all.auth.pam_unix2, "+use_ldap");
 	    SCR::Write(.pam.all.password.pam_unix2, "+use_ldap");
 
-	    SCR::Write(.etc.nsswitch_conf.passwd, "files ldap");
-	    SCR::Write(.etc.nsswitch_conf.group, "files ldap");
-	    if (Runlevel::ServiceStatus ("nscd") == 0 && !writeonly) {
-		Runlevel::RunInitScript ("nscd", "restart");
-	    }
+        foreach (`entry, `value, nsswitch, ``{
+            y2milestone ("entry: %1, value: %2", entry, value);
+            new_nsswitch [entry] = mergestring ( add (value, "ldap"), " " );
+        });
+	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
+	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
 	} else {
-	    SCR::Write(.etc.nsswitch_conf.passwd, "compat");
-	    SCR::Write(.etc.nsswitch_conf.group, "compat");
+
+        foreach (`entry, `value, nsswitch, ``{
+            y2milestone ("entry: %1, value: %2", entry, value);
+            new_nsswitch [entry] = mergestring (
+                filter (`v, value, ``(v != "ldap")), " ");
+        });
+	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
+	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
 	    SCR::Write(.etc.nsswitch_conf, nil);
+
 	    SCR::Write(.pam.all.account.pam_unix2, "-use_ldap");
 	    SCR::Write(.pam.all.auth.pam_unix2, "-use_ldap");
 	    SCR::Write(.pam.all.password.pam_unix2, "-use_ldap");
 
-	    if (Runlevel::ServiceStatus ("nscd") == 0 && !writeonly) {
-		Runlevel::RunInitScript ("nscd", "restart");
-	    }
 
 	    SCR::Execute(.target.bash, "/bin/cp -a /var/lib/yast2-config-ldap_client/* /etc/pam.d");
 	    SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
 	}
+
+    if (Runlevel::ServiceStatus ("nscd") == 0 && !writeonly) {
+	    Runlevel::RunInitScript ("nscd", "restart");
+	}
+
+    if (ypbind_running)
+        Runlevel::RunInitScript ("ypbind", "restart");
 
 	return true;
     }
