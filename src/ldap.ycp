@@ -98,7 +98,7 @@ global define boolean LdapWrite () ``{
 map cmdline = $[
     "id"		: "ldap",
     // translators: command line help text for Ldap client module
-    "help"		: _("Ldap client configuration module."),
+    "help"		: _("LDAP client configuration module."),
     "guihandler"	: ``(LdapSequence()),
     "initialize"	: ``(Ldap::Read()),
     "finish"		: ``(LdapWrite()),
