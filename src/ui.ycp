@@ -89,7 +89,11 @@ and the client will be restarted.")))
 	};
 
 	if (Modified())
+	{
+	    // help text
+	    Wizard::RestoreHelp(_("Writing LDAP Client settings"));
 	    return Ldap::Write (abort);
+	}
 	return `next;
     }
 
