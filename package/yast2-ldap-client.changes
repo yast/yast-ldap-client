@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Dec  1 15:41:15 CET 2003 - jsuchome@suse.cz
+
+- syntax fixes for new interpreter (abort block back again)
+
+-------------------------------------------------------------------
 Fri Nov 28 12:35:08 CET 2003 - jsuchome@suse.cz
 
 - syntax fixes for new interpreter

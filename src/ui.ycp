@@ -67,13 +67,19 @@
     global define symbol WriteDialog() ``{
 
 	// popup text
-	string abort_text = _("Really abort the writing process?");
+	block<boolean> abort = ``{
+            if (UI::PollInput () == `abort &&
+		// popup text
+		Popup::YesNo (_("Really abort the writing process?")))
+		return true;
+	    return false;
+	};
 
 	if (Modified())
 	{
 	    // help text
 	    Wizard::RestoreHelp(_("Writing LDAP Client Settings"));
-	    return Ldap::Write (abort_text);
+	    return Ldap::Write (abort);
 	}
 	return `next;
     }

@@ -16,13 +16,13 @@
 
     textdomain "ldap-client";
 
-    import "Require";
-    import "Popup";
     import "Ldap";
-    import "RichText";
-//    import "CommandLine";
 
     include "ldap/wizards.ycp";
+    import "Require";
+    import "Popup";
+    import "CommandLine";
+    import "RichText";
 
     include "commandline/commandline.ycp";
 
@@ -92,7 +92,8 @@ global define boolean LdapChangeConfiguration (map options ) ``{
 
 global define boolean LdapWrite () ``{
 
-    return (Ldap::Write(``{ return false; }) == `next);
+    block<boolean> abort = ``{ return false; };
+    return (Ldap::Write(abort) == `next);
 }
 
 /* the command line description map */

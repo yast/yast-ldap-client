@@ -46,6 +46,7 @@ y2debug("func=%1", func);
 y2debug("param=%1", param);
 
 
+block<boolean> abort_block = ``{ return false; };
 
 /* Import Data*/
 if(func == "Import") {
@@ -73,7 +74,7 @@ else if (func == "Write") {
     import "Progress";
     Ldap::write_only = true;
     Progress::off();
-    ret = Ldap::Write("");
+    ret = Ldap::Write(abort_block);
     Progress::on();
 }
 else if (func == "Packages") {

@@ -756,17 +756,10 @@ Value of DN is missing or invalid."),
 	    all = $[];
 	}
 	// create a helper map of default values inside ...
-	/*
 	templates = mapmap (string dn, map templ, all, ``{
 	    map template = ConvertDefaultValues (templ);
 	    template = AddMissingAttributes (template);
-	    return [dn, template];
-	}); TODO use mapmap again
-	*/
-	foreach (string dn, map templ, all, ``{
-	    map template = ConvertDefaultValues (templ);
-	    template = AddMissingAttributes (template);
-	    templates [dn] = template;
+	    return $[dn : template];
 	});
 	return templates;
     }
@@ -792,13 +785,8 @@ Value of DN is missing or invalid."),
 	    LDAPErrorMessage ("read", LDAPError());
 	    modules = $[];
 	}
-	/* TODO use mapmap
 	config_modules = mapmap (string dn, map mod, modules, ``{
-	    return [dn, AddMissingAttributes (mod)];
-	});
-	*/
-	foreach (string dn, map mod, modules, ``{
-	    config_modules = add(config_modules, dn, AddMissingAttributes(mod));
+	    return $[dn : AddMissingAttributes (mod)];
 	});
 
 	return config_modules;
@@ -1210,19 +1198,11 @@ Select another one.
     }
 
     /**
-     * Test if abort was pressed and ensure if user really wants to abort
-     */
-    define boolean AbortFunction (string text) ``{
-
-	return (UI::PollInput () == `abort && Popup::YesNo (text));
-    }
-
-    /**
      * Saves LDAP configuration.
-     * @param abort_text question to ask when Abort is pressed
+     * @param abort block for abort
      * @return symbol
      */
-    global define symbol Write (string abort_text) ``{
+    global define symbol Write (block<boolean> abort) ``{
 
 	// progress caption
 	string caption = _("Writing LDAP Configuration...");
@@ -1252,7 +1232,7 @@ Select another one.
 
 	// -------------------- stop services
 	Progress::NextStage ();
-	if (AbortFunction (abort_text))
+	if (eval (abort))
 	    return `abort;
 
 	boolean ypbind_running = false;
@@ -1272,7 +1252,7 @@ Select another one.
 
 	// -------------------- update config files
 	Progress::NextStage ();
-	if (AbortFunction (abort_text))
+	if (eval(abort))
 	    return `abort;
 
 	if (start) // ldap used
@@ -1368,7 +1348,7 @@ Select another one.
 
 	// -------------------- start services
 	Progress::NextStage ();
-	if (AbortFunction (abort_text))
+	if (eval(abort))
 	    return `abort;
 
 	if (Runlevel::ServiceStatus ("nscd") == 0 && !write_only)
@@ -1383,7 +1363,7 @@ Select another one.
 
 	// -------------------- write settings to LDAP
 	Progress::NextStage ();
-	if (AbortFunction (abort_text))
+	if (eval(abort))
 	    return `abort;
 
 	if (ldap_modified)
