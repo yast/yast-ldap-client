@@ -348,8 +348,9 @@ as a value of \"homeDirectory\").</p>
      */
     global define string BrowseTree (string root_dn) {
 
-// TODO check ncurses !!! - very bad, we cannot select particular item...
-// -> use "Open" button?
+	// get display mode
+	map display_info = UI::GetDisplayInfo();
+	boolean textmode = display_info["TextMode"]:true;
 
 	// map of already read subtrees
 	map<string,boolean> dns	= $[];
@@ -365,8 +366,14 @@ as a value of \"homeDirectory\").</p>
 		`HSpacing ()
 	    ),
 	    `HBox (
+		`HSpacing (1.5),
 	        `PushButton (`id (`ok), `opt (`key_F10), Label::OKButton()),
-		`PushButton (`id (`cancel), Label::CancelButton())
+		`PushButton(`id (`cancel),`opt (`key_F9),Label::CancelButton()),
+		// pushbutton label
+		textmode ?
+		  `Right (`PushButton (`id (`open), `opt (`key_F6), _("Open"))):
+		  `Empty (),
+		`HSpacing (1.5)
 	    ),
 	    `VSpacing (0.2)
 	));
@@ -386,7 +393,8 @@ as a value of \"homeDirectory\").</p>
 
 	if (size (items) > 0)
 	{
-	    UI::ReplaceWidget (`id (`reptree),
+	    UI::ReplaceWidget (`id (`reptree), textmode ?
+		`Tree (`id(`tree), root_dn, items) :
 		`Tree (`id(`tree), `opt(`notify), root_dn, items));
 	}
 	else if (root_dn == "")
@@ -400,12 +408,16 @@ as a value of \"homeDirectory\").</p>
 		items = maplist (string dn, bases[0,"namingcontexts"]:[],
 		    ``(`item(dn, false, [])));
 	    if (size (items) > 0)
-		UI::ReplaceWidget (`id (`reptree),
+		UI::ReplaceWidget (`id (`reptree), textmode ?
+		    `Tree (`id(`tree), root_dn, items) :
 		    `Tree (`id(`tree), `opt(`notify), root_dn, items));
 	}
 
+	if (textmode)
+	    UI::SetFocus (`id(`tree));
 
-	list<string> subdns = [];
+	list<string> subdns	= [];
+	map open_items		= $[];
 
 	define list<term> update_items (list<term> its) {
 
@@ -419,21 +431,17 @@ as a value of \"homeDirectory\").</p>
 		integer last = size (it) - 1;
 		if (size (select (it, last, [])) == 0)
 		    return it;
-		/* FIXME it is not possible to check if the branch is open
-		boolean open = select (it, 1, false);
-		if (open == nil)
-		    open = false;
+		// `OpenItems doesn't work in ncurses...
+		boolean open = haskey (open_items, dn) && !textmode;
 		return `item (dn, open, update_items (select(it,last,[])));
-		*/
-		return `item (dn, update_items (select(it,last,[])));
 	    });
 	}
 
-	string retval = "";
+	string retval = root_dn;
 	while (true)
 	{
 	    any ret = UI::UserInput ();
-	    if (ret == `tree)
+	    if (ret == `tree || ret == `open)
 	    {
 		current_dn = (string) UI::QueryWidget (`id(`tree),`CurrentItem);
 		if (! dns[current_dn]:false)
@@ -447,12 +455,17 @@ as a value of \"homeDirectory\").</p>
 		    dns [current_dn]	= true;
 		    if (size (subdns) > 0)
 		    {
+			open_items = (map) UI::QueryWidget (`tree, `OpenItems);
 			items	= update_items (items);
-			UI::ReplaceWidget (`id (`reptree),
+			UI::ReplaceWidget (`id (`reptree), textmode ?
+			    `Tree (`id(`tree), root_dn, items) :
 			    `Tree (`id(`tree), `opt(`notify), root_dn, items));
 			UI::ChangeWidget (`id(`tree), `CurrentItem, current_dn);
+			open_items = $[];
 		    }
 		}
+		if (textmode)
+		    UI::SetFocus (`id(`tree));
 	    }
 	    if (ret == `cancel)
 	    {
@@ -492,7 +505,7 @@ as a value of \"homeDirectory\").</p>
 	if (init == nil || !init)
 	{
 	    y2error ("init failed");
-	    return "";
+	    return root_dn;
 	}
 
 	return BrowseTree (root_dn);
