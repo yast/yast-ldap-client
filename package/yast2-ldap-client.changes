@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Aug 13 15:53:24 CEST 2004 - jsuchome@suse.cz
+
+- browse popup: return "" on cancel
+- 2.10.3
+
+-------------------------------------------------------------------
 Tue Aug 10 09:05:09 CEST 2004 - jsuchome@suse.cz
 
 - merged proofread texts
