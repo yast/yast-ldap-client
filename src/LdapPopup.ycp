@@ -471,11 +471,18 @@ as a value of \"homeDirectory\").</p>
 	return retval;
     }
 
-    // Before opening browse popup, initialize LDAP connection. It is assumed
-    // that Ldap settings were read
-    global define string InitAndBrowseTree (string root_dn) {
+    /**
+     * Open the LDAP Browse popup and initialize initialize LDAP connection
+     * before.
+     * @param connection init map with information passed to ldap agent
+     * (see ldap agent '.ldap' Execute call documentation)
+     * @param root_dn the starting point (root of tree); if empty string is
+     * given, the search for available bases will be done automatically
+     * @return DN of selected item, empty string when canceled
+     */
+    global define string InitAndBrowseTree (string root_dn, map connection) {
 
-	map args = $[
+	map args = size (connection) > 0 ? connection : $[
 	    "hostname"	: Ldap::GetFirstServer (Ldap::server),
 	    "port"	: Ldap::GetFirstPort (Ldap::server),
 	    "version"	: Ldap::ldap_v2 ? 2 : 3,

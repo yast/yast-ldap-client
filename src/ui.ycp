@@ -473,7 +473,12 @@ have changed your configuration.</p>
 
 	if (result == `br)
 	{
-	    string dn = LdapPopup::InitAndBrowseTree (Ldap::GetDomain ());
+	    string dn = LdapPopup::InitAndBrowseTree (Ldap::GetDomain (), $[
+		"hostname"	: Ldap::GetFirstServer (Ldap::server),
+		"port"		: Ldap::GetFirstPort (Ldap::server),
+		"version"	: Ldap::ldap_v2 ? 2 : 3,
+		"use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+	    ]);
 	    if (dn != "")
 	    {
 		UI::ChangeWidget (`id(`base_config_dn), `Value, dn);
