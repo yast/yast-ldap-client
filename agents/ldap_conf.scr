@@ -28,7 +28,7 @@
 .etc.openldap.ldap_conf
 
 `ag_ini(
-  IniAgent(
+  SCR::IniAgent(
     "/etc/openldap/ldap.conf",
     $[ "options" : [ "ignore_case", "global_values", "flat" ],
        "comments" : [ "^#.*", "^[ \t]*$", ],
