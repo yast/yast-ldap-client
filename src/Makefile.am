@@ -8,11 +8,11 @@ yncludedir = @yncludedir@/ldap
 
 client_DATA =		\
 	ldap.ycp	\
-	ldap_auto.ycp   \
-    cpu_configure.ycp
+	ldap_auto.ycp
 
 ynclude_DATA =		\
-	ui.ycp
+	ui.ycp		\
+	wizards.ycp
 
 module_DATA =		\
 	Ldap.ycp

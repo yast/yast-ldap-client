@@ -18,11 +18,11 @@
     import "Summary";
 
 
-	/**
-	 * Write only, used during autoinstallation.
-	 * Don't run services and SuSEconfig, it's all done at one place.
-	 */
-	global boolean write_only = false;
+    /**
+     * Write only, used during autoinstallation.
+     * Don't run services and SuSEconfig, it's all done at one place.
+     */
+    global boolean write_only = false;
 
     /**
      * Should ypbind be started at boot?
@@ -35,7 +35,8 @@
      */
     global string  server = "";
 
-    global boolean auto = false;
+    // anything modified?
+    global boolean modified = false;
 
     string domain = "";
     string old_domain = nil;
@@ -46,17 +47,34 @@
     global boolean ldap_tls = false;
 
     /* Which crypt method should be used? If not set, use crypt. */
+    // TODO make it configurable
     global string pam_password = "";
 
-    /* variables for LDAP user configuration, stored in /etc/cpu.cfg */
+    /**
+     * If home directories of LDAP users are stored on this machine
+     */
+    global boolean file_server = false;
+
+    /* variables for LDAP user configuration*/
+    // TODO: store it in LDAP
     global string user_base = "";
     global string group_base = "";
     global string user_filter = "";
+    global string group_filter = "";
     global string user_class = "";
+    global string group_class = "";
     global string bind_dn = "";
 
-    // save cpu settings
-    global boolean cpu_modified = false;
+    // default (and shadow) settings for new LDAP users
+    // TODO: store it in LDAP
+    global string default_home = "/home";
+    global string default_shell = "/bin/bash";
+    global string default_skel = "/etc/skel";
+    global string default_groupname = "users";
+    global string default_inactive = "-1";
+    global string default_expire = "";
+    global integer default_gid = 100; // TODO change to 500 with new version
+
 
     /* stored values of /etc/nsswitch.conf */
     map nsswitch = $[ "passwd" : [], "group": []];
@@ -160,32 +178,57 @@
     }
 
     /**
+     * Read single entry from /etc/openldap/ldap.conf file
+     * @param entry entry name
+     * @param defvalue default value if entry is not present
+     * @return entry value
+     */
+    define string ReadLdapConfEntry (string entry, string defvalue) ``{
+
+	string ret = SCR::Read(add (.etc.openldap.ldap_conf, entry));
+	if (ret == nil)
+	    ret = defvalue;
+	return ret;
+    }
+
+    /**
      * Reads LDAP settings from the SCR
      * @return success
      */
     global define boolean Read () ``{
+
 	start = (SCR::Execute (.target.bash, "/usr/bin/grep '^passwd:.*ldap' /etc/nsswitch.conf") == 0);
-	server = SCR::Read(.etc.openldap.ldap_conf.host);
-	if (server == nil) {
-	  server = "";
-	}
-	domain  = SCR::Read(.etc.openldap.ldap_conf.base);
-	if (domain == nil) {
-	  domain = "";
-	}
-	ldap_v2 = (SCR::Read(.etc.openldap.ldap_conf.ldap_version) == "2");
-	ldap_tls = (SCR::Read(.etc.openldap.ldap_conf.ssl) == "start_tls");
-	pam_password = SCR::Read(.etc.openldap.ldap_conf.pam_password);
-	if (pam_password == nil) {
-	  pam_password = "crypt"; /* else plain text is used, bad idea.  */
-	}
-
-    nsswitch["passwd"] = splitstring (SCR::Read(.etc.nsswitch_conf.passwd)," ");
-    nsswitch["group"] = splitstring (SCR::Read(.etc.nsswitch_conf.group), " ");
-
+	server = ReadLdapConfEntry ("host", "");
+	domain  = ReadLdapConfEntry ("base", "");
 	old_domain = domain;
 
-    ReadCpuSettings ();
+	ldap_v2 = (ReadLdapConfEntry ("ldap_version", "3") == "2");
+	ldap_tls = (ReadLdapConfEntry ("ssl", "no") == "start_tls");
+
+        bind_dn = ReadLdapConfEntry ("binddn", "");
+
+	// TODO: usere/group base should be stored in LDAP also?
+        user_base = ReadLdapConfEntry ("nss_base_passwd", domain);
+        group_base = ReadLdapConfEntry ("nss_base_group", user_base);
+
+	// TODO read these from somewhere!-----------------------------
+	user_filter = "objectclass=person";
+	user_class = "person,posixAccount,top,shadowAccount,inetOrgPerson";
+
+	group_filter = "objectClass=posixGroup";
+	group_class = "posixGroup,top";
+
+	file_server = false;
+	// ------------------------------------------------------------
+
+	pam_password = ReadLdapConfEntry ("pam_password", "crypt");
+	/* else plain text is used, bad idea.  */
+
+	nsswitch["passwd"] = splitstring
+	    (SCR::Read(.etc.nsswitch_conf.passwd)," ");
+	nsswitch["group"] = splitstring
+	    (SCR::Read(.etc.nsswitch_conf.group), " ");
+
 	return true;
     }
 
@@ -196,54 +239,75 @@
      * @return true on success
      */
     global define boolean Write () ``{
-    if (cpu_modified)
-        WriteCpuSettings ();
 
-
-    boolean ypbind_running = false;
+	boolean ypbind_running = false;
 
 	if (!write_only)
-    {
-        ypbind_running = (Runlevel::ServiceStatus ("ypbind") == 0);
-	    Runlevel::RunInitScript ("ypbind", "stop");
-    }
-    map new_nsswitch = $[ "passwd":"", "group": ""];
+	{
+	    ypbind_running = (Runlevel::ServiceStatus ("ypbind") == 0);
+		Runlevel::RunInitScript ("ypbind", "stop");
+	}
+	map new_nsswitch = $[ "passwd":"", "group": ""];
 
-	if (start) {
+	if (start) // ldap used
+	{
+	    // update ldap.conf
 	    SCR::Write(.etc.openldap.ldap_conf.host, server);
 	    SCR::Write(.etc.openldap.ldap_conf.base, domain);
 	    if (ldap_v2)
-	      SCR::Write(.etc.openldap.ldap_conf.ldap_version, "2");
+		SCR::Write(.etc.openldap.ldap_conf.ldap_version, "2");
 	    else
-	      SCR::Write(.etc.openldap.ldap_conf.ldap_version, "3");
-	    if (ldap_tls)
-	      SCR::Write(.etc.openldap.ldap_conf.ssl, "start_tls");
-            else
-	      SCR::Write(.etc.openldap.ldap_conf.ssl, "no");
-            SCR::Write(.etc.openldap.ldap_conf.pam_password, pam_password);
-            SCR::Write(.etc.openldap.ldap_conf, nil);
+		SCR::Write(.etc.openldap.ldap_conf.ldap_version, "3");
 
+	    if (ldap_tls)
+		SCR::Write(.etc.openldap.ldap_conf.ssl, "start_tls");
+	    else
+		SCR::Write(.etc.openldap.ldap_conf.ssl, "no");
+
+	    // TODO configure password encryption
+	    SCR::Write(.etc.openldap.ldap_conf.pam_password, pam_password);
+
+	    if (bind_dn != "")
+		SCR::Write (.etc.openldap.ldap_conf.binddn, bind_dn);
+
+	    // TODO when write to ldap.conf?
+	    if (user_base != "")
+	    {
+		SCR::Write(.etc.openldap.ldap_conf.nss_base_passwd, user_base);
+		SCR::Write(.etc.openldap.ldap_conf.nss_base_shadow, user_base);
+	    }
+	    if (group_base != "")
+		SCR::Write(.etc.openldap.ldap_conf.nss_base_group, group_base);
+
+	    // write the changes in ldap.conf
+	    SCR::Write(.etc.openldap.ldap_conf, nil);
+
+	    // pam settigs
 	    SCR::Write(.pam.all.account.pam_unix2, "+use_ldap");
 	    SCR::Write(.pam.all.auth.pam_unix2, "+use_ldap");
 	    SCR::Write(.pam.all.password.pam_unix2, "+use_ldap");
 
-        foreach (`entry, `value, nsswitch, ``{
-            new_nsswitch [entry] = mergestring ( value, " " );
-            if (!contains (value, "ldap"))
-                new_nsswitch [entry] = new_nsswitch [entry]:"" + " ldap";
-        });
+	    // modify sources in /etc/nsswitch.conf
+	    foreach (`entry, `value, nsswitch, ``{
+		new_nsswitch [entry] = mergestring ( value, " " );
+		if (!contains (value, "ldap"))
+		    new_nsswitch [entry] = new_nsswitch [entry]:"" + " ldap";
+	    });
 	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
 	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
 	    SCR::Write(.etc.nsswitch_conf, nil);
-	} else {
+	}
+	else // ldap is not used
+	{
 
-        foreach (`entry, `value, nsswitch, ``{
-            new_nsswitch [entry] = mergestring (
-                filter (`v, value, ``(v != "ldap")), " ");
-            // just to make sure that something remains...
-            if (new_nsswitch [entry]:"" == "")
-                new_nsswitch [entry] = "files";
-        });
+	    foreach (`entry, `value, nsswitch, ``{
+		new_nsswitch [entry] = mergestring (
+		    filter (`v, value, ``(v != "ldap")), " ");
+		// just to make sure that something remains...
+		if (new_nsswitch [entry]:"" == "")
+		    new_nsswitch [entry] = "files";
+	    });
+
 	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
 	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
 	    SCR::Write(.etc.nsswitch_conf, nil);
@@ -252,59 +316,47 @@
 	    SCR::Write(.pam.all.auth.pam_unix2, "-use_ldap");
 	    SCR::Write(.pam.all.password.pam_unix2, "-use_ldap");
 
+	    // FIXME what is this for?
 	    SCR::Execute(.target.bash, "/bin/cp -a /var/lib/yast2-config-ldap_client/* /etc/pam.d");
 	    SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
 	}
 
-    if (Runlevel::ServiceStatus ("nscd") == 0 && !write_only) {
+	// TODO: save file_server somewhere
+
+	if (Runlevel::ServiceStatus ("nscd") == 0 && !write_only)
+	{
 	    Runlevel::RunInitScript ("nscd", "restart");
 	}
 
-    if (ypbind_running)
-        Runlevel::RunInitScript ("ypbind", "restart");
+	if (ypbind_running)
+	{
+	    Runlevel::RunInitScript ("ypbind", "restart");
+	}
 
 	return true;
     }
 
-    /**
-     * Write settings to /etc/cpu.cfg
-     */
-    global define void WriteCpuSettings () ``{
+    // ------------------------------------------------------
+    // TODO settings to write to LDAP directory (ConfigObject)
+    /*
+	base_config: dn, scope, (objectclass?)
+	user_base
+	group_base
+	user_filter
+	group_filter
+	user_object_class
+	group_object_class
 
-        SCR::Write (.etc.cpu_cfg."ldap_host", server);
-        SCR::Write (.etc.cpu_cfg."base_dn", domain);
-        SCR::Write (.etc.cpu_cfg."user_base", user_base);
-        SCR::Write (.etc.cpu_cfg."user_filter", user_filter);
-        SCR::Write (.etc.cpu_cfg."user_object_class", user_class);
-        SCR::Write (.etc.cpu_cfg."group_base", group_base);
-        SCR::Write (.etc.cpu_cfg."bind_dn", bind_dn);
-        SCR::Write (.etc.cpu_cfg, "force");
-
-        if (user_base != "")
-        {
-            SCR::Write(.etc.openldap.ldap_conf.nss_base_passwd, user_base);
-            SCR::Write(.etc.openldap.ldap_conf.nss_base_shadow, user_base);
-        }
-        if (group_base != "")
-            SCR::Write(.etc.openldap.ldap_conf.nss_base_group, group_base);
-        if (user_base != "" || group_base != "")
-            SCR::Write(.etc.openldap.ldap_conf, nil);
-    }
+	default user settings (group, shell, shadow) from template
+    */
 
     /**
-     * Read settings from /etc/cpu.cfg
-     */
-    global define void ReadCpuSettings () ``{
+     * Read additional/default settings from LDAP?
+     *
 
-        if (SCR::Execute (.target.bash, "/usr/bin/test -e /etc/cpu.cfg") == 0)
-        {
-            user_base = SCR::Read(.etc.cpu_cfg."user_base");
-            group_base = SCR::Read(.etc.cpu_cfg."group_base");
-            user_filter = SCR::Read(.etc.cpu_cfg."user_filter");
-            user_class = SCR::Read(.etc.cpu_cfg."user_object_class");
-            bind_dn = SCR::Read(.etc.cpu_cfg."bind_dn");
-        }
-    }
+
+    */
+    // ------------------------------------------------------
 
 
     /**

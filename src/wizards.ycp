@@ -1,0 +1,128 @@
+/**
+ * File:	include/ldap-client/wizards.ycp
+ * Package:	Configuration of ldap-client
+ * Summary:	Wizards definitions
+ * Authors:	Jiri Suchomel <jsuchome@suse.cz>
+ *
+ * $Id$
+ */
+
+{
+
+textdomain "ldap";
+
+import "Wizard";
+
+include "wizard/sequencer.ycp";
+
+include "ldap/ui.ycp";
+
+/**
+ * Whole configuration of ldap-client
+ * @return sequence result
+ */
+global define symbol LdapSequence() ``{
+
+    map aliases = $[
+	"read"	: [ ``( ReadDialog() ), true ],
+	"main"	:   ``( MainSequence() ),
+	"write"	: [ ``( WriteDialog() ), true ]
+    ];
+
+    map sequence = $[
+	"ws_start" : "read",
+	"read" : $[
+	    `abort	: `abort,
+	    `next	: "main"
+	],
+	"main" : $[
+	    `abort	: `abort,
+	    `next	: "write"
+	],
+	"write" : $[
+	    `abort	: `abort,
+	    `next	: `next
+	]
+    ];
+
+    // label
+    string caption = _("Ldap Client Configuration");
+    // label
+    term contents = `Label(_("Initializing ..."));
+
+    Wizard::CreateDialog();
+    Wizard::SetContentsButtons(caption, contents, "",
+	    BackButtonLabel(), NextButtonLabel());
+
+    any ret = WizardSequencer(aliases, sequence);
+
+    UI::CloseDialog();
+    return ret;
+}
+
+/**
+ * Whole configuration of ldap-client but without reading and writing.
+ * For use with autoinstallation.
+ * @return sequence result
+ */
+global define symbol LdapAutoSequence() ``{
+
+    string caption = _("Ldap Client Configuration");
+    term contents = `Label(_("Initializing ..."));
+
+    Wizard::CreateDialog();
+    Wizard::SetContentsButtons(caption, contents, "",
+	    BackButtonLabel(), NextButtonLabel());
+
+    any ret = MainSequence();
+
+    UI::CloseDialog();
+    return ret;
+}
+
+/**
+ * Main workflow of the ldap-client configuration
+ * @return sequence result
+ */
+global define symbol MainSequence() ``{
+
+    map aliases = $[
+	"ldap"		: ``( LdapDialog() ),
+	"users"		: ``( UsersConfigureDialog() ),
+	"defaults"	: ``( DefaultsConfigureDialog() ),
+	"abort"		: ``( ReallyAbort())
+    ];
+
+    map sequence = $[
+	"ws_start"	: "ldap",
+	"ldap" : $[
+	    `abort	: "abort",
+	    `cancel	: "abort",
+	    `details	: "users",
+	    `next	: `next
+	],
+	"users" : $[
+	    `abort	: "abort",
+	    `cancel	: "abort",
+	    `next	: "defaults"
+	],
+	"defaults" : $[
+	    `abort	: "abort",
+	    `cancel	: "abort",
+	    `next	: "ldap"
+	],
+	"abort": $[
+	    `abort	: `abort,
+	    `next	: `abort,
+	    `cancel	: `back,
+	    `back	: `back
+	]
+    ];
+
+    any ret = WizardSequencer(aliases, sequence);
+
+    return ret;
+}
+
+/* EOF */
+}

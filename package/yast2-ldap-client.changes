@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue May  6 13:57:09 CEST 2003 - jsuchome@suse.de
+
+- new workflow for users and groups settings
+- removed cpu usage
+- 2.8.1
+
+-------------------------------------------------------------------
 Thu Mar 20 14:34:00 CET 2003 - kukuk@suse.de
 
 - Use example.com as example domain name.

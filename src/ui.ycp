@@ -22,9 +22,69 @@
     include "network/ip.ycp";
     // include "network/dns.ycp";
 
+
     /**
-     * The only dialog
-     * @return	`back or `next
+     * The dialog that appears when the [Abort] button is pressed.
+     * @return `abort if user really wants to abort, `back otherwise
+     */
+    global define symbol ReallyAbort () ``{
+
+	boolean ret = true;
+	if (!Mode::cont)
+	{
+	    if (Ldap::modified)
+		ret = UI::ReallyAbortPopup (true);;
+	}
+	else
+	{
+	    ret = CallFunction(`inst_confirm_abort(`incomplete));
+	}
+	if ( ret )	return `abort;
+	else		return `back;
+    }
+
+    /**
+     * Read settings dialog
+     * @return `abort if aborted and `next otherwise
+     */
+    global define symbol ReadDialog () ``{
+	boolean ret = Ldap::Read();
+        return ret ? `next : `abort;
+    }
+
+    /**
+     * Write settings dialog
+     * @return `next
+     */
+    global define symbol WriteDialog() ``{
+
+	if (!Ldap::modified)
+	    return `next;
+
+	// yes/no popup text
+	if (!Mode::config && !Mode::cont && !UI::YesNoPopup(_("The configuration of the LDAP client will be saved
+and the client will be restarted.")))
+	    return `back;
+
+	if (Ldap::Write() && !Mode::cont && !Mode::config)
+	{
+	    if (Ldap::start)
+	    {
+		UI::MessagePopup(_("The configuration of the LDAP client
+was saved and can be used."));
+	    }
+	    else
+	    {
+		UI::MessagePopup(_("The configuration of the LDAP
+client was saved."));
+	    }
+	}
+	return `next;
+    }
+
+    /**
+     * The main dialog for ldap-client configuration
+     * @return	`back, `next or `abort
      */
     global define symbol LdapDialog () ``{
 
@@ -59,68 +119,60 @@ configuration will be modified and the LDAP entry removed.</p>"));
 will be configured accordingly to use LDAP for user authentification.</p>"));
 
 // help text 5/5
-	help_text = help_text + UI(_("<p>For later configuration of users and
-groups on the LDAP server, click <b>Set up User Configuration Tool</b> and complete the settings.</p>
+	help_text = help_text + UI(_("<p>For configuration of LDAP user and
+group settings, click <b>Advanced Configuration</b> button.</p>
 "));
 
-	boolean start = Mode::cont || Ldap::start; //#23733
-	string domain  = Ldap::GetDomain ();
-	string server = Ldap::server;
-	boolean ldap_tls = Ldap::ldap_tls;
-	boolean ldap_v2 = Ldap::ldap_v2;
-	boolean old_start = start;
-	string old_domain = domain;
-	string old_server = server;
-	boolean old_ldap_tls = ldap_tls;
-	boolean old_ldap_v2 = ldap_v2;
+	//#23733: during installation, only starting ldap is enabled
+	boolean start		= Mode::cont || Ldap::start;
+	string domain		= Ldap::GetDomain ();
+	string server		= Ldap::server;
+	boolean ldap_tls	= Ldap::ldap_tls;
+	boolean ldap_v2		= Ldap::ldap_v2;
 
-	term con = `HVSquash(
-                 `VBox(
-			     `Frame (_("LDAP client"),
-				     `VBox (`VSpacing (0.2),
-					    `RadioButtonGroup(`id(`rd),
-							      // radio button label
-							      `Left(
-								    `HVSquash(
-									      `VBox (
-										     `Left (`RadioButton(`id(`ldapno), `opt (`notify), _("Do &not use LDAP"), !start)),
-                                                                                 // radio button label
-										     `Left(`RadioButton(`id(`ldapyes), `opt (`notify), _("&Use LDAP"), start)))))),
-					    // text entry label
-					    `HSquash(`TextEntry (`id (`ldapd), _("LDAP base &DN"), domain)),
-					    // text entry label
-					    `HSquash(`TextEntry (`id (`ldapa), _("&Addresses of LDAP servers"), server)
-						     ),
-					    `VSpacing (0.2),
-					    // check box label
-					    `CheckBox (`id(`ldaps), _("LDAP &TLS/SSL"), ldap_tls),
-					    `VSpacing (0.2),
-					    // check box label
-					    `CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2),
-					    `VSpacing (0.2)
-					    )
-				     ),
-                `VSpacing (1),
-                // PushButton label
-                `PushButton (`id(`cpu), _("&Set up User Configuration Tool..."))
-                )
-	);
-
-
+	term con = `HVSquash(`VBox(
+	    `Frame (_("LDAP client"),
+	    `VBox (`VSpacing (0.2),
+	    `RadioButtonGroup(`id(`rd),
+		`Left(`HVSquash(`VBox (
+		    `Left (`RadioButton(`id(`ldapno), `opt (`notify),
+			// radio button label
+			_("Do &not use LDAP"), !start)),
+		    `Left(`RadioButton(`id(`ldapyes), `opt (`notify),
+			// radio button label
+			_("&Use LDAP"), start)))))),
+	    // text entry label
+	    `HSquash(`TextEntry (`id (`ldapd), _("LDAP base &DN"), domain)),
+	    // text entry label
+	    `HSquash(`TextEntry (`id (`ldapa), _("&Addresses of LDAP servers"),
+		server)),
+	    `VSpacing (0.2),
+	    // check box label
+	    `CheckBox (`id(`ldaps), _("LDAP &TLS/SSL"), ldap_tls),
+	    `VSpacing (0.2),
+	    // check box label
+	    `CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2),
+	    `VSpacing (0.2)
+	    )),
+	    `VSpacing(1),
+	    // pushbutton label
+	    `PushButton (`id(`details), _("Advan&ced configuration..."))
+        ));
 
 	Wizard::SetContentsButtons (
 	    // dialog title
 	    _("LDAP Client Configuration"), con, help_text,
-	    BackButtonLabel(), Mode::cont ? NextButtonLabel(): FinishButtonLabel());
+	    BackButtonLabel(),
+	    Mode::cont ? NextButtonLabel(): FinishButtonLabel());
 
 	UI::ChangeWidget (`id (`ldapd), `Enabled, start);
 	UI::ChangeWidget (`id (`ldapa), `Enabled, start);
 	UI::ChangeWidget (`id (`ldaps), `Enabled, start);
 	UI::ChangeWidget (`id (`ldapv), `Enabled, start);
-	UI::ChangeWidget (`id (`cpu), `Enabled, start);
+	UI::ChangeWidget (`id (`details), `Enabled, start);
 
-    // during installation, only enabling makes sence (#23831)
-    if (Mode::cont)
+	// during installation, only enabling makes sence (#23831)
+	if (Mode::cont)
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
 
 	any result = nil;
@@ -134,10 +186,12 @@ groups on the LDAP server, click <b>Set up User Configuration Tool</b> and compl
 		UI::ChangeWidget(`id(`ldapa), `Enabled, start);
 		UI::ChangeWidget(`id(`ldaps), `Enabled, start);
 		UI::ChangeWidget (`id (`ldapv), `Enabled, start);
-		UI::ChangeWidget (`id (`cpu), `Enabled, start);
+		UI::ChangeWidget (`id (`details), `Enabled, start);
+
             }
 
-	    if ((result == `next || result == `cpu) && start) {
+//	    if ((result == `next || result == `details) && start) {
+	    if (result == `next && start) {
 		domain = UI::QueryWidget(`id(`ldapd), `Value);
 		server = UI::QueryWidget(`id(`ldapa), `Value);
 		ldap_v2 = UI::QueryWidget(`id(`ldapv), `Value);
@@ -159,38 +213,377 @@ groups on the LDAP server, click <b>Set up User Configuration Tool</b> and compl
 		    continue;
 		}
 	    }
-
-        if (result == `cpu)
-        {
-            CallFunction (`cpu_configure(false));
-        }
-
-	    if (result == `next)
-	    {
-		// if nothing is changed go back.
-		if (old_start == start &&
-		    old_domain == domain &&
-		    old_server == server &&
-		    old_ldap_tls == ldap_tls &&
-		    old_ldap_v2 == ldap_v2 &&
-            !Ldap::cpu_modified) // TODO no need to restart for only cpu change
-		    result = `back;
-		else
-		    if (!Ldap::auto && ! UI::YesNoPopup(_("The configuration of the LDAP client will be saved\nand the client will be restarted.")))
-			result = nil;
-	    }
-
-	} while (result != `back && result != `next && result != `cancel);
+	} while (!contains ([`back, `next, `cancel, `abort, `details], result));
 
 	if (result == `next)
 	{
-	    Ldap::start = start;
-	    Ldap::SetDomain (domain);
-	    Ldap::server = server;
-	    Ldap::ldap_v2 = ldap_v2;
-	    Ldap::ldap_tls = ldap_tls;
+	    if (Ldap::start != start || Ldap::GetDomain != domain ||
+		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||
+		Ldap::ldap_tls != ldap_tls)
+	    {
+		Ldap::SetDomain (domain);
+		Ldap::start	= start;
+		Ldap::server	= server;
+		Ldap::ldap_v2	= ldap_v2;
+		Ldap::ldap_tls	= ldap_tls;
+		Ldap::modified = true;
+	    }
 	}
 
 	return result;
     }
+
+/**
+ * Dialog for configuration of general LDAP user settings
+ * @return symbol for sequencer
+ */
+global define symbol UsersConfigureDialog() ``{
+
+    string user_base	= Ldap::user_base;
+    string group_base	= Ldap::group_base;
+    string user_filter	= Ldap::user_filter;
+    string user_class	= Ldap::user_class;
+    string bind_dn	= Ldap::bind_dn;
+    boolean file_server = Ldap::file_server;
+
+    list encryptions = [
+	// TODO: which encryption?
+	// password encryption type
+	`item( `id("crypt"), _("CRYPT"), true),
+	// password encryption type
+	`item( `id("md5"), _("MD5"), false)
+    ];
+
+    // help text 1/7
+	string help_text = _("<p>Here, you can set the values used by the YaST2 Users module for managing LDAP users and groups.</p>") +
+
+    // help text 2/7
+    _("<p><b>User Base</b><br>
+This is the base to which users will be added. It is in the form: <i>ou=People,dc=example,dc=com</i>. If you are not sure, use your <b>base DN</b> value.</p>
+") +
+
+    // help text 3/7
+    _("<p><b>Group Base</b><br>
+This is the base to which groups will be added. It may be the same as the user base.</p>
+") +
+
+    // help text 4/7
+    _("<p><b>User Object Class</b><br>
+Object classes the user entry belongs to. The value is in the form:
+<i>person,posixAccount,top,shadowAccount,inetOrgPerson</i>.</p>
+") +
+
+    // help text 5/7 FIXME: add group filter
+    _("<p><b>User Filter</b><br>
+Filter for searching. Default of <i>objectclass=person</i> is fine.</p>
+") +
+
+    // help text 6/7 FIXME: understandable!!!
+    _("<p><b>Bind DN</b><br>
+Required to get access to the LDAP database. It is in the form: <i>uid=manager,dc=example,dc=com</i></p>
+") +
+
+    // TODO encryption!
+
+    // help text 7/7
+    _("<p><b>File Server</b><br>
+Check this if home directories of your LDAP users are stored on this machine.</p>");
+
+    term con = `VSquash(
+        `VBox (
+        `VSpacing(1),
+        // frame label
+        `Frame (_("LDAP User and Group Settings"),
+            `HBox (
+            `HSpacing (2),
+            `VBox (
+                `VSpacing (0.5),
+                // textentry label
+                `TextEntry (`id (`userb), _("&User Base"),
+                     user_base),
+                // textentry label
+                `TextEntry (`id (`groupb), _("&Group Base"),
+                     group_base),
+                // textentry label
+                `TextEntry (`id (`userc), _("User &Object Class:"),
+                     user_class),
+                // textentry label
+                `TextEntry (`id (`userf), _("Default User Fi&lter"),
+                     user_filter),
+// FIXME add group filter!!
+                // textentry label
+                `TextEntry (`id (`binddn), _("Bind &DN"), bind_dn),
+		    //TODO:move to 1st dialog?
+		// combobox label
+		`Left(`ComboBox (`id(`encr),
+                    // combobox label
+                    _("User Password &Encryption"), encryptions)),
+		    //TODO:move to 1st dialog?
+                `VSpacing (0.5)
+            ),
+            `HSpacing (2)
+            )
+        ),
+        `VSpacing(1),
+        `Left(`CheckBox (`id(`file_server),
+            // checkbox label
+            _("&File Server (home directories are stored here)"), file_server)),
+        `VSpacing(1)
+    ));
+
+    Wizard::SetContentsButtons (
+	// dialog title
+	_("LDAP User Management Configuration"), con, help_text,
+	UI::BackButtonLabel (), UI::NextButtonLabel ());
+
+    any result = nil;
+    do {
+	result = UI::UserInput ();
+
+	if (result == `next)
+        {
+
+	    user_base = UI::QueryWidget(`id(`userb), `Value);
+	    group_base = UI::QueryWidget(`id(`groupb), `Value);
+	    user_filter = UI::QueryWidget(`id(`userf), `Value);
+	    user_class = UI::QueryWidget(`id(`userc), `Value);
+	    bind_dn = UI::QueryWidget(`id(`binddn), `Value);
+
+	    if (bind_dn == "")
+	    {
+		// error popup label
+                Report::Error(_("Enter an LDAP bind DN."));
+                result = nil;
+                continue;
+            }
+            if (user_base == "")
+            {
+		// error popup label
+                Report::Error(_("Enter the user base."));
+                result = nil;
+                continue;
+            }
+            if (user_class == "")
+            {
+		// error popup label
+                Report::Error(_("Enter the user class."));
+                result = nil;
+                continue;
+            }
+            if (group_base == "")
+            {
+		// error popup label
+                Report::Error(_("Enter the group base."));
+                result = nil;
+                continue;
+            }
+	    file_server = UI::QueryWidget (`id(`file_server), `Value);
+	}
+
+    } while (!contains ([`back, `next, `cancel, `abort], result));
+
+    if (result == `next &&
+	(Ldap::user_base != user_base || Ldap::group_base != group_base ||
+	 Ldap::user_filter != user_filter || Ldap::user_class != user_class ||
+	 Ldap::bind_dn != bind_dn || Ldap::file_server != file_server))
+    {
+        Ldap::user_base		= user_base;
+        Ldap::group_base	= group_base;
+        Ldap::user_filter	= user_filter;
+        Ldap::user_class	= user_class;
+        Ldap::bind_dn		= bind_dn;
+	Ldap::file_server	= file_server;
+        Ldap::modified		= true;
+    }
+    return result;
 }
+
+/** FIXME: all function...
+ * The dialogs for setting defaults for new LDAP users
+ * @return symbol for sequencer
+ */
+global define symbol DefaultsConfigureDialog() ``{
+
+    string home		= Ldap::default_home;
+    string shell	= Ldap::default_shell;
+    string skel		= Ldap::default_skel;
+    string expire	= Ldap::default_expire;
+    string inactive	= Ldap::default_inactive;
+    integer inact	= tointeger(inactive);
+    integer gid		= Ldap::default_gid;
+    string s_gid	= sformat ("%1", gid);
+    string exp_date = "";
+    list available_groups = [];
+
+    //FIXME get shells list!
+    list available_shells = [];
+
+    if (expire != "0" && expire != "")
+    {
+        exp_date = lookup (SCR::Execute (.target.bash_output, (sformat (
+		"date --date='1970-01-01 00:00:01 %1 days' ", expire) +
+		"+\"%Y-%m-%d\"")), "stdout", "");
+        // remove \n from the end
+        exp_date = substring(exp_date,0,size(exp_date)-1);
+    }
+
+    string help_text = "FIXME!";
+
+    term contents = `HBox(`HSpacing(1.5),
+        `VBox(`VSpacing(0.5),
+	    // Frame label
+	    `Frame(_("Set the default values for new LDAP users"),`HBox(
+            `HSpacing(2), `VBox(
+                `VSpacing(0.5),
+		`TextEntry(`id(`defaultgid),
+		    // textentry label
+		    _("D&efault GID (gidNumber)"), s_gid ),
+                `VSpacing(0.5),
+		`ComboBox(`id(`shell), `opt(`hstretch, `editable),
+		    // combobox label
+		    _("Default &Login Shell (loginShell)"), available_shells) ,
+		/*
+		`HBox(
+		    `TextEntry (`id(`min), _("shadowMin"), ""),
+		    `TextEntry (`id(`min), _("shadowMax"), "")
+		),
+		// intfield
+		`IntField (`id ("warn"), _("Issue &warning how many days before password expiration"), -1, 99999, warn),
+		*/
+                `VSpacing(0.5),
+                // intfield
+                `IntField (`id (`inact), _("Days &after Password Expiration Login Is Usable (shadowInactive)"), -1, 99999, inact),
+                `VSpacing(0.5),
+                // text entry
+                `TextEntry( `id(`exp), _("Default E&xpiration Date (shadowExpire)"), exp_date),
+                `VSpacing(0.5),
+                // text entry
+                `TextEntry( `id(`home), _("Path Prefix for &Home Directory"),
+                    home),
+                `VSpacing(0.5),
+                // text entry
+                `TextEntry( `id(`skel), _("&Skeleton for Home Directory"),skel),
+                `VSpacing(0.5)
+                ),
+              `HSpacing(2))),
+            `VSpacing(0.5)),
+        `HSpacing(1.5));
+
+    Wizard::SetContentsButtons(
+            // dialog label
+            _("LDAP User Defaults"),
+            contents,
+            help_text,
+            BackButtonLabel(),
+            NextButtonLabel());
+
+    UI::ChangeWidget(`id(`shell), `Value, shell);
+
+    boolean modified = false;
+
+    string new_home  = home;
+    string new_shell = shell;
+    string new_skel = skel;
+    string new_exp_date = exp_date;
+    string new_expire = expire;
+    integer new_inact = inact;
+    integer new_gid = gid;
+
+    while (true)
+    {
+        modified = false;
+        ret = UI::UserInput();
+        if (ret == `back || ret == `abort || ret == `cancel) break;
+        if (ret == `next)
+        {
+            new_home  = UI::QueryWidget(`id(`home),  `Value);
+            new_shell = UI::QueryWidget(`id(`shell), `Value);
+            new_skel = UI::QueryWidget(`id(`skel), `Value);
+            new_inact = UI::QueryWidget(`id(`inact), `Value);
+            new_gid = tointeger (UI::QueryWidget(`id(`defaultgid),`Value));
+            new_exp_date = UI::QueryWidget(`id(`exp),`Value);
+            // check the home existence //FIXME only on server!
+            if (home != new_home)
+            {
+                if (SCR::Read(.target.dir, new_home ) == nil)
+                {
+                    Report::Error(_("The entered path prefix for home is not a directory.
+Try again.
+"));
+                    UI::SetFocus(`id(`home));
+                    continue;
+                }
+                modified = true;
+            }
+            // check the shell existence
+            if (shell != new_shell)
+            {
+		// FIXME: Users::
+                if (! contains (Users::all_shells, new_shell))
+                {
+                    // Yes-No popup
+                    if (! UI::YesNoPopup (_("If you select a nonexistent shell, the user
+may be unable to log in. Continue?
+")))
+                        continue;
+                }
+                modified = true;
+            }
+            // check the skeleton existence //FIXME only on server!
+            if (skel != new_skel)
+            {
+                if (SCR::Read(.target.dir, new_skel ) == nil)
+                {
+                    Report::Error(_("The entered home directory skeleton is not a directory.
+Try again.
+"));
+                    UI::SetFocus(`id(`skel));
+                    continue;
+                }
+                modified = true;
+            }
+            // check the expire date
+            if (exp_date != new_exp_date)
+            {
+                if (new_exp_date != "" && !regexpmatch (new_exp_date,
+                    "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]"))
+                {
+                    // Trannslators: Don't reorder the letters YYYY-MM-DD!!!
+                    // The date must stay in this format
+                    UI::MessagePopup(_("Expiration date must be in format YYYY-MM-DD"));
+                    UI::SetFocus(`id(`exp));
+                    continue;
+                }
+                if (new_exp_date == "")
+		{
+                    new_expire = "";
+		}
+                else
+                {
+                    map out = SCR::Execute(.target.bash_output,
+                        sformat("date --date='%1' ", new_exp_date) + "+%s");
+                    string days_s = out["stdout"]:"0\n";
+                    if (days_s != "")
+                    {
+                        days_s = substring(days_s, 0, size(days_s)-1);
+                        integer days = (tointeger(days_s) + 3600)/ (60*60*24);
+                        new_expire = sformat("%1", days);
+                    }
+                }
+                modified = true;
+            }
+            if (gid != new_gid || inact != new_inact)
+                modified = true;
+            break;
+        }
+    }
+    if (ret == `next && modified)
+    {
+	// TODO save new defaults
+	Ldap::modified = true;
+    }
+
+    return ret;
+}
+
+}//EOF

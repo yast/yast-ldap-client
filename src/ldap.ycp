@@ -20,24 +20,25 @@
     import "Wizard";
     include "require.ycp";
 
-    include "ldap/ui.ycp";
+//    include "ldap/ui.ycp";
+    include "ldap/wizards.ycp";
 
     if (!RequireAndConflict (["pam_ldap","nss_ldap"], [],
 			     _("<p>To configure and access LDAP services,
 the <b>%1</b> packages must be installed.</p>
 <p>Install these packages now?</p>
 ")))
-              {
-		  UI::MessagePopup(_("The configuration of the LDAP client
+    {
+	UI::MessagePopup(_("The configuration of the LDAP client
 cannot be completed without the mentioned packages."));
-		  return `auto;
-              }
+	return `auto;
+    }
 
+/*
     Wizard::CreateDialog ();
     Wizard::ReplaceAbortButton(`Empty ());
 
     Ldap::Read ();
-
     symbol result = LdapDialog ();
 
     if (result == `next)
@@ -59,5 +60,7 @@ client was saved."));
 
     UI::CloseDialog();
     return result;
+*/
+    return LdapSequence();
 
 }
