@@ -168,7 +168,7 @@
 	  domain = "";
 	}
 	ldap_v2 = (SCR::Read(.etc.openldap.ldap_conf.ldap_version) == "2");
-	ldap_tls = (SCR::Read(.etc.openldap.ldap_conf.ssl) == "start_tls");
+	ldap_tls = (SCR::Read(.etc.openldap.ldap_conf.start_tls) == "yes");
 
     nsswitch["passwd"] = splitstring (SCR::Read(.etc.nsswitch_conf.passwd)," ");
     nsswitch["group"] = splitstring (SCR::Read(.etc.nsswitch_conf.group), " ");
@@ -204,7 +204,9 @@
 	    else
 	      SCR::Write(.etc.openldap.ldap_conf.ldap_version, "3");
 	    if (ldap_tls)
-	      SCR::Write(.etc.openldap.ldap_conf.ssl, "start_tls");
+	      SCR::Write(.etc.openldap.ldap_conf.start_tls, "yes");
+            else
+	      SCR::Write(.etc.openldap.ldap_conf.start_tls, "no");
 
         if (user_base != "")
             SCR::Write(.etc.openldap.ldap_conf.nss_base_passwd, user_base);
