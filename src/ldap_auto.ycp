@@ -67,7 +67,7 @@ else if (func == "Change") {
 	UI::CloseDialog ();
 }
 /* Return actual state */
-else if (func == "Result") {
+else if (func == "Export") {
     ret = Ldap::Export();
 }
 /* Write givven settings */
