@@ -788,6 +788,7 @@ Value of DN is missing or invalid."),
      */
     global define boolean SingleValued (string attr) ``{
 
+	attr = tolower (attr);
 	if (!haskey (attr_types, attr))
 	{
 	    map attr_type = (map)SCR::Read (.ldap.schema.at, $["name":attr]);
@@ -846,6 +847,7 @@ Value of DN is missing or invalid."),
      */
     global define list GetAllAttributes (string class) ``{
 
+	class = tolower (class);
 	if (!haskey (object_classes, class))
 	{
 	    map object_class = (map)SCR::Read(.ldap.schema.oc, $["name":class]);
@@ -871,6 +873,7 @@ Value of DN is missing or invalid."),
      */
     global define list<string> GetRequiredAttributes (string class) ``{
 
+	class = tolower (class);
 	if (!haskey (object_classes, class))
 	{
 	    GetAllAttributes (class);
@@ -1077,12 +1080,13 @@ The object with the selected DN cannot be created.
      * @param classes object classes of the object the template will belong to
      * @return template map
      */
-    global define map CreateTemplate (string cn, list classes) ``{
+    global define map CreateTemplate (string cn, list<string> classes) ``{
 
 	map obj = $[
 	    "cn":		[ cn ],
 	    "modified":		"added"
 	];
+	classes = maplist (string c, classes, ``(tolower (c)));
 	if (contains (classes, "suseuserconfiguration"))
 	{
 	    obj = union (obj, new_objects ["suseusertemplate"]:$[]);
@@ -1121,7 +1125,8 @@ The object with the selected DN cannot be created.
 	if (class == "suseuserconfiguration")
 	{
 	    foreach (string dn, map t, (map<string,map<string,any> >)templates, ``{
-		if (contains (t["objectclass"]:[], "suseusertemplate"))
+		list cls = maplist(string c,t["objectclass"]:[],``(tolower(c)));
+		if (contains (cls, "suseusertemplate"))
 		    templs = add (templs, dn);
 	    });
 	    if (templs == [])
@@ -1131,7 +1136,8 @@ The object with the selected DN cannot be created.
 	if (class == "susegroupconfiguration")
 	{
 	    foreach (string dn, map t, (map<string,map<string,any> >)templates, ``{
-		if (contains (t["objectclass"]:[], "susegrouptemplate"))
+		list cls = maplist(string c,t["objectclass"]:[],``(tolower(c)));
+		if (contains (cls, "susegrouptemplate"))
 		    templs = add (templs, dn);
 	    });
 	    if (templs == [])
@@ -1214,8 +1220,8 @@ The object with the selected DN cannot be created.
 	    // OK, does not exist
 	    return $[];
 	}
-	else if (contains (object ["objectclass"]:[], "suseobjecttemplate"))
-// FIXME could be diffrerent case!!!
+	list cls = maplist (string c, object["objectclass"]:[],``(tolower (c)));
+	if (contains (cls, "suseobjecttemplate"))
 	{
 	    // exists as a template -> return object
 	    object = ConvertDefaultValues (object);
@@ -1330,13 +1336,15 @@ Select another one.
 	    }
 	    if (action == "renamed")
 	    {
-// FIXME FIXME works other way now!!!
-		string rdn = select (splitstring (dn, ","), 0, "");
-		dn = object["old_dn"]:dn;
-		object = remove (object, "old_dn");
+		string rdn	= select (splitstring (dn, ","), 0, "");
+		string new_dn	= dn;
+		dn		= object["old_dn"]:dn;
+		object		= remove (object, "old_dn");
+
 		if (!(boolean)SCR::Write (.ldap.modify, $[
-			"dn":	dn,// the original DN
-			"rdn":	rdn,
+			"dn"		: dn,// the original DN
+			"rdn"		: rdn,
+			"new_dn"	: new_dn,
 			"deleteOldRDN":	true,
 			"check_attrs":	true ], object))
 		    ret = LDAPErrorMap();

@@ -32,7 +32,7 @@
 	]
     ]];
 
-    TEST(``(Ldap::SingleValued ("skelDi")), [ READ2, $[], $[] ], 0);
+    TEST(``(Ldap::SingleValued ("skeldi")), [ READ2, $[], $[] ], 0);
 
     DUMP ("==================================================");
     DUMP ("===== non-single attribute =======================");
@@ -44,12 +44,12 @@
 	    ]
 	]
     ]];
-    TEST(``(Ldap::SingleValued ("skelDir")), [ READ3, $[], $[] ], 0);
+    TEST(``(Ldap::SingleValued ("skeldir")), [ READ3, $[], $[] ], 0);
 
     DUMP ("==================================================");
     DUMP ("===== skelDir once again (already in cache) ======");
 
-    TEST(``(Ldap::SingleValued ("skelDir")), [ READ3, $[], $[] ], 0);
+    TEST(``(Ldap::SingleValued ("skeldir")), [ READ3, $[], $[] ], 0);
 
     DUMP ("==================================================");
     DUMP ("===== cn (always single) =========================");
@@ -78,7 +78,7 @@
 	]
     ]];
 
-    TEST(``(Ldap::AttributeDescription ("defaultTemplate")), [ READ5, $[], $[] ], 0);
+    TEST(``(Ldap::AttributeDescription ("defaulttemplate")), [ READ5, $[], $[] ], 0);
     DUMP ("==================================================");
     DUMP ("===== description of used attribute (in cache) ===");
 

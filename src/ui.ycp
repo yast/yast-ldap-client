@@ -557,7 +557,7 @@ removing current ones.</p>
 	any val = value;
 	// do not show internal attributes
 	if (contains (["susedefaultvalue", "default_values", "objectclass",
-	"modified", "old_dn"], attr))
+	"modified", "old_dn"], tolower (attr)))
 	    return;
 	if (is (value, list))
 	    val = to_table (attr, (list<string>) val);
@@ -724,32 +724,7 @@ Enter a value."), attr));
 		});
 	    });
 	    if (cont) continue;
-
 	    template ["default_values"] = default_values;
-
-	    /*
-	    boolean structural = false;
-	    // check the object classes in defaultObjectClass entry:
-	    foreach (string oc, template["susedefaultobjectclass"]:[], ``{
-		if (!cont && !Ldap::ObjectClassExists (oc))
-		{
-		    y2warning ("no object class %1 in schema", oc);
-		    // error message: not supported class (%1)
-		    Popup::Error (sformat (_("The object class \"%1\" is not supported by current schema.
-Correct the value of \"defaultObjectClass\" entry."), oc));
-		    UI::SetFocus (`id(`table));
-		    cont = true;
-		}
-		structural = structural || Ldap::ObjectClassStructural (oc);
-	    });
-	    if (cont) continue;
-	    if (!structural && !Popup::YesNoHeadline (Label::WarningMsg(),
-// error message: not sufficient object classes
-_("No object class in 'defaultObjectClass' entry has the structural type.
-It is impossible to create the LDAP objects without structural object classes.
-Are you sure?")))
-		continue;
-	    */
 	    break;
 	}
     }
@@ -893,9 +868,6 @@ click <b>Configure Template</b>.
     // dialog label
     Wizard::SetContentsButtons(_("Module Configuration"),
             contents, help_text, Label::BackButton(), Label::NextButton());
-    // sh: We don't use "Abort Installation" any more. Stick with the normal "Abort" button.
-    // if (Mode::cont)
-    //     Wizard::SetAbortButton(`abort, Label::AbortInstallationButton() );
 
     if (size (modules_attrs_items[current_cn]:[]) > 0)
     {

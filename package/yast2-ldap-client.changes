@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Mar 25 17:36:17 CET 2004 - jsuchome@suse.cz
+
+- do not check 'defaultObjectClass' attribute (not present now)
+- more lowercase conversions
+- adapted testsuite
+- 2.9.10
+
+-------------------------------------------------------------------
 Wed Mar 24 16:42:57 CET 2004 - jsuchome@suse.cz
 
 - new attribute names for user/group LDAP configuration ('suse' prefix)

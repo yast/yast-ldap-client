@@ -4,11 +4,11 @@ Read	.ldap.schema.at $["name":"uid"] $["desc":"uid desc", "single":true]
 Return	true
 Dump	==================================================
 Dump	===== non-existent attribute =====================
-Read	.ldap.schema.at $["name":"skelDi"] nil
+Read	.ldap.schema.at $["name":"skeldi"] nil
 Return	false
 Dump	==================================================
 Dump	===== non-single attribute =======================
-Read	.ldap.schema.at $["name":"skelDir"] $["desc":"skelDir desc"]
+Read	.ldap.schema.at $["name":"skeldir"] $["desc":"skelDir desc"]
 Return	false
 Dump	==================================================
 Dump	===== skelDir once again (already in cache) ======
@@ -19,7 +19,7 @@ Read	.ldap.schema.at $["name":"cn"] $["desc":"cn attribute description", "oid":"
 Return	true
 Dump	==================================================
 Dump	===== description of new attribute ===============
-Read	.ldap.schema.at $["name":"defaultTemplate"] $["desc":"The DN of a template that should be used by default", "single":false]
+Read	.ldap.schema.at $["name":"defaulttemplate"] $["desc":"The DN of a template that should be used by default", "single":false]
 Return	The DN of a template that should be used by default
 Dump	==================================================
 Dump	===== description of used attribute (in cache) ===
