@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Feb 13 10:43:13 CET 2004 - jsuchome@suse.cz
+
+- force write of ldap.conf
+- 2.9.3
+
+-------------------------------------------------------------------
 Tue Feb 10 18:17:14 CET 2004 - jsuchome@suse.cz
 
 - change some return values: error messages, not boolean

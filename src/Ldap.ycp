@@ -1206,6 +1206,7 @@ Select another one.
 	    // update ldap.conf
 	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".host, server);
 	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base, domain);
+	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf", nil);
 	    y2milestone ("file /etc/openldap/ldap.conf was modified");
 	}
 	return write_openldap_conf;
