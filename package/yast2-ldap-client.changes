@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Wed Mar 31 12:43:57 CEST 2004 - jsuchome@suse.cz
+
+- fix of #37664: group support (write +::: to /etc/group)
+
+-------------------------------------------------------------------
 Tue Mar 30 18:32:50 CEST 2004 - jsuchome@suse.cz
 
 - set TLS_REQCERT value if TLS should be started (#37393)

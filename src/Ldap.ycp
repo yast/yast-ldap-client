@@ -496,7 +496,6 @@
 	_start_autofs = _autofs_allowed && Service::Enabled ("autofs");
 
 	// read /etc/passwd to check + line:
-	// TODO move passwd agent to core!
 	if (!(boolean)SCR::Execute (.passwd.init,$["base_directory":"/etc"]))
 	{
 	    string error	= (string) SCR::Read (.passwd.error);
@@ -1457,6 +1456,19 @@ Select another one.
 	    SCR::Execute (.target.bash,sformat("/bin/cp %1 %1.YaST2save",file));
 	    // empty map map as a parameter means "use data you have read"
 	    if (!SCR::Write (.passwd.users, $[]))
+	    {
+		// error popup
+		Report::Error (sformat (_("Error writing file %1."), file));
+		return false;
+	    }
+	}
+	file	= "/etc/group";
+	what	= "+:::";
+	if ((boolean) SCR::Write (.passwd.group.plusline, what))
+	{
+	    SCR::Execute (.target.bash,sformat("/bin/cp %1 %1.YaST2save",file));
+	    // empty map map as a parameter means "use data you have read"
+	    if (!SCR::Write (.passwd.groups, $[]))
 	    {
 		// error popup
 		Report::Error (sformat (_("Error writing file %1."), file));
