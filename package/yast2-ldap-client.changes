@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Mar 20 14:34:00 CET 2003 - kukuk@suse.de
+
+- Use example.com as example domain name.
+
+-------------------------------------------------------------------
 Wed Mar 12 12:57:07 CET 2003 - kukuk@suse.de
 
 - Force writing of config files [Bug #25143]

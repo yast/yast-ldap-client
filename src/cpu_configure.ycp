@@ -54,7 +54,7 @@
 
     // help text 2/7
     _("<p><b>User Base</b><br>
-This is the base to which users will be added. It is in the form: <i>ou=People,o=dbaseiv.net,c=US</i>. If you are not sure, use your <b>base DN</b> value.</p>
+This is the base to which users will be added. It is in the form: <i>ou=People,dc=example,dc=com</i>. If you are not sure, use your <b>base DN</b> value.</p>
 ") +
 
     // help text 3/7
@@ -75,7 +75,7 @@ Filter for searching. Default of <i>objectclass=person</i> is fine.</p>
 
     // help text 6/7
     _("<p><b>Bind DN</b><br>
-Required to get access to the LDAP database. It is in the form: <i>cn=Manager,o=dbaseiv.net,c=US</i></p>
+Required to get access to the LDAP database. It is in the form: <i>cn=Manager,dc=example,dc=com</i></p>
 ") +
 
     // help text 7/7
