@@ -161,7 +161,7 @@
     global map config_modules = $[];
     global map templates = $[];
 
-    global boolean binded = false;
+    global boolean bound = false;
 
     // DN's of groups (posixGroups) in LDAP
     global list groups_dn = [];
@@ -616,6 +616,8 @@ Value of DN is missing or invalid."),
 		args = $[ "bind_dn": bind_dn, "bind_pw": pass];
 	    if (!(boolean)SCR::Execute (.ldap.bind, args))
 		ret = LDAPError();
+	    else
+		bound = true;
 	}
 	return ret;
     }
@@ -1499,7 +1501,7 @@ Select another one.
 	// unbind is done in agent destructor
 	// ldap-client can be called more times from users module so we
 	// will have to know it is necessary to bind again
-	binded = false;
+	bound = false;
 
 	return `next;
     }

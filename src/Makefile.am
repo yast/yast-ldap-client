@@ -11,7 +11,8 @@ YCPCFLAGS = -I .
 client_DATA =		\
 	ldap.ycp	\
 	ldap_auto.ycp	\
-	ldap-client.ycp
+	ldap-client.ycp	\
+	ldap_config.ycp
 
 ynclude_DATA =		\
 	ui.ycp		\

@@ -1,0 +1,47 @@
+/**
+ * File:	clients/ldap.ycp
+ * Module:	Configuration of LDAP client
+ * Summary:	Manage the configuration stored in LDAP directory
+ *		(e.g. user/group templates)
+ * Authors:
+ *
+ * $Id$
+ */
+
+{
+    import "Ldap";
+
+    include "ldap/ui.ycp";
+
+    string param	= "";
+    /* Check arguments */
+    if(size(WFM::Args()) > 0 && is(WFM::Args(0), string)) {
+	param = (string) WFM::Args(0);
+    }
+    y2debug ("param=%1", param);
+
+    if (param != "late_dialog")
+	Wizard::CreateDialog();
+
+    ReadDialog (); // TODO not necessary when already done...
+
+    any ret = LDAPReadDialog ();
+    if (ret != `next)
+	return ret;
+
+    if (param == "late_dialog")
+	Wizard::CreateDialog();
+
+    ret = ModuleConfigurationDialog ();
+
+    if (ret == `next && Ldap::ldap_modified)
+    {
+	// TODO maybe add question "Really Write?"
+	if (Ldap::WriteLDAP (Ldap::config_modules))
+	    Ldap::WriteLDAP (Ldap::templates);
+    }
+
+    Wizard::CloseDialog();
+
+    return ret;
+}

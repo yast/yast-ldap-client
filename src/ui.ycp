@@ -406,11 +406,12 @@ directories.</p>
  */
 define symbol LDAPReadDialog () ``{
 
-    string msg = "";
+    string msg		= "";
+    boolean read_now	= false;
 
-    if (!Ldap::binded || Modified())
+    if (!Ldap::bound || Modified())
     {
-	if (!Ldap::binded || Ldap::modified)
+	if (!Ldap::bound || Ldap::modified)
 	{
 	    msg = Ldap::LDAPInit ();
 	    if (msg != "") Ldap::LDAPErrorMessage ("init", msg);
@@ -418,13 +419,14 @@ define symbol LDAPReadDialog () ``{
 	    Ldap::bind_pass = Ldap::LDAPAskAndBind (true);
 	    if (Ldap::bind_pass == nil)
 		return `back;
+	    read_now	= true;
 
 	    msg = Ldap::InitSchema ();
 	    if (msg != "") Ldap::LDAPErrorMessage ("schema", msg);
 	}
 	if (!Ldap::CheckBaseConfig (Ldap::base_config_dn))
 	    return `back;
-	if (!Ldap::binded || (Ldap::modified && !Ldap::ldap_modified) ||
+	if (read_now || (Ldap::modified && !Ldap::ldap_modified) ||
 	    (Ldap::ldap_modified && Popup::AnyQuestion( Popup::NoHeadline(),
 // yes/no popup
 _("Reread settings from server?
@@ -440,7 +442,7 @@ All changes will be lost.
 
 	    Ldap::ldap_modified = false;
 	}
-	Ldap::binded = true;
+	Ldap::bound = true;
     }
     return `next;
 }

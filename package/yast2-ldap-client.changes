@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Mar  2 14:19:56 CET 2004 - jsuchome@suse.cz
+
+- new standalone client for LDAP management
+- 2.9.5
+
+-------------------------------------------------------------------
 Mon Mar  1 18:56:08 CET 2004 - jsuchome@suse.cz
 
 - typing of lists/maps
