@@ -22,6 +22,7 @@
 
     import "Runlevel";
     import "Report";
+    import "Summary";
 
     /**
      * Should ypbind be started at boot?
@@ -198,5 +199,29 @@
 	}
 
 	return true;
+    }
+
+        
+    /** 
+     * Summary()
+     * returns html formated configuration summary
+     * @return string
+     */
+
+    global define Summary ()
+	``{	
+	string summary = "";
+	summary = Summary::AddHeader(summary, _("LDAP Client enabled"));
+	summary = Summary::AddLine(summary, (start) ? "Yes" : Summary::NotConfigured());
+	summary = Summary::AddHeader(summary, _("LDAP Domain"));
+	summary = Summary::AddLine(summary, (domain != "") ? domain : Summary::NotConfigured());
+	summary = Summary::AddHeader(summary, _("LDAP Server"));
+	summary = Summary::AddLine(summary,( server!="") ? server : Summary::NotConfigured());
+	summary = Summary::AddHeader(summary, _("LDAP Version 2"));
+	summary = Summary::AddLine(summary, (ldap_v2) ? "Yes" : Summary::NotConfigured());
+	summary = Summary::AddHeader(summary, _("LDAP &TLS/SSL"));
+	summary = Summary::AddLine(summary, (ldap_tls) ? "Yes" : Summary::NotConfigured());
+	
+	return summary;	
     }
 }
