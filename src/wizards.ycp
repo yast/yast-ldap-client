@@ -19,66 +19,10 @@ include "wizard/sequencer.ycp";
 include "ldap/ui.ycp";
 
 /**
- * Whole configuration of ldap-client
- * @return sequence result
- */
-global define symbol LdapSequence() ``{
-
-    map aliases = $[
-	"read"	: [ ``( ReadDialog() ), true ],
-	"main"	:   ``( MainSequence() ),
-	"write"	: [ ``( WriteDialog() ), true ]
-    ];
-
-    map sequence = $[
-	"ws_start" : "read",
-	"read" : $[
-	    `abort	: `abort,
-	    `next	: "main"
-	],
-	"main" : $[
-	    `abort	: `abort,
-	    `next	: "write"
-	],
-	"write" : $[
-	    `abort	: `abort,
-	    `next	: `next
-	]
-    ];
-
-    Wizard::CreateDialog();
-
-    any ret = WizardSequencer(aliases, sequence);
-
-    UI::CloseDialog();
-    return ret;
-}
-
-/**
- * Whole configuration of ldap-client but without reading and writing.
- * For use with autoinstallation.
- * @return sequence result
- */
-global define symbol LdapAutoSequence() ``{
-
-    string caption = _("LDAP Client Configuration");
-    term contents = `Label(_("Initializing ..."));
-
-    Wizard::CreateDialog();
-    Wizard::SetContentsButtons(caption, contents, "",
-	    Label::BackButton(), Label::NextButton());
-
-    any ret = MainSequence();
-
-    UI::CloseDialog();
-    return ret;
-}
-
-/**
  * Main workflow of the ldap-client configuration
  * @return sequence result
  */
-global define symbol MainSequence() ``{
+global define any MainSequence() ``{
 
     map aliases = $[
 	"ldap"		: ``( LdapDialog() ),
@@ -125,6 +69,62 @@ global define symbol MainSequence() ``{
     any ret = WizardSequencer(aliases, sequence);
 
     return ret;
+}
+
+/**
+ * Whole configuration of ldap-client but without reading and writing.
+ * For use with autoinstallation.
+ * @return sequence result
+ */
+global define symbol LdapAutoSequence() ``{
+
+    string caption = _("LDAP Client Configuration");
+    term contents = `Label(_("Initializing ..."));
+
+    Wizard::CreateDialog();
+    Wizard::SetContentsButtons(caption, contents, "",
+	    Label::BackButton(), Label::NextButton());
+
+    any ret = MainSequence();
+
+    UI::CloseDialog();
+    return (symbol) ret;
+}
+
+/**
+ * Whole configuration of ldap-client
+ * @return sequence result
+ */
+global define symbol LdapSequence() ``{
+
+    map aliases = $[
+	"read"	: [ ``( ReadDialog() ), true ],
+	"main"	:   ``( MainSequence() ),
+	"write"	: [ ``( WriteDialog() ), true ]
+    ];
+
+    map sequence = $[
+	"ws_start" : "read",
+	"read" : $[
+	    `abort	: `abort,
+	    `next	: "main"
+	],
+	"main" : $[
+	    `abort	: `abort,
+	    `next	: "write"
+	],
+	"write" : $[
+	    `abort	: `abort,
+	    `next	: `next
+	]
+    ];
+
+    Wizard::CreateDialog();
+
+    any ret = WizardSequencer(aliases, sequence);
+
+    UI::CloseDialog();
+    return (symbol) ret;
 }
 
 /* EOF */
