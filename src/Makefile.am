@@ -6,6 +6,8 @@
 
 yncludedir = @yncludedir@/ldap
 
+YCPCFLAGS = -I .
+
 client_DATA =		\
 	ldap.ycp	\
 	ldap_auto.ycp	\
@@ -25,3 +27,10 @@ config_DATA = ldap.y2cc
 desktop_DATA = ldap.desktop
 
 EXTRA_DIST = $(client_DATA) $(ynclude_DATA) $(module_DATA) $(config_DATA) $(desktop_DATA)
+
+symlinks:
+	test -L ldap || ln -sf . ldap
+
+ycpchook = symlinks
+
+include $(top_srcdir)/Makefile.am.common
