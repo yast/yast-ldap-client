@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Tue Jan  8 08:28:26 CET 2002 - nashif@suse.de
+
+- use y2tool
+- removed icon to y2m_menu
+- new module Ldapclient
+- added _auto.ycp for auto-installation
+
+-------------------------------------------------------------------
 Fri Sep 21 12:39:00 CEST 2001 - kukuk@suse.de
 
 - Add icon to filelist ...
