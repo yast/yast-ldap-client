@@ -337,4 +337,156 @@ as a value of \"homeDirectory\").</p>
     return $[ "attr": attr, "value": new_value ];
 }
 
+    /**
+     * Popup for browsing LDAP tree and selecting the DN
+     * WARNING we expect that LDAP connection is already correctly initialized !
+     * @param root_dn the starting point (root of tree); if empty string is
+     * given, the search for available bases will be done automatically
+     * @return DN of selected item, empty string when canceled
+     */
+    global define string BrowseTree (string root_dn) {
+
+// TODO check ncurses !!! - very bad, we cannot select particular item...
+// -> use "Open" button?
+
+	// map of already read subtrees
+	map<string,boolean> dns	= $[];
+	// selected DN (return value)
+	string current_dn	= "";
+
+	term contents = `HBox (`VSpacing (20), `VBox (`HSpacing(70),
+	    `VSpacing (0.2),
+	    `HBox (
+		`HSpacing (),
+		`ReplacePoint (`id (`reptree), `Tree (`id(`tree), root_dn, [])),
+		`ReplacePoint (`id (`repbuttons), `Empty ()),
+		`HSpacing ()
+	    ),
+	    `HBox (
+	        `PushButton (`id (`ok), `opt (`key_F10), Label::OKButton()),
+		`PushButton (`id (`cancel), Label::CancelButton())
+	    ),
+	    `VSpacing (0.2)
+	));
+
+	UI::OpenDialog (`opt (`decorated), contents);
+
+	list<term> items = maplist (string dn,
+	    (list<string>) SCR::Read (.ldap.search, $[
+		"base_dn"	: root_dn,
+		"scope"		: 1,
+		"dn_only"	: true,
+		"not_found_ok": true ]), {
+
+	    dns [dn]	= false;
+	    return `item (dn, false, []);
+	});
+
+	if (size (items) > 0)
+	{
+	    UI::ReplaceWidget (`id (`reptree),
+		`Tree (`id(`tree), `opt(`notify), root_dn, items));
+	}
+	else if (root_dn == "")
+	{
+	    list bases = (list) SCR::Read (.ldap.search, $[
+		"base_dn"	: "",
+	        "scope"		: 0,
+		"attrs"		: [ "namingcontexts" ]
+	    ]);
+	    if (size (bases) > 0)
+		items = maplist (string dn, bases[0,"namingcontexts"]:[],
+		    ``(`item(dn, false, [])));
+	    if (size (items) > 0)
+		UI::ReplaceWidget (`id (`reptree),
+		    `Tree (`id(`tree), `opt(`notify), root_dn, items));
+	}
+
+
+	list<string> subdns = [];
+
+	define list<term> update_items (list<term> its) {
+
+	    return maplist (term it, its, {
+		string dn	= select (it, 0, "");
+		if (dn == current_dn)
+		{
+		    return `item (dn, true, maplist (string k,
+			subdns, ``(`item (k, false, []))));
+		}
+		integer last = size (it) - 1;
+		if (size (select (it, last, [])) == 0)
+		    return it;
+		/* FIXME it is not possible to check if the branch is open
+		boolean open = select (it, 1, false);
+		if (open == nil)
+		    open = false;
+		return `item (dn, open, update_items (select(it,last,[])));
+		*/
+		return `item (dn, update_items (select(it,last,[])));
+	    });
+	}
+
+	string retval = "";
+	while (true)
+	{
+	    any ret = UI::UserInput ();
+	    if (ret == `tree)
+	    {
+		current_dn = (string) UI::QueryWidget (`id(`tree),`CurrentItem);
+		if (! dns[current_dn]:false)
+		{
+		    subdns = (list<string>) SCR::Read (.ldap.search, $[
+			"base_dn"	: current_dn,
+			"scope"		: 1,
+			"dn_only"	: true,
+			"not_found_ok"	: true,
+		    ]);
+		    dns [current_dn]	= true;
+		    if (size (subdns) > 0)
+		    {
+			items	= update_items (items);
+			UI::ReplaceWidget (`id (`reptree),
+			    `Tree (`id(`tree), `opt(`notify), root_dn, items));
+			UI::ChangeWidget (`id(`tree), `CurrentItem, current_dn);
+		    }
+		}
+	    }
+	    if (ret == `cancel)
+	    {
+		break;
+	    }
+	    if (ret == `ok)
+	    {
+		string dn = (string)UI::QueryWidget (`id(`tree), `CurrentItem);
+		if (dn != nil)
+		    retval = dn;
+		else retval = current_dn;
+		break;
+	    }
+	}
+	UI::CloseDialog ();
+	return retval;
+    }
+
+    // Before opening browse popup, initialize LDAP connection. It is assumed
+    // that Ldap settings were read
+    global define string InitAndBrowseTree (string root_dn) {
+
+	map args = $[
+	    "hostname"	: Ldap::GetFirstServer (Ldap::server),
+	    "port"	: Ldap::GetFirstPort (Ldap::server),
+	    "version"	: Ldap::ldap_v2 ? 2 : 3,
+	    "use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+	];
+	boolean init = (boolean) SCR::Execute (.ldap, args);
+	if (init == nil || !init)
+	{
+	    y2error ("init failed");
+	    return "";
+	}
+
+	return BrowseTree (root_dn);
+    }
+
 }//EOF

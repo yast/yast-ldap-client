@@ -1,9 +1,15 @@
 -------------------------------------------------------------------
+Wed Jul 14 17:47:09 CEST 2004 - jsuchome@suse.cz
+
+- first version of browse popup
+- GetRequiredAttributes now gets attributes also from superior classes
+- 2.10.1
+
+-------------------------------------------------------------------
 Mon Jul 12 20:40:40 CEST 2004 - jsuchome@suse.cz
 
 - used Nsswitch module for handling /etc/nsswitch.conf
 - yast2-network is not required now
-- 2.10.1
 
 -------------------------------------------------------------------
 Mon Jun 28 14:58:23 CEST 2004 - jsuchome@suse.cz

@@ -411,10 +411,16 @@ have changed your configuration.</p>
 	`Frame (_("Access to LDAP Server"), `HBox(
 	    `HSpacing (1), `VBox(
 		`VSpacing(0.5),
-		`TextEntry (`id (`base_config_dn),
-		    // textentry label
-		    _("&Configuration Base DN"),
-		    base_config_dn),
+		`HBox (
+		    `TextEntry (`id (`base_config_dn),
+			// textentry label
+			_("&Configuration Base DN"), base_config_dn),
+		    `VBox (
+			`Label (""),
+			// button label
+			`PushButton (`id(`br), `opt(`key_F6), _("Bro&wse"))
+		    )
+		),
 		`VSpacing(0.5),
 		`TextEntry (`id (`bind_dn),
 		    // textentry label
@@ -457,6 +463,15 @@ have changed your configuration.</p>
 	}
 	if (contains ([`back, `cancel, `abort], result))
 	    break;
+
+	if (result == `br)
+	{
+	    string dn = LdapPopup::InitAndBrowseTree (Ldap::GetDomain ());
+	    if (dn != "")
+	    {
+		UI::ChangeWidget (`id(`base_config_dn), `Value, dn);
+	    }
+	}
 	if (result == `next || result == `configure)
 	{
 	    bind_dn = (string) UI::QueryWidget(`id(`bind_dn), `Value);

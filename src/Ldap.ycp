@@ -905,8 +905,10 @@ Value of DN is missing or invalid."),
 		object_class["must"]:[]);
 	    // read attributes of superior classes
 	    foreach (string sup_oc, object_class["sup"]:[], ``{
-		object_class ["all"] = union (object_class ["all"]:[],
-		    GetAllAttributes (sup_oc));
+		list sup_all = GetAllAttributes (sup_oc);
+		object_class ["all"] = union (object_class ["all"]:[], sup_all);
+		object_class ["must"] = union (object_class ["must"]:[],
+		    object_classes [sup_oc,"must"]:[]);
 	    });
 	    object_classes [class] = object_class;
 	}
