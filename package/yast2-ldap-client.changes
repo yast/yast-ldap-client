@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Mar 15 16:30:21 CET 2004 - jsuchome@suse.cz
+
+- build fix
+- new defaults according to new LDAP user/group schemas
+
+-------------------------------------------------------------------
 Fri Mar 12 12:46:40 CET 2004 - jsuchome@suse.cz
 
 - updated helptext

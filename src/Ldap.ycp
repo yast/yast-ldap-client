@@ -155,17 +155,19 @@
 	"userTemplate"		: $[
 	    "objectClass"	: [ "top", "objectTemplate", "userTemplate"],
 	    "namingAttribute"	: [ "uid" ],
-	    "defaultObjectClass":
-		[ "top", "posixAccount", "shadowAccount", "inetOrgPerson"],
+//	    "defaultObjectClass":
+//		[ "top", "posixAccount", "shadowAccount", "inetOrgPerson"],
 	    "defaultValue"	: [
 		"homeDirectory=/home/%uid",
 		"loginShell=/bin/bash"
-	    ]
+	    ],
+	    "plugin"		: [ "UsersPluginLDAPAll" ]
 	],
 	"groupTemplate"		: $[
 	    "objectClass"	: [ "top", "objectTemplate", "groupTemplate"],
 	    "namingAttribute"	: [ "cn" ],
-	    "defaultObjectClass": [ "top", "posixGroup", "groupOfNames"]
+//	    "defaultObjectClass": [ "top", "posixGroup", "groupOfNames"]
+	    "plugin"		: [ "UsersPluginLDAPAll" ]
 	]
     ];
 
@@ -1093,7 +1095,9 @@ The object with the selected DN cannot be created.
 	    obj = union (obj, new_objects ["groupTemplate"]:$[]);
 	}
 	else
+	{
 	    obj["objectClass"] = [ "top", "objectTemplate"];
+	}
 
 	obj = ConvertDefaultValues (obj);
 	return AddMissingAttributes (obj);
