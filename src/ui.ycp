@@ -15,9 +15,10 @@
     textdomain "ldap-client";
 
     import "Wizard";
-    import "Ldap";
     import "Mode";
     import "Report";
+    import "Ldap";
+    import "LdapPopup";
 
     import "Label";
     import "Popup";
@@ -99,49 +100,39 @@ and the client will be restarted.")))
      */
     global define symbol LdapDialog () ``{
 
-	string help_text = _("FIXME!
-<p>First, basic terms have to be described, like
-<b>What does it mean \"DN\"</b>...</p>
-<b>
-<p>server:port</p>
-<p>Advanced...</p>
-</b>
-");
+	// help text 1/6
+	string help_text = _("<p>Here, your machine can be set up as an
+<b>LDAP client</b> to authenticate your users with an OpenLDAP server.
+Enter the <b>Distinguished Name</b> of the search base (\"base DN\", such as
+dc=example,dc=com) in the first entry and the LDAP server's address
+(e.g., ldap.example.com or 10.20.0.2) in the second. Specify multiple servers
+by separating their addresses with spaces. It must be possible to resolve the
+addresses without using LDAP. You can also specify the port on which the server is running using the syntax \"server:port\", e.g. ldap.example.com:379.
+</p>") +
 
-// help text 1/5
-	help_text = help_text + UI(_("<p>Here, your machine can be set up as an
-<b>LDAP client</b> to authenticate your user with an OpenLDAP server.
-Enter the name of the search base (base DN, such as dc=example,dc=com)
-in the first entry and the LDAP server's address (e.g., ldap.example.com
-or 10.20.0.2) in the second. Specify multiple servers by separating their
-addresses with spaces. It must be possible to resolve the addresses
-without using LDAP.
-To deactivate LDAP services, click <b>Do Not Use LDAP</b>.</p>"));
+	// help text 2/6
+	_("<p>Some LDAP servers support StartTLS [RFC2830].
+If your server supports it and it is configured, activate <b>LDAP TLS/SSL</b>
+to encrypt your communication with the LDAP server.</p>") +
 
-// help text 2/5
-	help_text = help_text + UI(_("<p>Some LDAP servers support
-StartTLS [RFC2830]. If your server supports it and it is configured,
-activate <b>LDAP TLS/SSL</b> to encrypt your communication
-with the LDAP server.</p>"));
+	// help text 3/6
+	_("<p>Normally, the LDAP version 3 protocol will be used. If you have
+a LDAP server using protocol 2 (for example OpenLDAP v1), you should activate
+<b>LDAP Version 2</b>.</p>") +
 
-// help text 3/5
-	help_text = help_text + UI(_("<p>Normally, the LDAP version 3 protocol
-will be used. If you have a LDAP server using protocol 2 (for example
-OpenLDAP v1), you should activate <b>LDAP Version 2</b>.</p>"));
+	// help text 4/6
+	_("<p>If you activate LDAP, NSS and PAM will be configured accordingly
+to use LDAP for user authentification.</p>") +
 
-// help text 4/5
-	help_text = help_text + UI(_("<p>If you deactivate LDAP, the current
-LDAP entry for passwd in /etc/nsswitch.conf will be removed. The PAM
-configuration will be modified and the LDAP entry removed.</p>"));
+	// help text 5/6
+	_("<p>To deactivate LDAP services, click <b>Do Not Use LDAP</b>.
+If you deactivate LDAP, the current LDAP entry for passwd in /etc/nsswitch.conf
+will be removed. The PAM configuration will be modified and the LDAP entry
+removed.</p>") +
 
-// help text 5/5
-	help_text = help_text + UI(_("<p>If you activate LDAP, NSS and PAM
-will be configured accordingly to use LDAP for user authentification.</p>"));
-
-// help text 5/5
-	help_text = help_text + UI(_("<p>For configuration of LDAP user and
-group settings, click <b>Advanced Configuration</b> button.</p>
-"));
+	// help text 6/6
+	_("<p>For configuration of advanced LDAP settings, click
+<b>Advanced Configuration</b> button.</p>");
 
 	// during installation, only starting ldap is enabled
 	boolean start		= Mode::cont || Ldap::start;
@@ -218,7 +209,7 @@ group settings, click <b>Advanced Configuration</b> button.</p>
 
 		if (domain == "")
 		{
-		   // error popup label
+		    // error popup label
                     Report::Error(_("Enter an LDAP base DN."));
                     result = nil;
                     continue;
@@ -256,18 +247,26 @@ group settings, click <b>Advanced Configuration</b> button.</p>
  */
 global define symbol AdvancedConfigurationDialog () ``{
 
-    string help_text = _("FIXME!") +
+    // help text 1/4
+    string help_text = _("<p>First, you should set <b>Configuration Base DN</b>.
+It is the base for storing your configuration data, which are saved on LDAP
+server.</p>") +
 
-_("<p><b>Configuration Base DN</b> (Main Configuration Object) is written in ldap.conf file,
-while all other values are strored in LDAP.</p> ") +
+    // help text 2/4
+    _("<p>To access the data stored on server, you have to fill the
+<b>Bind DN</b> (e.g. ou=Managerer,dc=mydomain,dc=com).</p>") +
 
-_("<p><b>Bind DN</b> is for binding :-)...</p>") +
+    // help text 3/4
+    _("<p>Push the <b>Configure</b> button to configure settings stored at
+LDAP server. You will be asked for password if you are not connected yet or
+if you have changed your configuration.</p>") +
 
-_("<p><b>File Server</b> checkbox...</p>") +
+    // help text 4/4
+    _("<p><b>File Server</b> indicates, that home directories of users are
+stored on this machine. Changing this value does not cause any direct action,
+it is only information for YaST Users module, which can manage user home
+directories.</p>");
 
-_("<p>Push the <b>Configure</b> button to configure settings stored in LDAP...<br>
-You will be asked for password.
-</p>");
 
 
     string bind_dn	= Ldap::bind_dn;
@@ -290,7 +289,7 @@ You will be asked for password.
 		`VSpacing(0.5),
 		`TextEntry (`id (`bind_dn),
 		    // textentry label
-		    _("Bind &DN for LDAP Server"), bind_dn),
+		    _("Bind &DN"), bind_dn),
 		`VSpacing(1)
 	    ),
 	    `HSpacing (1)
@@ -322,6 +321,22 @@ You will be asked for password.
 	    base_config_dn = UI::QueryWidget(`id(`base_config_dn), `Value);
 	    file_server = UI::QueryWidget(`id(`file_server), `Value);
 
+	    if (result == `configure && bind_dn == "")
+	    {
+		// error popup label
+                Report::Error(_("Enter the DN used for binding to the LDAP server."));
+		UI::SetFocus (`id (`bind_dn));
+		continue;
+	    }
+
+	    if (result == `configure && base_config_dn == "")
+	    {
+		// error popup label
+                Report::Error(_("Enter the Configuration Base DN"));
+		UI::SetFocus (`id (`base_config_dn));
+		continue;
+	    }
+
 	    if (Ldap::GetMainConfigDN() != base_config_dn ||
 		Ldap::bind_dn != bind_dn || Ldap::file_server != file_server)
 	    {
@@ -345,7 +360,6 @@ global define symbol LDAPReadDialog () ``{
     if (!Ldap::binded || Modified())
     {
 	if (!Ldap::binded || Ldap::modified)
-	// TODO don't ask everytime (after 1st change)
 	{
 	    Ldap::LDAPInit ();
 	    Ldap::bind_pass = Ldap::LDAPAskAndBind (true);
@@ -437,16 +451,24 @@ global define symbol ModuleConfigurationDialog () ``{
 	UI::ChangeWidget (`id(`templ_mb), `Enabled, items != []);
     }
 
-    string help_text = _("FIXME!") +
+    // helptext 1/4
+    string help_text = _("<p>Here you can manage the configuration stored in LDAP directory.</p>") +
 
-    _("<p>Choose module with <b>Configuration Module</b> combo.</p>") +
+    // helptext 2/4
+    _("Each configuration set is called <b>configuration module</b>. If there
+is no configuration module in the provided location (Base Configuration),
+you can create new one with <b>New</b> button. You can delete current module
+using <b>Delete</b> button.") +
 
-    _("<p>Delete current module with <b>Delete</b> button or create new one using the <b>New</b> button.</p>") +
+    // helptext 3/4
+    _("<p>Edit the values of attributes in table with <b>Edit</b> button.
+Some values have special meaning - e.g. changing the <b>cn</b> value renames the
+current module.</p>") +
 
-    _("<p>Edit the values in table with <b>Edit</b> button. Changing the <b>cn</b> value renames the module.</p>") +
-
-    _("<p>Clicking on <b>Configure Template</b> button gets you to Template Configuration Dialog.
-</p>");
+    // helptext 4/4
+    _("<p>If you want to configure the default template of current module,
+click the <b>Configure Template</b> button to go to Template Configuration
+Dialog.</p>");
 
     string current_dn		= Ldap::current_module_dn;
     map  modules_attrs_items	= $[]; // map of list (table items), index is cn
@@ -557,7 +579,7 @@ of each type, so you cannot add a new one."));
 		continue;
 	    }
 	    // get new name and class
-	    map new = NewModulePopup (available, names);
+	    map new = LdapPopup::NewModule (available, names);
 	    string cn = new ["cn"]:"";
 	    if (cn == "")
 		continue;
@@ -572,7 +594,7 @@ of each type, so you cannot add a new one."));
 		modules_attrs_items[current_cn]:[]);
 	}
 	// module attribute modification
-	if (result == `edit || result == `table)// && attr != "defaultTemplate")
+	if (result == `edit || result == `table)
 	{
 	    list value		= modules [current_dn, attr]:[];
 	    list offer		= [];
@@ -580,9 +602,11 @@ of each type, so you cannot add a new one."));
 	    if (attr == "cn")
 		conflicts = names;
 	    if (attr == "defaultTemplate")
-		offer          = templates_dns;
+		offer		= templates_dns;
+	    else if (attr == "passwordHash")
+		offer		= [ "crypt", "clear"];//FIXME md5??
 
-	    value = EditAttributePopup (attr, value, conflicts,
+	    value = LdapPopup::EditAttribute (attr, value, conflicts,
 		Ldap::SingleValued (attr), offer);
 	    if (value == modules [current_dn, attr]:[]) //nothing was changed
 		continue;
@@ -686,11 +710,18 @@ of each type, so you cannot add a new one."));
  */
 global define map TemplateConfigurationDialog (map templ) ``{
 
-    string help_text = _("FIXME!") +
+    // help text 1/3
+    string help_text = _("<p>Here you can configure the template used for
+creating new objects (like users or groups).</p>") +
 
-    _("<p>Edit the values in table with <b>Edit</b> button. Changing the <b>cn</b> value renames the template.</p>") +
+    // help text 2/3
+    _("<p>Edit the template attribute values in with <b>Edit</b> button.
+Changing the <b>cn</b> value renames the template.</p>") +
 
-_("<p></p>");
+    // help text 3/3
+    _("<p>In the second table there is a list of <b>default values</b>, used
+for new objects. You can modify the list by adding new values and editing or
+removing current ones.</p>");
 
     string template_dn = Ldap::current_template_dn;
 
@@ -785,14 +816,13 @@ _("<p></p>");
 	    if (attr == "cn")
 	    {
 		string base = substring (template_dn, find (template_dn,",")+1);
-		// TODO cache the DN's?
 		foreach (`it, Ldap::ReadDN (base, ""), ``{
 		    if (substring (it,0,3) == "cn=")
 			conflicts = add (conflicts, get_cn (it));
 		});
 	    }
 
-	    value = EditAttributePopup (attr, value, conflicts,
+	    value = LdapPopup::EditAttribute (attr, value, conflicts,
 		Ldap::SingleValued (attr), offer);
 	    if (value == template[attr]:[])
 		continue;
@@ -807,9 +837,9 @@ _("<p></p>");
 	    });
 	    list classes = template["defaultObjectClass"]:[];
 	    list available = Ldap::GetObjectAttributes (classes);
-	    // TODO: filter objectClass from available? (there is already
-	    // defaultObjectClass attribute...)
-	    map dfl = AddDefaultValuePopup (available, conflicts);
+	    // filter out objectClass (there is already defaultObjectClass)
+	    map dfl = LdapPopup::AddDefaultValue (available,
+		add (conflicts, "objectClass"));
 	    if (dfl["value"]:"" == "")
 		continue;
 	    string attr = dfl["attr"]:"";
@@ -827,7 +857,7 @@ _("<p></p>");
 	    if (attr == nil)
 		continue;
 	    string value	= default_values [attr]:"";
-	    list l_value = EditAttributePopup (attr, [ value ], [], true, []);
+	    list l_value = LdapPopup::EditAttribute (attr, [value],[],true,[]);
 	    if (l_value [0]:"" == value)
 		continue;
 	    value = l_value[0]:"";

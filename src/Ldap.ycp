@@ -148,8 +148,6 @@
      * Map of atribute types (from schema). Indexed by names.
      */
     global map attr_types = $[
-	// well, cn is not "single value" according to schema, but...
-	"cn" : $[ "single": true]
     ];
 
 
@@ -403,6 +401,8 @@
 		SCR::Write(.etc.openldap.ldap_conf.admintool_dn,base_config_dn);
 
 	    // save the user and group bases (check the LDAP config before)
+	    user_base = domain;
+	    group_base = domain;
 	    foreach (`dn, `mod, config_modules, ``{
 		if (contains (mod["objectClass"]:[], "userConfiguration"))
 		    user_base = mod["defaultBase",0]:domain;
@@ -702,7 +702,32 @@ Object Class not found."),
 	return pw;
     }
 
+    /**
+     * Check if attribute allowes only single or multiple value
+     * @param attr attribute name
+     * @return answer
+     */
     global define boolean SingleValued (string attr) ``{
+
+	if (!haskey (attr_types, attr))
+	{
+	    map attr_type = SCR::Read (.ldap.schema.at, $["name":attr]);
+	    if (attr_type == nil)
+		attr_type = $[];
+	    if (attr == "cn")
+		// well, cn is not "single value" according to schema, but...
+		attr_type ["single"] = true;
+	    attr_types [attr] = attr_type;
+	}
+	return attr_types [attr, "single"]:false;
+    }
+
+    /**
+     * Gets the description of attribute (from schema)
+     * @param attr attribute name
+     * @return description
+     */
+    global define string AttributeDescription (string attr) ``{
 
 	if (!haskey (attr_types, attr))
 	{
@@ -711,7 +736,7 @@ Object Class not found."),
 		attr_type = $[];
 	    attr_types [attr] = attr_type;
 	}
-	return attr_types [attr, "single"]:false;
+	return attr_types [attr, "desc"]:"";
     }
 
     /**
@@ -754,7 +779,7 @@ Object Class not found."),
      * For a given object, add all atributes this object is allowed to have
      * according to its "objectClass" value. Added attributes have empty values.
      */
-    define map AddMissingAttributes (map object) ``{
+    global define map AddMissingAttributes (map object) ``{
 
 	foreach (`class, object["objectClass"]:[], ``{
 	    foreach (`attr, GetAllAttributes (class), ``{
@@ -1033,7 +1058,7 @@ exists at LDAP server. Create it now?"), dn)))
 	    if (GetLDAPEntry (default_base) == $[])
 		default_base = domain;
 	}
-	obj ["defaultBase"] = default_base;
+	obj ["defaultBase"] = [ default_base ];
 	return AddMissingAttributes (obj);
     }
 
@@ -1161,14 +1186,14 @@ Please select another one."));
      * @param objects map of objects to write. It is in the form:
      * $[ DN: (map) attribute_values]
      * @example TODO
-     * @return empty string on success, error message otherwise
+     * @return error map (empty on success)
      */
-    global define string WriteToLDAP (map objects) ``{
+    global define map WriteToLDAP (map objects) ``{
 
-	string ret = "";
+	map ret = $[];
 	foreach (`dn, `object, objects, ``{
 
-	    if (ret != "")
+	    if (ret != $[])
 		return;
 	    string action = object["modified"]:"";
 	    if (action != "")
@@ -1185,14 +1210,14 @@ Please select another one."));
 	    if (action == "added")
 	    {
 		if (!SCR::Write (.ldap.add, $[ "dn": dn ], object))
-		    ret = LDAPError();
+		    ret = LDAPErrorMap();
 	    }
 	    if (action == "edited")
 	    {
 		if (!SCR::Write (.ldap.modify, $[
 		    "dn":		dn,
 		    "check_attrs":	true ], object))
-		    ret = LDAPError();
+		    ret = LDAPErrorMap();
 	    }
 	    if (action == "renamed")
 	    {
@@ -1204,14 +1229,14 @@ Please select another one."));
 			"rdn":	rdn,
 			"deleteOldRDN":	true,
 			"check_attrs":	true ], object))
-		    ret = LDAPError();
+		    ret = LDAPErrorMap();
 	    }
 	    if (action == "deleted")
 	    {
 		if (object ["old_dn"]:dn != dn)
 		    dn = object ["old_dn"]:dn;
 		if (!SCR::Write (.ldap.delete, $[ "dn":	dn ]))
-		    ret = LDAPError();
+		    ret = LDAPErrorMap();
 	    }
 	});
 	return ret;
@@ -1224,7 +1249,7 @@ Please select another one."));
      */
     global define boolean WriteLDAP (map objects) ``{
 
-	string error = "";
+	map error = $[];
 	if (anonymous || bind_pass == nil)
 	{
 	    bind_pass = LDAPAskAndBind (false);
@@ -1233,66 +1258,9 @@ Please select another one."));
 	if (bind_pass != nil)
 	{
 	    error = WriteToLDAP (objects);
-	    if (error != "")
-		LDAPErrorMessage ("write", error);
+	    if (error != $[])
+		LDAPErrorMessage ("write", error["msg"]:"");
 	}
-	return error == "";
+	return error == $[];
     }
-
-
-    /*
-    TODO popup for browsing the LDAP tree...
-
-    global define string BrowseForDN (string base) ``{
-
-	string dn = base;
-
-	list base_items = maplist (`it, OneLevelDNSearch (base), ``{
-	    return `item(`id(it), it, false, []);
-	});
-	list tree_items = [ `item(`id(base), base , true, base_items) ];
-
-	UI::OpenDialog (
-	    `VBox (
-		`HSpacing (50),
-		`Tree (`id (`ldap_tree),`opt(`notify), _("Select &DN:"), tree_items),
-		`HBox (
-		    `PushButton (`id(`ok), `opt(`default, `key_F10),
-				 Label::OKButton()),
-		    `PushButton (`id(`cancel), `opt(`key_F9),
-				 Label::CancelButton())
-		    )
-		));
-	UI::SetFocus (`id (`ldap_tree));
-	any ret = nil;
-	while (true)
-	{
-	    ret = UI::UserInput();
-
-	    if (ret == `ok)
-		break;
-	    else if (contains ([`cancel, `abort], ret))
-		break;
-	    else
-		y2warning ("current item:%1", UI::QueryWidget(`id(`ldap_tree), `CurrentItem));
-	}
-
-	dn = UI::QueryWidget(`id(`ldap_tree), `CurrentItem);
-
-	UI::CloseDialog ();
-	return dn;
-    }
-    global define list OneLevelDNSearch (string base) ``{
-
-	list ret = SCR::Read (.ldap.search, $[
-	    "base_dn":	base,
-	    "attrs":	["dn"],
-	    "attrsOnly":true,
-	    "scope":	1,
-	    "dn_only":	true
-	]);
-	if (ret == nil) ret = [];
-	return ret;
-    }
-    */
 }

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Jul  2 13:19:17 CEST 2003 - jsuchome@suse.de
+
+- LdapPopup module offers edit-popups outside (e.g. for users-module)
+- added helptexts
+
+-------------------------------------------------------------------
 Fri Jun 27 08:37:46 CEST 2003 - jsuchome@suse.de
 
 - read schema description from server
