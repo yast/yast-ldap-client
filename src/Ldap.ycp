@@ -64,6 +64,17 @@
     global boolean _start_autofs = false;
 
     /**
+     * If login of LDAP uses to local machine is enabled
+     */
+    global boolean login_enabled = true;
+
+    /**
+     * which attribute have LDAP groups for list of members
+     */
+    global string member_attribute	= "member";
+    global string old_member_attribute	= "member";
+
+    /**
      * IP addresses of LDAP server.
      */
     global string  server = "";
@@ -101,7 +112,9 @@
     global string group_base = "";
 
     /* stored values of /etc/nsswitch.conf */
-    map nsswitch = $[ "passwd" : [], "group": []];
+    map nsswitch = $[
+	"passwd" : [], "group": [], "passwd_compat": [], "group_compat": []
+    ];
 
     // are we binding anonymously?
     global boolean anonymous = false;
@@ -144,12 +157,15 @@
 	    "namingAttribute"	: [ "uid" ],
 	    "defaultObjectClass":
 		[ "top", "posixAccount", "shadowAccount", "inetOrgPerson"],
-	    "defaultValue"	: [ "gidNumber=100" ]
+	    "defaultValue"	: [
+		"homeDirectory=/home/%uid",
+		"loginShell=/bin/bash"
+	    ]
 	],
 	"groupTemplate"		: $[
 	    "objectClass"	: [ "top", "objectTemplate", "groupTemplate"],
 	    "namingAttribute"	: [ "cn" ],
-	    "defaultObjectClass": [ "top", "posixGroup", "groupOfUniqueNames"]
+	    "defaultObjectClass": [ "top", "posixGroup", "groupOfNames"]
 	]
     ];
 
@@ -335,11 +351,84 @@
      */
     define string ReadLdapConfEntry (string entry, string defvalue) ``{
 
-	string ret = (string) SCR::Read(
+	string value = defvalue;
+	any ret = (any) SCR::Read(
 	    add (.etc.ldap_conf.v."/etc/ldap.conf", entry));
 	if (ret == nil)
-	    ret = defvalue;
-	return ret;
+	    value = defvalue;
+	else if (is (ret,list))
+	{
+	    value = ((list)ret)[0]:defvalue;
+	}
+	else
+	    value = sformat ("%1", ret);
+	return value;
+    }
+
+    /**
+     * Read multi-valued entry from /etc/ldap.conf file
+     * @param entry entry name
+     * @return entry value
+     */
+    define list<string> ReadLdapConfEntries (string entry) ``{
+
+	any ret = (any) SCR::Read(
+	    add (.etc.ldap_conf.v."/etc/ldap.conf", entry));
+	if (ret == nil)
+	    return [];
+	else if (is (ret,list))
+	{
+	    return (list<string>) ret;
+	}
+	else
+	    return [ sformat ("%1", ret) ];
+    }
+
+    /**
+     * Write (single valued) entry to /etc/ldap.conf
+     * @param entry name
+     * @param value
+     */
+    define void WriteLdapConfEntry (string entry, string value) ``{
+
+	SCR::Write (add (.etc.ldap_conf.v."/etc/ldap.conf",entry), [value]);
+    }
+
+    /**
+     * Write (possibly multi valued) entry to /etc/ldap.conf
+     * @param entry name
+     * @param value it is of type [attr1, attr2],
+     * in /etc/ldap.conf should be written as "entry attr1 attr2"
+     * @example to write "nss_map_attribute       uniqueMember member", call
+     * WriteLdapConfEntries ("nss_map_attribute", ["uniqueMember", "member"])
+     */
+    define void WriteLdapConfEntries (string entry, list<string> value) ``{
+
+	list<string> current	= ReadLdapConfEntries (entry);
+	list<string> values	= [];
+	foreach (string val, current, ``{
+	    list lval	= splitstring (val, " \t");
+	    if (lval[0]:"" != value[0]:"")
+		values	= add (values, val);
+	    else
+		values	= add (values, mergestring (value, " "));
+	});
+	SCR::Write (add (.etc.ldap_conf.v."/etc/ldap.conf", entry), values);
+    }
+
+
+    /**
+     * Reads a database entry from nsswitch_conf and returns it as a list
+     * @param db eg. "passwd"
+     * @return   eg. ["files", "nis"]
+     */
+    define list<string> ReadNssDb (string db) ``{
+	string db_s = (string) SCR::Read (add (.etc.nsswitch_conf, db));
+	if (db_s == nil)
+	{
+	    db_s = "";
+	}
+	return filter (string s, splitstring (db_s, " \t"), ``(s != ""));
     }
 
     /**
@@ -348,7 +437,14 @@
      */
     global define boolean Read () ``{
 
-	start = ((integer)SCR::Execute (.target.bash, "/usr/bin/grep '^passwd:.*ldap' /etc/nsswitch.conf") == 0);
+	foreach (string db,["passwd","group","passwd_compat","group_compat"],``{
+	    nsswitch[db]	= ReadNssDb (db);
+	});
+
+	start = contains (nsswitch["passwd"]:[], "ldap") ||
+		(contains (nsswitch["passwd"]:[], "compat") &&
+		 contains (nsswitch["passwd_compat"]:[], "ldap"));
+
 	server = ReadLdapConfEntry ("host", "");
 	domain  = ReadLdapConfEntry ("base", "");
 	old_domain = domain;
@@ -363,11 +459,6 @@
 
 	pam_password = ReadLdapConfEntry ("pam_password", "crypt");
 
-	nsswitch["passwd"] = splitstring
-	    ((string)SCR::Read(.etc.nsswitch_conf.passwd)," ");
-	nsswitch["group"] = splitstring
-	    ((string)SCR::Read(.etc.nsswitch_conf.group), " ");
-
 	// read sysconfig values
 	base_config_dn = (string)SCR::Read (.sysconfig.ldap.BASE_CONFIG_DN);
 	if (base_config_dn == nil)
@@ -379,27 +470,39 @@
 	if (bind_dn == nil || bind_dn == "")
 	    bind_dn = ReadLdapConfEntry ("binddn", "");
 
-	Autologin::Read ();
+	list<string> map_attrs = ReadLdapConfEntries ("nss_map_attribute");
+	foreach (string map_attr, map_attrs, ``{
+	    if (issubstring (map_attr, "uniqueMember"))
+	    {
+		list<string> attr	= splitstring (map_attr, " \t");
+		if (attr[0]:"" == "uniqueMember")
+		    member_attribute	= attr[1]:member_attribute;
+	    }
+	});
+	old_member_attribute	= member_attribute;
 
 	// install on demand
 	_autofs_allowed = true;
 	_start_autofs = _autofs_allowed && Service::Enabled ("autofs");
 
-	return true;
-    }
-
-    /**
-     * Reads a database entry from nsswitch_conf and returns it as a list
-     * @param db eg. "passwd"
-     * @return   eg. ["files", "nis"]
-     */
-    define list<string> ReadNssDb (string db) ``{
-	string db_s = (string) SCR::Read (add (.etc.nsswitch_conf, db));
-	if (db_s == nil)
+	// read /etc/passwd to check + line:
+	// TODO move passwd agent to core!
+	if (!(boolean)SCR::Execute (.passwd.init,$["base_directory":"/etc"]))
 	{
-	    db_s = "";
+	    string error	= (string) SCR::Read (.passwd.error);
+	    y2error ("error: %1", error);
 	}
-	return filter (string s, splitstring (db_s, " \t"), ``(s != ""));
+	else
+	{
+	    string plus_line	= (string) SCR::Read (.passwd.passwd.plusline);
+	    list<string> plus	= splitstring (plus_line, ":");
+	    if (plus[size (plus) -1]:"" == "/sbin/nologin")
+		login_enabled	= false;
+	}
+
+	Autologin::Read ();
+
+	return true;
     }
 
     /**
@@ -1287,11 +1390,11 @@ Select another one.
 	    write_openldap_conf = true;
 	// if there are same values as in /etc/ldap.conf
 	else if (
-	    (old_server ==
-	    (string)SCR::Read (.etc.ldap_conf.v."/etc/openldap/ldap.conf".host))
+	    (old_server == select ((list) SCR::Read
+		(.etc.ldap_conf.v."/etc/openldap/ldap.conf".host),0, ""))
 	    &&
-	    (old_domain ==
-	    (string)SCR::Read (.etc.ldap_conf.v."/etc/openldap/ldap.conf".base))
+	    (old_domain == select ((list) SCR::Read
+		(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base),0,""))
 	)
 	{
 	    write_openldap_conf = true;
@@ -1300,11 +1403,39 @@ Select another one.
 	if (write_openldap_conf)
 	{
 	    // update ldap.conf
-	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".host, server);
-	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base, domain);
+	    SCR::Write (.etc.ldap_conf.v."/etc/openldap/ldap.conf".host,
+		[server]);
+	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base,
+		[domain]);
 	    y2milestone ("file /etc/openldap/ldap.conf was modified");
 	}
 	return write_openldap_conf;
+    }
+
+
+    /**
+     * If a file does not + entry, add it.
+     * @param	is login allowed?
+     * @return	success?
+     */
+    global define boolean WritePlusLine (boolean login) ``{
+
+	string file	= "/etc/passwd";
+	string what	= "+::::::";
+	if (!login)
+	    what	= "+::::::/sbin/nologin";
+
+	if ((boolean) SCR::Write (.passwd.passwd.plusline, what))
+	{
+	    SCR::Execute (.target.bash,sformat("/bin/cp %1 %1.YaST2save",file));
+	    // empty map map as a parameter means "use data you have read"
+	    if (!SCR::Write (.passwd.users, $[]))
+	    {
+		// error popup
+		Report::Error (sformat (_("Error writing file %1."), file));
+		return false;
+	    }
+	}
     }
 
     /**
@@ -1351,14 +1482,15 @@ Select another one.
 	{
 	    ypbind_running = (Service::Status ("ypbind") == 0);
 		Service::RunInitScript ("ypbind", "stop");
-	} else if (write_only && Mode::autoinst ){
-		// Read existing nsswitch in autoinstallation mode
-        nsswitch["passwd"] = splitstring
-           ((string)SCR::Read(.etc.nsswitch_conf.passwd)," ");
-        nsswitch["group"] = splitstring
-           ((string)SCR::Read(.etc.nsswitch_conf.group), " ");
 	}
-	map new_nsswitch = $[ "passwd":"", "group": ""];
+	else if (write_only && Mode::autoinst )
+	{
+	    // Read existing nsswitch in autoinstallation mode
+	    foreach (string db,
+		["passwd","group","passwd_compat","group_compat"],``{
+		nsswitch[db]	= ReadNssDb (db);
+	    });
+	}
 
 	// -------------------- update config files
 	Progress::NextStage ();
@@ -1368,22 +1500,28 @@ Select another one.
 	if (start) // ldap used
 	{
 	    // update ldap.conf
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".host, server);
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".base, domain);
+	    WriteLdapConfEntry ("host", server);
+	    WriteLdapConfEntry ("base", domain);
+
+	    if (member_attribute != old_member_attribute)
+	    {
+		WriteLdapConfEntries ("nss_map_attribute",
+		    ["uniqueMember", member_attribute ]);
+	    }
 
 	    WriteOpenLdapConf();
 
 	    if (ldap_v2)
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ldap_version, "2");
+		WriteLdapConfEntry ("ldap_version", "2");
 	    else
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ldap_version, "3");
+		WriteLdapConfEntry ("ldap_version", "3");
 
 	    if (ldap_tls)
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ssl, "start_tls");
+		WriteLdapConfEntry ("ssl", "start_tls");
 	    else
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ssl, "no");
+		WriteLdapConfEntry ("ssl", "no");
 
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".pam_password, pam_password);
+	    WriteLdapConfEntry ("pam_password", pam_password);
 
 	    // save the user and group bases (check the LDAP config before)
 	    user_base = domain;
@@ -1394,15 +1532,12 @@ Select another one.
 		if (contains (mod["objectClass"]:[], "groupConfiguration"))
 		    group_base = mod["defaultBase",0]:user_base;
 	    });
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_passwd,
+	    WriteLdapConfEntry ("nss_base_passwd",
 		(nss_base_passwd != "")? nss_base_passwd : user_base);
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_shadow,
+	    WriteLdapConfEntry ("nss_base_shadow",
 		(nss_base_shadow != "")? nss_base_shadow : user_base);
-	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_group,
-		(nss_base_group != "")? nss_base_group : group_base);
-
-	    // write the changes in ldap.conf now
-	    SCR::Write(.etc.ldap_conf, nil);
+	    WriteLdapConfEntry ("nss_base_group",
+		(nss_base_group != "")? nss_base_group : user_base);
 
 	    // pam settigs
 	    foreach (string type, [ "account", "auth", "password" ], ``{
@@ -1410,13 +1545,13 @@ Select another one.
 	    });
 
 	    // modify sources in /etc/nsswitch.conf
-	    foreach (string entry, list<string> value, (map<string,list<string> >)nsswitch, ``{
-		new_nsswitch [entry] = mergestring ( value, " " );
-		if (!contains (value, "ldap"))
-		    new_nsswitch [entry] = new_nsswitch [entry]:"" + " ldap";
+	    foreach (string db, [ "passwd", "group" ], ``{
+		string new_db		= db+"_compat";
+		nsswitch [new_db]	= union (nsswitch[new_db]:[], ["ldap"]);
+		WriteNssDb (db, ["compat"]);
+		WriteNssDb (new_db, nsswitch[new_db]:["ldap"]);
 	    });
-	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
-	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
+
 	    SCR::Write(.etc.nsswitch_conf, nil);
 
 	    Autologin::Write (write_only);
@@ -1424,30 +1559,40 @@ Select another one.
 	else // ldap is not used
 	{
 	    // update ldap.conf -- currently only in cmd-line change is possible
+	    if (member_attribute != old_member_attribute)
+	    {
+		WriteLdapConfEntries ("nss_map_attribute",
+		    ["uniqueMember", member_attribute ]);
+	    }
+
 	    if (server != old_server || domain != old_domain)
 	    {
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".host, server);
-		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".base, domain);
+		WriteLdapConfEntry ("host", server);
+		WriteLdapConfEntry ("base", domain);
 
 		WriteOpenLdapConf();
 	    }
 
-	    foreach (string entry, list<string> value, (map<string,list<string> >) nsswitch, ``{
-		new_nsswitch [entry] = mergestring (
-		    (list<string>)filter (string v, value, ``(v != "ldap")), " ");
-		// just to make sure that something remains...
-		if (new_nsswitch [entry]:"" == "")
-		    new_nsswitch [entry] = "files";
+	    foreach (string db, [ "passwd", "group" ], ``{
+		string new_db		= db+"_compat";
+		nsswitch [db]	= filter (
+		    string v, nsswitch[db]:[], ``(v != "ldap"));
+		if (nsswitch[db]:[] == [])
+		    nsswitch [db]	= ["compat"];
+		nsswitch [new_db]	= filter (
+		    string v, nsswitch[new_db]:[], ``(v != "ldap"));
+		WriteNssDb (db, nsswitch[db]:["compat"]);
+		WriteNssDb (new_db, nsswitch[new_db]:[]);
 	    });
-
-	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
-	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
 	    SCR::Write(.etc.nsswitch_conf, nil);
 
 	    foreach (string type, [ "account", "auth", "password" ], ``{
 		PamSettings::RemoveValue ("pam_unix2", type, "use_ldap");
 	    });
 	}
+
+	// write the changes in ldap.conf now
+	SCR::Write(.etc.ldap_conf, nil);
 
 	// write sysconfig values
 	SCR::Write (.sysconfig.ldap.FILE_SERVER, file_server? "yes": "no");
@@ -1470,6 +1615,8 @@ Select another one.
 		}
 	    }
 	}
+
+	WritePlusLine (login_enabled);
 
 	// -------------------- start services
 	Progress::NextStage ();

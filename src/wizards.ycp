@@ -34,8 +34,8 @@ define any MainSequence() ``{
     map sequence = $[
 	"ws_start"	: "ldap",
 	"ldap" : $[
-	    `abort	: "abort",
-	    `cancel	: "abort",
+	    `abort	: `abort,
+	    `cancel	: `abort,
 	    `advanced	: "advanced",
 	    `next	: `next
 	],
@@ -52,14 +52,14 @@ define any MainSequence() ``{
 	    `skip	: "ldap"
 	],
 	"advanced": $[
-	    `abort	: "abort",
-	    `cancel	: "abort",
+	    `abort	: `abort,
+	    `cancel	: `abort,
 	    `next	: "ldap",
 	    `configure	: "read_ldap"
 	],
 	"configure": $[
-	    `abort	: "abort",
-	    `cancel	: "abort",
+	    `abort	: `abort,
+	    `cancel	: `abort,
 	    `next	: "advanced",
 	],
     ];

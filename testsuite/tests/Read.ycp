@@ -13,8 +13,10 @@
     map READ = $[
 	"etc": $[
 	    "nsswitch_conf" : $[
-		"passwd" : "compat ldap",
-		"group"  : "compat ldap"
+		"passwd" : "compat",
+		"group"  : "compat",
+		"passwd_compat": "ldap",
+		"group_compat": "ldap",
 	    ],
 	    "ldap_conf" : $[
 		"v" : $[
@@ -43,11 +45,19 @@
 		"exists": false,
 	    ],
 	],
+	"passwd": $[
+	    "passwd": $[
+		"plusline": "+"
+	    ]
+	]
     ];
 
     map EX = $[
 	"target": $[
 	    "bash": 0,
+	],
+	"passwd": $[
+	    "init": true
 	]
     ];
 

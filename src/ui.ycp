@@ -39,8 +39,7 @@
 	boolean ret = true;
 	if (!Mode::cont)
 	{
-	    if (Modified())
-		ret = Popup::ReallyAbort (true);;
+	    ret = Popup::ReallyAbort (Modified());;
 	}
 	else
 	{
@@ -156,38 +155,39 @@ automatically.</p>
 	    help_text	= help_text + autofs_help_text;
 	}
 
-	term con = `HVSquash(`VBox(
-	  // frame label
-	  `Frame (_("LDAP client"), `HBox (`HSpacing (1),
-	    `VBox (`VSpacing (0.5),
-	    `RadioButtonGroup(`id(`rd),
+	term con = `HBox (`HSpacing (3), `VBox (
+	    `VSpacing (0.5),
+	    `RadioButtonGroup (`id(`rd),
 		`Left(`HVSquash(`VBox (
 		    `Left (`RadioButton(`id(`ldapno), `opt (`notify),
 			// radio button label
 			_("Do N&ot Use LDAP"), !start)),
 		    `Left(`RadioButton(`id(`ldapyes), `opt (`notify),
 			// radio button label
-			_("&Use LDAP"), start)))))),
-	    // text entry label
-	    `HSquash(`TextEntry (`id (`ldapd), _("LDAP base &DN"), domain)),
-	    // text entry label
-	    `HSquash(`TextEntry (`id (`ldapa), _("Addresses of LDAP &Servers"),
-		server)),
-	    `VSpacing (0.2),
-	    // check box label
-	    `CheckBox (`id(`ldaps), _("LDAP &TLS/SSL"), ldap_tls),
-	    `VSpacing (0.2),
-	    // check box label
-	    `CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2),
-	    `VSpacing (0.5)
+			_("&Use LDAP"), start)))))
 	    ),
-	    `HSpacing (1))
-	  ),
-	  autofs_con,
-	  `VSpacing(1),
-	  // pushbutton label
-	  `PushButton (`id(`advanced), _("&Advanced Configuration..."))
-        ));
+	    `VSpacing (),
+	    // frame label
+	    `Frame (_("LDAP client"), `HBox (`HSpacing (0.5), `VBox(
+		`VSpacing (0.5),
+		// text entry label
+		`TextEntry (`id (`ldapd), _("LDAP base &DN"), domain),
+		// text entry label
+		`TextEntry (`id (`ldapa), _("Addresses of LDAP &Servers"),
+		    server),
+		`VSpacing (0.2),
+		// check box label
+		`CheckBox (`id(`ldaps), _("LDAP &TLS/SSL"), ldap_tls),
+		`VSpacing (0.2),
+		// check box label
+		`CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2),
+		`VSpacing (0.5)
+	    ), `HSpacing (0.5))),
+	    autofs_con,
+	    `VSpacing(1),
+	    // pushbutton label
+	    `PushButton (`id(`advanced), _("&Advanced Configuration..."))
+        ), `HSpacing (3));
 
 	Wizard::SetContentsButtons (
 	    // dialog title
@@ -248,6 +248,11 @@ automatically.</p>
 		    continue;
 		}
 	    }
+	    if ((result == `abort || result == `cancel) &&
+		ReallyAbort () != `abort)
+	    {
+		result = `not_next;
+	    }
 	} while (!contains ([`back, `next, `cancel, `abort, `advanced], result));
 
 	if (result == `next || result == `advanced)
@@ -293,7 +298,7 @@ server.</p>
 
     // help text 2/4
     _("<p>To access the data stored on the server, enter the
-<b>Bind DN</b> (e.g., ou=Management,dc=mydomain,dc=com).</p>
+<b>Administrator DN</b> (e.g., ou=Management,dc=mydomain,dc=com).</p>
 ") +
 
     // help text 3/4
@@ -310,16 +315,53 @@ directories.</p>
 ");
 
 
+    string bind_dn		= Ldap::bind_dn;
+    boolean file_server		= Ldap::file_server;
+    boolean login_enabled	= Ldap::login_enabled;
+    string member_attribute	= Ldap::member_attribute;
+    string base_config_dn	= Ldap::GetMainConfigDN();
 
-    string bind_dn	= Ldap::bind_dn;
-    boolean file_server = Ldap::file_server;
-    string base_config_dn = Ldap::GetMainConfigDN();
+    list<term>member_attributes	= [
+	`item (`id("member"), "member", member_attribute == "member"),
+	`item (`id("uniqueMember"), "uniqueMember", member_attribute == "uniqueMember")
+    ];
+    if (member_attribute != "member" && member_attribute != "uniqueMember")
+    {
+	member_attributes = add (member_attributes,
+	    `item (`id(member_attribute), member_attribute, true));
+    }
 
     // propose some good default
     if (base_config_dn == "")
 	base_config_dn = sformat ("ou=ldapconfig,%1", Ldap::GetDomain ());
 
     term contents = `HBox(`HSpacing (5), `VBox(
+	// frame label
+	`Frame (_("Users and Groups Settings"), `HBox(
+	    `HSpacing (1), `VBox(
+		`VSpacing(0.5),
+		`Left(`CheckBox (`id(`file_server),
+		    // checkbox label
+		    _("F&ile Server (home directories are stored here)"),
+			file_server)),
+		`VSpacing(0.5),
+		`Left(`CheckBox (`id(`login_enabled),
+		    // checkbox label
+		    _("&Enable LDAP users to log in"), login_enabled)),
+		`VSpacing(0.5),
+		/*
+		`TextEntry (`id (`group_style),
+		    // textentry label
+		    _("&Group Member Attribute"), member_attribute),
+		*/
+		`ComboBox (`id (`group_style), `opt (`notify, `hstretch),
+		    // combobox label
+		    _("&Group Member Attribute"), member_attributes),
+		`VSpacing(0.5)
+	    ),
+	    `HSpacing (1)
+	)),
+        `VSpacing(),
 	// frame label
 	`Frame (_("Access to LDAP Server"), `HBox(
 	    `HSpacing (1), `VBox(
@@ -331,19 +373,15 @@ directories.</p>
 		`VSpacing(0.5),
 		`TextEntry (`id (`bind_dn),
 		    // textentry label
-		    _("Bind &DN"), bind_dn),
-		`VSpacing(1)
+		    _("&Administrator DN"), bind_dn),
+		`VSpacing(0.5),
+		`Right (`PushButton (`id(`configure),
+		    // pushbutton label
+		    _("Configure User Managment &Settings..."))),
+		`VSpacing(0.5)
 	    ),
 	    `HSpacing (1)
-	)),
-        `VSpacing(0.5),
-        `Left(`CheckBox (`id(`file_server),
-            // checkbox label
-            _("F&ile Server (home directories are stored here)"), file_server)),
-        `VSpacing(2),
-	`PushButton (`id(`configure),
-	    // pushbutton label
-	    _("Configure Settings Stored on &Server..."))
+	))
 	),
 	`HSpacing (5));
 
@@ -364,6 +402,11 @@ directories.</p>
     while (true)
     {
 	result = (symbol) UI::UserInput ();
+	if ((result == `abort || result == `cancel) &&
+	    ReallyAbort () != `abort)
+	{
+	    result = `not_next;
+	}
 	if (contains ([`back, `cancel, `abort], result))
 	    break;
 	if (result == `next || result == `configure)
@@ -371,6 +414,8 @@ directories.</p>
 	    bind_dn = (string) UI::QueryWidget(`id(`bind_dn), `Value);
 	    base_config_dn=(string)UI::QueryWidget(`id(`base_config_dn),`Value);
 	    file_server = (boolean)UI::QueryWidget(`id(`file_server), `Value);
+	    login_enabled =(boolean)UI::QueryWidget(`id(`login_enabled),`Value);
+	    member_attribute =(string)UI::QueryWidget(`id(`group_style),`Value);
 
 	    if (result == `configure && bind_dn == "")
 	    {
@@ -389,12 +434,16 @@ directories.</p>
 	    }
 
 	    if (Ldap::GetMainConfigDN() != base_config_dn ||
-		Ldap::bind_dn != bind_dn || Ldap::file_server != file_server)
+		Ldap::bind_dn != bind_dn || Ldap::file_server != file_server ||
+		Ldap::login_enabled != login_enabled ||
+		Ldap::member_attribute != member_attribute)
 	    {
-		Ldap::bind_dn = bind_dn;
-		Ldap::base_config_dn = base_config_dn;
-		Ldap::file_server = file_server;
-		Ldap::modified = true;
+		Ldap::bind_dn		= bind_dn;
+		Ldap::base_config_dn	= base_config_dn;
+		Ldap::file_server	= file_server;
+		Ldap::login_enabled	= login_enabled;
+		Ldap::member_attribute	= member_attribute;
+		Ldap::modified		= true;
 	    }
 	    break;
 	}
@@ -1026,6 +1075,11 @@ of each type, so you cannot add a new one."));
 	    // commit templates here!
 	    Ldap::CommitTemplates (templates);
 	    break;
+	}
+	if ((result == `abort || result == `cancel) &&
+	    ReallyAbort () != `abort)
+	{
+	    result = `not_next;
 	}
 	if (is (result,symbol) && contains ([`back, `cancel, `abort], (symbol)result))
 	    break;
