@@ -46,45 +46,70 @@ much (or just for enabling/disabling the services).
 
 <h3>Advanced Configuration Dialog</h3>
 <p>
-Dialog for configuring main configuration DN's (base, template) and show
-the "modules", which could be configured (in the table).
-<b>Problems</b>
-<ul>
-<li>First value is written in the config file, while others are stored in LDAP
-- this is not very consistent
-<li>What if the main DN is changed? Should be everything moved in LDAP tree? Or
-should it be just new start point for new values, stored at other place?
-</ul>
+Dialog for configuring the access to LDAP server (main configuration DN - 
+the place for configuration objects - and bind DN) and various other settings
+(file server - the flag used by users module to check if manipulation with
+homes is possible).
 <p>
 <img src="02_ldap-client.png">
-
-<h3>Advanced Configuration Dialog</h3>
 <p>
-For configuration of one specified module (here the users configuration).
-The table contains some values common for each module (like Default Base or
-Default Filter) and some module-specific (like Password Length for users).
-<br>
-Maybe the ObjectClass should not be allowed to edit.
-<b>Problem</b>
-<ul>
-<li>As before - should be allowed changing of cn (which implies change of DN)
-when something is already configured?
-</ul>
+<b>Configure</b> button leads to configuration of objects, stored at LDAP server
+, so the password popup is displayed before Modules Configuration Dialog:
 <p>
 <img src="03_ldap-client.png">
 
-<h3>Template Configuration Dialog</h3>
+<h3>Modules Configuration Dialog</h3>
 <p>
-Configuration of template values. There is one table with  default template
-attributes (they cannot be deleted, only ignored) and one table for setting
-the defaultValue attribute.
+For configuration of specialized "config modules" (currently users and groups
+configuration).
 <br>
-<b>Problem</b>
-<ul>
-<li>The attribute of secondaryGroup is not very easy to edit with our widgets...
-</ul>
-</ul>
+ComboButton allows to change currently configured module.
+<br>
+The table contains all attributes allowed for the module (including the
+empty - not set - ones). Some of them are common for each module (like
+defaultBase or cn) and some are module-specific (like skelDir for users).
 <p>
 <img src="04_ldap-client.png">
+<p>
+User can create new configuration module (but only one for each type at one
+level of LDAP tree). This popup is opened for creation:
+<p>
+<img src="06_ldap-client.png">
+<p>
+For changing the values in table, "change value popup" is used. It is differed,
+when only single value could be entered:
+<p>
+<img src="07_ldap-client.png">
+<p>
+... and when the list of values could be used. In this case, list of propose
+values could be provided (if available):
+<p>
+<img src="08_ldap-client.png">
+<p>
+<p>
+From <b>Modules Configuration Dialog</b> we can move to <b>Template Configuration Dialog</b> by using MenuButton at the bottom, which shows the list of
+templates available for editing (the list entries are the values of
+"defaultTemplate" attribute): 
+<p>
+<img src="05_ldap-client.png">
+<p>
+
+
+<h3>Template Configuration Dialog</h3>
+<p>
+Configuration of template values. There is one table with general template
+attributes (they cannot be deleted, only ignored) and one table for setting
+the defaultValue attribute. In default values, some kind of regular expressions
+is allowed.
+<p>
+<img src="09_ldap-client.png">
+<p>
+When user wants to add new "default Value", AddDefaultValue Popup is opened.
+It offers the list of attibutes which could have new object according to the
+"defaultObjectClass" attribute of template (in the example, "loginShell" is 
+derived from "posixAccount" value in "defaultObjectClass" attribute):
+<p>
+<img src="10_ldap-client.png">
+
 
 </body></html>

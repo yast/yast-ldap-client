@@ -17,6 +17,9 @@
     import "Report";
     import "Summary";
     import "Progress";
+    import "Label";
+
+    include "ldap/routines.ycp";
 
     /**
      * Write only, used during autoinstallation.
@@ -38,6 +41,7 @@
     // local settings modified?
     global boolean modified = false;
 
+    // base DN
     string domain = "";
     string old_domain = nil;
     boolean domain_changed = false;
@@ -46,25 +50,108 @@
     global boolean ldap_v2 = false;
     global boolean ldap_tls = false;
 
-    /* Which crypt method should be used? If not set, use crypt. */
+    /* Which crypt method should be used? If not set, use crypt.
+       Not configurable now! TODO */
     global string pam_password = "";
 
     global integer default_port = 389;
+
     /**
      * If home directories of LDAP users are stored on this machine
      */
-    global boolean file_server = false; // FIXME where to store this?
+    global boolean file_server = false;
 
-    global string user_base = ""; // FIXME store both in LDAP and ldap.conf
+    // settings from ldap.conf
+    global string nss_base_passwd = "";
+    global string nss_base_shadow = "";
+    global string nss_base_group = "";
+    // settings from LDAP configuration objects
+    global string user_base = "";
     global string group_base = "";
-
-    /*
-    global string user_filter = "objectClass=posixAccount";
-    global string group_filter = "objectClass=posixGroup";
-    */
 
     /* stored values of /etc/nsswitch.conf */
     map nsswitch = $[ "passwd" : [], "group": []];
+
+    // are we binding anonymously?
+    global boolean anonymous = false;
+
+    // bind password for LDAP server
+    global string bind_pass = nil;
+
+    /**
+     * DN for binding to LDAP server
+     */
+    global string bind_dn = "";
+
+    // DN of currently edited configuration module
+    global string current_module_dn = "";
+    // DN of currently edited template
+    global string current_template_dn = "";
+
+    /**
+     * DN of base configuration object
+     */
+    global string base_config_dn = "";
+
+    /**
+     * defaults for adding new config objects and templates
+     */
+    global map new_objects = $[
+	"userConfiguration"	: $[
+//TODO	    "searchFilter"		: ["objectClass=posixAccount"],
+	    "passwordHash"	: ["crypt"],
+	    "skelDir"		: ["/etc/skel"],
+	    "minUniqueId"	: ["500"],
+	    "maxUniqueId"	: ["60000"],
+	    "minPasswordLength" : ["5"],
+	    "maxPasswordLength" : ["8"],
+	],
+	"groupConfiguration"	: $[
+//TODO	    "searchFilter"	: ["objectClass=posixGroup"],
+	    "minUniqueId"	: ["500"],
+	    "maxUniqueId"	: ["60000"],
+	],
+	"userTemplate"		: $[
+	    "objectClass"	: [ "top", "objectTemplate", "userTemplate"],
+	    "namingAttribute"	: [ "uid" ],
+	    "defaultObjectClass":
+		[ "top", "posixAccount", "shadowAccount", "inetOrgPerson"],
+	    "defaultValue"	: [ "gidNumber=100" ]
+	],
+	"groupTemplate"		: $[
+	    "objectClass"	: [ "top", "objectTemplate", "groupTemplate"],
+	    "namingAttribute"	: [ "cn" ],
+	    "defaultObjectClass": [ "top", "posixGroup", "groupOfNames"]
+	]
+    ];
+
+    global string base_template_dn = base_config_dn;
+
+    // settings saved at LDAP server modified
+    global boolean ldap_modified = false;
+
+    global map config_modules = $[];
+    global map templates = $[];
+
+    global boolean binded = false;
+
+    // DN's of groups (posixGroups) in LDAP
+    global list groups_dn = [];
+
+    /**
+     * Map of object classes (from schema). Indexed by names.
+     */
+    global map object_classes = $[];
+    //TODO create defaults when schema could not be reached...
+
+    /**
+     * Map of atribute types (from schema). Indexed by names.
+     */
+    global map attr_types = $[
+	// well, cn is not "single value" according to schema, but...
+	"cn" : $[ "single": true]
+    ];
+
 
     //----------------------------------------------------------------
 
@@ -96,7 +183,7 @@
 	}
     }
 
-    /* ---------------------------------------------------------------- */
+    /* ------------- auto_yast functions -------------------------------- */
 
     /**
      * Get all the LDAP configuration from a map.
@@ -167,6 +254,31 @@
     }
 
     /**
+     * Summary()
+     * returns html formated configuration summary
+     * @return summary
+     */
+
+    global define string Summary ()
+	``{
+	string summary = "";
+	summary = Summary::AddHeader(summary, _("LDAP Client enabled"));
+	summary = Summary::AddLine(summary, (start) ? "Yes" : Summary::NotConfigured());
+	summary = Summary::AddHeader(summary, _("LDAP Domain"));
+	summary = Summary::AddLine(summary, (domain != "") ? domain : Summary::NotConfigured());
+	summary = Summary::AddHeader(summary, _("LDAP Server"));
+	summary = Summary::AddLine(summary,( server!="") ? server : Summary::NotConfigured());
+	summary = Summary::AddHeader(summary, _("LDAP Version 2"));
+	summary = Summary::AddLine(summary, (ldap_v2) ? "Yes" : Summary::NotConfigured());
+	summary = Summary::AddHeader(summary, _("LDAP &TLS/SSL"));
+	summary = Summary::AddLine(summary, (ldap_tls) ? "Yes" : Summary::NotConfigured());
+
+	return summary;
+    }
+
+    /* ------------- read/write functions ------------------------------- */
+
+    /**
      * Read single entry from /etc/openldap/ldap.conf file
      * @param entry entry name
      * @param defvalue default value if entry is not present
@@ -198,16 +310,13 @@
 
         base_config_dn = ReadLdapConfEntry ("admintool_dn", "");
 
-	// TODO: usere/group base should be stored in LDAP also!
-        user_base = ReadLdapConfEntry ("nss_base_passwd", domain);
-        group_base = ReadLdapConfEntry ("nss_base_group", user_base);
+        nss_base_passwd = ReadLdapConfEntry ("nss_base_passwd", "");
+        nss_base_shadow = ReadLdapConfEntry ("nss_base_passwd", "");
+        nss_base_group = ReadLdapConfEntry ("nss_base_group", "");
 
-	file_server = false;//TODO read from some file!
-	// ------------------------------------------------------------
+	file_server = (SCR::Read (.sysconfig.ldap.FILE_SERVER) == "yes");
 
-	// TODO: test this attribute with various values!
 	pam_password = ReadLdapConfEntry ("pam_password", "crypt");
-	/* else plain text is used, bad idea.  */
 
 	nsswitch["passwd"] = splitstring
 	    (SCR::Read(.etc.nsswitch_conf.passwd)," ");
@@ -221,9 +330,9 @@
     /**
      * Saves LDAP configuration.
      * @param abort block for abort check
-     * @return true on success
+     * @return symbol
      */
-    global define boolean Write (block abort) ``{
+    global define symbol Write (block abort) ``{
 
 	// progress caption
 	string caption = _("Writing LDAP configuration...");
@@ -237,7 +346,7 @@
 	    // progress stage label
 	    _("Start services"),
 	    // progress stage label
-	    _("Update configuration in LDAP database"),
+	    _("Update configuration in LDAP directory"),
            ], [
 	    // progress step label
 	    _("Stopping services..."),
@@ -246,7 +355,7 @@
 	    // progress step label
 	    _("Starting services..."),
 	    // progress step label
-	    _("Updating configuration in LDAP database..."),
+	    _("Updating configuration in LDAP directory..."),
 	    // final progress step label
 	    _("Finished") ],
 	    "" );
@@ -285,8 +394,6 @@
 	    else
 		SCR::Write(.etc.openldap.ldap_conf.ssl, "no");
 
-	    // TODO configure password encryption
-	    // -check the value stored in LDAP
 	    SCR::Write(.etc.openldap.ldap_conf.pam_password, pam_password);
 
 	    if (bind_dn != "")
@@ -295,16 +402,21 @@
 	    if (base_config_dn != "")
 		SCR::Write(.etc.openldap.ldap_conf.admintool_dn,base_config_dn);
 
-	    // TODO when write to ldap.conf?
-	    if (user_base != "")
-	    {
-		SCR::Write(.etc.openldap.ldap_conf.nss_base_passwd, user_base);
-		SCR::Write(.etc.openldap.ldap_conf.nss_base_shadow, user_base);
-	    }
-	    if (group_base != "")
-		SCR::Write(.etc.openldap.ldap_conf.nss_base_group, group_base);
+	    // save the user and group bases (check the LDAP config before)
+	    foreach (`dn, `mod, config_modules, ``{
+		if (contains (mod["objectClass"]:[], "userConfiguration"))
+		    user_base = mod["defaultBase",0]:domain;
+		if (contains (mod["objectClass"]:[], "groupConfiguration"))
+		    group_base = mod["defaultBase",0]:user_base;
+	    });
+	    SCR::Write(.etc.openldap.ldap_conf.nss_base_passwd,
+		(nss_base_passwd != "")? nss_base_passwd : user_base);
+	    SCR::Write(.etc.openldap.ldap_conf.nss_base_shadow,
+		(nss_base_shadow != "")? nss_base_shadow : user_base);
+	    SCR::Write(.etc.openldap.ldap_conf.nss_base_group,
+		(nss_base_group != "")? nss_base_group : group_base);
 
-	    // write the changes in ldap.conf
+	    // write the changes in ldap.conf now
 	    SCR::Write(.etc.openldap.ldap_conf, nil);
 
 	    // pam settigs
@@ -341,12 +453,10 @@
 	    SCR::Write(.pam.all.auth.pam_unix2, "-use_ldap");
 	    SCR::Write(.pam.all.password.pam_unix2, "-use_ldap");
 
-	    // FIXME what is this for?
-	    SCR::Execute(.target.bash, "/bin/cp -a /var/lib/yast2-config-ldap_client/* /etc/pam.d");
-	    SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
 	}
 
-	// TODO: save file_server somewhere
+	// write sysconfig
+	SCR::Write (.sysconfig.ldap.FILE_SERVER, file_server? "yes": "no");
 
 	// -------------------- start services
 	Progress::NextStage ();
@@ -370,113 +480,121 @@
 
 	if (ldap_modified)
 	{
-	    if (ldap_anonymous || ldap_bind_pass == nil)
-	    {
-		ldap_bind_pass = LDAPAskAndBind (false);
-	    }
-	    // nil means "canceled"
-	    if (ldap_bind_pass != nil)
-	    {
-		string error = WriteToLDAP (config_modules);
-		if (error != "")
-		    LDAPErrorMessage ("write", error);
-
-		error = WriteToLDAP (templates);
-		if (error != "")
-		    LDAPErrorMessage ("write", error);
-	    }
+	    WriteLDAP (config_modules);
+	    WriteLDAP (templates);
 	}
 
 	// final stage
 	Progress::NextStage ();
 
-	return true;
+	return `next;
     }
 
-    // ---------------------------- new variables, functions...
+    /* ------------- functions for work with LDAP tree contents ------------ */
 
-/**
- * Error popup for errors detected during LDAP operation
- * @param type error type: binding/reading/writing
- * @param detailed error message (from agent-ldap)
- */
-global define void LDAPErrorMessage (string type, string error) ``{
+    /**
+     * Error popup for errors detected during LDAP operation
+     * @param type error type: binding/reading/writing
+     * @param detailed error message (from agent-ldap)
+     */
+    global define void LDAPErrorMessage (string type, string error) ``{
 
-    map ldap_error = $[
-    "initialize":
-// error message:
-_("
+        map ldap_error = $[
+	// error message:
+	"initialize": _("
 Server could be down or unreachable."),
 
-    "missing_dn":
-// error message:
-_("
+	// error message:
+	"missing_dn": _("
 Value of DN is missing or invalid."),
-    ];
 
-    map error_type = $[
-        // error message, more specific description follows
-	"init": _("Connection to LDAP server can not be established."),
-        // error message, more specific description follows
-	"bind": _("Problem with connecting to the LDAP server."),
-        // error message, more specific description follows
-	"read": _("Problem with reading data from the LDAP server."),
-        // error message, more specific description follows
-	"users": _("There was a problem with writing LDAP users."),
-        // error message, more specific description follows
-	"groups": _("There was a problem with writing LDAP groups."),
-        // error message, more specific description follows
-	"write": _("There was a problem with writing data to LDAP server."),
-    ];
+	// error message:
+	"at_not_found": _("
+Attribute Type not found."),
 
-    if (error == nil) error = "YaST error?";
+	// error message:
+	"oc_not_found": _("
+Object Class not found."),
+	];
 
-    UI::OpenDialog (`HBox(`HSpacing (0.5),
-	`VBox(
-	    `VSpacing (0.5),
-	    // label
-	    `Left(`Heading (_("Error"))),
-	    `Label (error_type[type]:_("Unknown LDAP error")),
-	    `ReplacePoint (`id(`rp), `Empty()),
-	    `VSpacing (0.5),
-	    // checkbox label
-	    `Left(`CheckBox (`id(`details), `opt (`notify),_("&Show Details"), false)),
-	    `PushButton (`id(`ok), `opt(`key_F10,`default), UI::OKButtonLabel())
-	),
-	`HSpacing(0.5))
-    );
-    any ret = nil;
-    do
-    {
-	ret = UI::UserInput();
-	if (ret == `details)
+        map error_type = $[
+	    // error message, more specific description follows
+	    "init": _("Connection to LDAP server can not be established."),
+	    // error message, more specific description follows
+	    "bind": _("Problem with connecting to the LDAP server."),
+	    // error message, more specific description follows
+	    "read": _("Problem with reading data from the LDAP server."),
+	    // error message, more specific description follows
+	    "users": _("There was a problem with writing LDAP users."),
+	    // error message, more specific description follows
+	    "groups": _("There was a problem with writing LDAP groups."),
+	    // error message, more specific description follows
+	    "write": _("There was a problem with writing data to LDAP server."),
+	    // error message, more specific description follows
+	    "schema": _("Problem with reading schema from the LDAP server."),
+	];
+
+	if (error == nil) error = "YaST error?";
+
+	UI::OpenDialog (`HBox(`HSpacing (0.5),
+	    `VBox(
+		`VSpacing (0.5),
+		// label
+		`Left(`Heading (_("Error"))),
+		// default error message
+		`Label (error_type[type]:_("Unknown LDAP error")),
+		`ReplacePoint (`id(`rp), `Empty()),
+		`VSpacing (0.5),
+		`Left(`CheckBox (`id(`details), `opt (`notify),
+		    // checkbox label
+		    _("&Show Details"), false)),
+		`PushButton (`id(`ok), `opt(`key_F10,`default),
+		    Label::OKButton())
+	    ),
+	    `HSpacing(0.5))
+	);
+	any ret = nil;
+	if (error == "")
+	    UI::ChangeWidget (`id(`details), `Enabled, false);
+	do
 	{
-	    if (UI::QueryWidget (`id(`details), `Value))
-		UI::ReplaceWidget (`id(`rp), `VBox (
-		    `Label (ldap_error[error]:error)));
-	    else
-		UI::ReplaceWidget (`id(`rp), `Empty());
+	    ret = UI::UserInput();
+	    if (ret == `details)
+	    {
+		if (UI::QueryWidget (`id(`details), `Value))
+		    UI::ReplaceWidget (`id(`rp), `VBox (
+			`Label (ldap_error[error]:error)));
+		else
+		    UI::ReplaceWidget (`id(`rp), `Empty());
+	    }
 	}
+	while (ret != `ok && ret != `cancel);
+	UI::CloseDialog();
     }
-    while (ret != `ok && ret != `cancel);
 
-    UI::CloseDialog();
-}
-
+    /**
+     * Reads and returns error message from agent
+     */
     global define string LDAPError () ``{
 
 	map err_map = LDAPErrorMap ();
 	return err_map["msg"]:"";
     }
 
+    /**
+     * Reads and returns error map (=message + code) from agent
+     */
     global define map LDAPErrorMap () ``{
 
         return (SCR::Read(.ldap.error));
     }
 
-    // TODO what if we have more servers?
+    /**
+     * Initializes LDAP agent
+     */
     global define string LDAPInit () ``{
 
+	// ODO what if we have more servers?
 	string ret = "";
 	map args = $[
 	    "hostname":     GetFirstServer (server),
@@ -488,22 +606,7 @@ Value of DN is missing or invalid."),
 	return ret;
     }
 
-    global define string LDAPBind (string pass) ``{
-
-        string ret = "";
-	if (pass != nil)
-	{
-	    map args = $[];
-	    if (!ldap_anonymous)
-		args = $[ "bind_dn": bind_dn, "bind_pw": pass];
-	    if (!SCR::Execute (.ldap.bind, args))
-		ret = LDAPError();
-	}
-	return ret;
-    }
-
     // this is a hack
-    // TODO solve choosing from multiple servers
     global define string GetFirstServer (string servers) ``{
 
 	list l_servers = splitstring (servers, " ");
@@ -511,6 +614,7 @@ Value of DN is missing or invalid."),
 	return substring (srv, 0, find (srv, ":"));
     }
 
+    // this is a hack
     global define string GetFirstPort (string servers) ``{
 
 	list l_servers = splitstring (servers, " ");
@@ -522,143 +626,212 @@ Value of DN is missing or invalid."),
 	    return default_port;
 	else return tointeger (s_port);
     }
-/**
- * Gets the bind password to LDAP database
- * @return password
- */
-global define string GetLDAPPassword (boolean anonymous) ``{
 
-    UI::OpenDialog (`opt(`decorated),
+    /**
+     * Binds to LDAP server
+     * @param pass password
+     */
+    global define string LDAPBind (string pass) ``{
+
+        string ret = "";
+	if (pass != nil)
+	{
+	    map args = $[];
+	    if (!anonymous)
+		args = $[ "bind_dn": bind_dn, "bind_pw": pass];
+	    if (!SCR::Execute (.ldap.bind, args))
+		ret = LDAPError();
+	}
+	return ret;
+    }
+
+    /**
+     * Asks user for bind password to LDAP server
+     * @param anonymous if anonymous access could be allowed
+     * @return password
+     */
+    global define string GetLDAPPassword (boolean enable_anonymous) ``{
+
+	UI::OpenDialog (`opt(`decorated),
         `VBox(
             `HSpacing(40),
             // password entering label
             `Password(`id(`pw), _("&Enter the Password for LDAP Server:")),
             `HBox(
               `PushButton (`id(`ok),`opt(`key_F10, `default),
-		UI::OKButtonLabel()),
+		Label::OKButton()),
               // button label
 	      `PushButton (`id(`anon), `opt(`key_F6), _("&Anonymous Access")),
-              `PushButton (`id(`cancel),`opt(`key_F9), UI::CancelButtonLabel())
-            )
-        )
-    );
-    if (!anonymous)
-	UI::ChangeWidget (`id(`anon), `Enabled, false);
-    UI::SetFocus (`id(`pw));
-    any ret = UI::UserInput();
-    string pw = "";
-    if (ret == `ok)
-    {
-        pw = UI::QueryWidget(`id(`pw), `Value);
-	ldap_anonymous = false;
-    }
-    else if (ret == `cancel)
-        pw = nil;
-    else ldap_anonymous = true;
-    UI::CloseDialog();
-    return pw;
-}
-
-/**
- * Asks for LDAP password and tries to bind with it
- * @return password entered, nil on cancel
- */
-global define string LDAPAskAndBind (boolean anonymous) ``{
-
-    string pw = GetLDAPPassword (anonymous);
-    if (pw != nil)
-    {
-	string ldap_msg = LDAPBind (pw);
-	while (pw != nil && ldap_msg != "")
+              `PushButton (`id(`cancel),`opt(`key_F9), Label::CancelButton())
+            ))
+	);
+	if (!enable_anonymous)
+	    UI::ChangeWidget (`id(`anon), `Enabled, false);
+	UI::SetFocus (`id(`pw));
+	any ret = UI::UserInput();
+	string pw = "";
+	if (ret == `ok)
 	{
-	    LDAPErrorMessage ("bind", ldap_msg);
-	    pw = GetLDAPPassword (anonymous);
-	    ldap_msg = LDAPBind (pw);
+	    pw = UI::QueryWidget(`id(`pw), `Value);
+	    anonymous = false;
 	}
+	else if (ret == `cancel)
+	    pw = nil;
+	else anonymous = true;
+	UI::CloseDialog();
+	return pw;
     }
-    return pw;
-}
 
-    // are we binding anonymously?
-    global boolean ldap_anonymous = false;
+    /**
+     * Asks for LDAP password and tries to bind with it
+     * @return password entered, nil on cancel
+     */
+    global define string LDAPAskAndBind (boolean enable_anonymous) ``{
 
-    // bind password for LDAP server
-    global string ldap_bind_pass = "";
-
-    // DN for binding to LDAP server
-    global string bind_dn = "";
-
-    // DN of currently edited configuration module
-    global string current_module_dn = "";
-    // DN of currently edited template
-    global string current_template_dn = "";
-
-    // DN of base configuration object
-    global string base_config_dn = "ou=ldapconfig,dc=suse,dc=cz";
-
-    global string base_template_dn = base_config_dn;
-    //global string base_template_dn = "ou=templates,ou=ldapconfig,dc=suse,dc=cz";
-
-    // settings saved at LDAP server modified
-    global boolean ldap_modified = false;
-
-    // TODO use map or list?
-    global map config_modules = $[];
-    global map templates = $[];
-
-    global boolean binded = false;
-
-    global list groups_dn = [];//DN's of groups (posixGroups) in LDAP
-
-    // TODO FIXME read from schema!!!
-    global map allowed_attrs = $[
-	"moduleConfiguration":	[ "cn", "defaultBase", "objectClass",
-	    "searchUri", "defaultTemplate",
-	    "minUniqueId", "maxUniqueId", "nextUniqueId"],
-	"userConfiguration":	[ "minPasswordLength", "maxPasswordLength",
-	    "skelDir", "passwordHash"],
-	"objectTemplate":	[ "cn", "defaultObjectClass", "defaultValue",
-	    "requiredAttribute", "allowedAttribute", "namingAttribute" ],
-	"userTemplate":		[ "secondaryGroup" ],
-
-	"posixAccount":		[ "cn", "uid", "gidNumber" ],
-	"inetOrgPerson":	[ "sn", "o" ],
-    ];
+	string pw = GetLDAPPassword (enable_anonymous);
+        if (pw != nil)
+	{
+	    string ldap_msg = LDAPBind (pw);
+	    while (pw != nil && ldap_msg != "")
+	    {
+		LDAPErrorMessage ("bind", ldap_msg);
+		pw = GetLDAPPassword (enable_anonymous);
+		ldap_msg = LDAPBind (pw);
+	    }
+	}
+	return pw;
+    }
 
     global define boolean SingleValued (string attr) ``{
 
-	// TODO where to get this?
-	return contains (["uid", "uidNumber", "cn", "gidNumber",
-	    "defaultBase", "defaultTemplate", //only for here
-	    "maxUniqueId", "minUniqueId", "nextUniqueId"],
-	    attr);
+	if (!haskey (attr_types, attr))
+	{
+	    map attr_type = SCR::Read (.ldap.schema.at, $["name":attr]);
+	    if (attr_type == nil)
+		attr_type = $[];
+	    attr_types [attr] = attr_type;
+	}
+	return attr_types [attr, "single"]:false;
     }
 
-    // TODO: read schema!
-    // TODO do not call every time, store it after 1st read
+    /**
+     * Returns allowed and required attributes of given object class
+     * Read it from LDAP if it was not done yet.
+     */
+    global define list GetAllAttributes (string class) ``{
+
+	if (!haskey (object_classes, class))
+	{
+	    map object_class = SCR::Read (.ldap.schema.oc, $["name":class]);
+	    if (object_class == nil)
+		object_class = $[];
+	    object_class ["all"] = union (object_class["may"]:[],
+		object_class["must"]:[]);
+	    // read attributes of superior classes
+	    foreach (`sup_oc, object_class["sup"]:[], ``{
+		object_class ["all"] = union (object_class ["all"]:[],
+		    GetAllAttributes (sup_oc));
+	    });
+	    object_classes [class] = object_class;
+	}
+	return object_classes [class, "all"]:[];
+    }
+
+    /**
+     * Returns the list of all allowed and required attributes for each
+     * object class, given in the list of object classes
+     */
     global define list GetObjectAttributes (list classes) ``{
 
 	list ret = [];
 	foreach (`class, classes, ``{
-	    ret = union (ret, allowed_attrs [class]:[]);
+	    ret = union (ret, GetAllAttributes (class));
 	});
 	return ret;
     }
 
     /**
      * For a given object, add all atributes this object is allowed to have
-     * according to its "objectClass" value. New attributes have empty value.
+     * according to its "objectClass" value. Added attributes have empty values.
      */
     define map AddMissingAttributes (map object) ``{
 
-	// add empty attributes, allowed by schema
 	foreach (`class, object["objectClass"]:[], ``{
-	    foreach (`attr, allowed_attrs [class]:[], ``{
+	    foreach (`attr, GetAllAttributes (class), ``{
 		if (!haskey (object, attr))
-		    object = add (object, attr, "");
+		    object = add (object, attr, []);
 	    });
 	});
 	return object;
+    }
+
+    /**
+     * Prepare agent for later schema queries
+     * (agent reads schema to its internal structures)
+     */
+    global define boolean InitSchema () ``{
+
+	list schemas = SCR::Read (.ldap.search, $[
+	    "base_dn":  "",
+	    "attrs":    [ "subschemaSubentry" ],
+	    "scope":    0, //0:base
+	]);
+	string schema_dn = schemas[0,"subschemaSubentry",0]:nil;
+	if (schemas == nil || schema_dn == nil)
+	{
+	    LDAPErrorMessage ("schema", LDAPError());
+	    return false;
+	}
+	boolean ok = SCR::Execute (.ldap.schema, $[ "schema_dn": schema_dn ]);
+
+	if (!ok)
+	    LDAPErrorMessage ("schema", LDAPError());
+	return ok;
+    }
+
+    /**
+     * In template object, convert the list of values
+     * (in the form [ "a1=v1", "a2=v2"])
+     * to map (in the form $[ "a1":"v1", "a2":"v2"]
+     */
+    global define map ConvertDefaultValues (map templ) ``{
+
+        map template = add (templ, "default_values", $[]);
+	foreach (`value, templ["defaultValue"]:[], ``{
+	    list line = splitstring (value, "=");
+	    if (size (line) != 2)
+		return;
+	    template ["default_values", line[0]:""] = line[1]:"";
+	});
+	return template;
+    }
+
+    /**
+     * Read object templates from LDAP server
+     */
+    global define map ReadTemplates () ``{
+
+	templates = $[];
+	map all = SCR::Read (.ldap.search, $[
+	    "base_dn":	base_config_dn,
+	    "filter":   "objectClass=objectTemplate",
+	    "attrs":	[],
+	    "scope":	2,// sub: all templates under config DN
+	    "map":	true,
+	    "not_found_ok":	true,
+	]);
+	if (all == nil)
+	{
+	    LDAPErrorMessage ("read", LDAPError());
+	    all = $[];
+	}
+	// create a helper map of default values inside ...
+	templates = mapmap (`dn, `templ, all, ``{
+	    map template = ConvertDefaultValues (templ);
+	    template = AddMissingAttributes (template);
+	    return [dn, template];
+	});
+	return templates;
     }
 
     /**
@@ -666,18 +839,20 @@ global define string LDAPAskAndBind (boolean anonymous) ``{
      */
     global define map ReadConfigModules () ``{
 
+	config_modules = $[];
 	map modules = SCR::Read (.ldap.search, $[
 	    "base_dn":	base_config_dn,
 	    "filter":   "objectClass=moduleConfiguration",
 	    "attrs":	[],
-	    "scope":	1, //one - deeper searches would have problems with
-	    //constructing of dn
-	    "map":	true
+	    "scope":	1, // one - deeper searches would have problems with
+			   // constructing the dn
+	    "map":	true,
+	    "not_found_ok":	true,
 	]);
 	if (modules == nil)
 	{
 	    LDAPErrorMessage ("read", LDAPError());
-	    return $[];
+	    modules = $[];
 	}
 	config_modules = mapmap (`dn, `mod, modules, ``{
 	    return [dn, AddMissingAttributes (mod)];
@@ -687,42 +862,74 @@ global define string LDAPAskAndBind (boolean anonymous) ``{
     }
 
     /**
-     * Read object templates from LDAP server
+     * Search for one entry (=base scope) in LDAP directory
+     * @param dn DN of entry
+     * @return map with entry values, empty map if nothing found, nil on error
      */
-    global define map ReadTemplates () ``{
+    global define map GetLDAPEntry (string dn) ``{
 
-	map all = SCR::Read (.ldap.search, $[
-	    "base_dn":	base_template_dn,
-	    "filter":   "objectClass=objectTemplate",
+	list objects = SCR::Read (.ldap.search, $[
+	    "base_dn":	dn,
 	    "attrs":	[],
-	    "scope":	2,// sub: all templates under config DN
-	    "map":	true
+	    "scope":	0, // only this one
+	    "not_found_ok": true
 	]);
-	if (all == nil)
+	if (objects == nil)
 	{
 	    LDAPErrorMessage ("read", LDAPError());
-	    return $[];
+	    return nil;
 	}
-	// create a helper map of default values...
-	templates = mapmap (`dn, `templ, all, ``{
-	    list default_values = [];
-	    if (is (templ["defaultValue"]:[], list))
-		default_values = templ["defaultValue"]:[];
-	    else
-		default_values = [ templ["defaultValue"]:"" ];
+	return objects[0]:$[];
+    }
 
-	    map template = add (templ, "default_values", $[]);
-	    foreach (`value, default_values, ``{
-		list line = splitstring (value, "=");
-		if (size (line) != 2)
-		    return;
-		template ["default_values", line[0]:""] = line[1]:"";
-	    });
+    /**
+     * Check for existence of parent object of given DN in LDAP tree
+     */
+    global define boolean ParentExists (string dn) ``{
 
-	    template = AddMissingAttributes (template);
-	    return [dn, template];
-	});
-	return templates;
+	string parent = substring (dn, find (dn,",")+1);
+	map object = GetLDAPEntry (parent);
+	if (object == nil)
+	    return false;
+	if (object == $[])
+	{
+	    // error message, %1 is DN
+	    Popup::Error (sformat (_("In LDAP directory there does not exist direct parent for DN
+'%1'.
+The object with selected DN cannot be created."), dn));
+	    return false;
+	}
+	return true;
+    }
+
+    /**
+     * Check if base config DN belongs to some existing object and offer
+     * creating it if necessary
+     */
+    global define boolean CheckBaseConfig (string dn) ``{
+
+	map object = GetLDAPEntry (dn);
+	if (object == nil)
+	{
+	    return false;
+	}
+	if (object == $[])
+	{
+	    // yes/no popup, %1 is value of DN
+	    if (Popup::YesNo (sformat (_("No entry with DN '%1'
+exists at LDAP server. Create it now?"), dn)))
+	    {
+		if (!ParentExists (dn))
+		    return false;
+		return WriteLDAP ( $[ dn : $[
+		    "objectClass"	: [ "top", "organizationalUnit"],
+		    "modified"		: "added",
+		    "ou"		: get_cn (dn)]]
+		);
+	    }
+	    return false;
+	}
+	return true;
     }
 
     /**
@@ -743,57 +950,90 @@ global define string LDAPAskAndBind (boolean anonymous) ``{
 	return eval (templates);
     }
 
-    /* FIXME read from LDAP
-    global define string GetUserFilter () ``{
-
-	return user_filter;
-    }
-
-    // FIXME read from LDAP
-    global define string GetGroupFilter () ``{
-
-	return "objectClass=posixGroup";
-    }
-
-    // FIXME read from LDAP
-    global define list GetUserObjectClasses () ``{
-
-	return [ "top", "posixAccount", "inetOrgPerson" ];
-    }
-
-    // FIXME read from LDAP
-    global define list GetGroupObjectClasses () ``{
-
-	return [ "top", "posixGroup" ];
-    }
-    */
-
     /**
      * Creates default new map for a new object template
+     * @param cn cn of new template
+     * @param classes object classes of the object the template will belong to
+     * @return template map
      */
     global define map CreateTemplate (string cn, list classes) ``{
 
 	map obj = $[
-	    "cn":		cn,
-	    "objectClass":	[ "top", "objectTemplate"],
+	    "cn":		[ cn ],
 	    "modified":		"added"
 	];
 	if (contains (classes, "userConfiguration"))
-	    obj["objectClass"] = add (obj["objectClass"]:[],"userTemplate");
+	{
+	    obj = union (obj, new_objects ["userTemplate"]:$[]);
+	}
+	else if (contains (classes, "groupConfiguration"))
+	{
+	    obj = union (obj, new_objects ["groupTemplate"]:$[]);
+	}
+	else
+	    obj["objectClass"] = [ "top", "objectTemplate"];
 
+	obj = ConvertDefaultValues (obj);
 	return AddMissingAttributes (obj);
     }
 
     /**
-     * Creates default new map for a new configuration object
+     * Creates default new map for new configuration object
+     * @param class additional objectClass of new module (e.g.userConfiguration)
      */
     global define map CreateModule (string cn, string class) ``{
 
 	map obj = $[
-	    "cn":		cn,
+	    "cn":		[ cn ],
 	    "objectClass":	add ([ "top", "moduleConfiguration"], class),
 	    "modified":		"added"
 	];
+	// create some good defaults
+	obj = union (obj, new_objects [class]:$[]);
+	list templs = [];
+	string templ_cn = "";
+	string default_base = "";
+	if (class == "userConfiguration")
+	{
+	    foreach (`dn, `t, templates, ``{
+		if (contains (t["objectClass"]:[], "userTemplate"))
+		    templs = add (templs, dn);
+	    });
+	    if (templs == [])
+		templ_cn = "userTemplate";
+	    default_base = nss_base_passwd;
+	}
+	if (class == "groupConfiguration")
+	{
+	    foreach (`dn, `t, templates, ``{
+		if (contains (t["objectClass"]:[], "groupTemplate"))
+		    templs = add (templs, dn);
+	    });
+	    if (templs == [])
+		templ_cn = "groupTemplate";
+	    default_base = nss_base_group;
+	}
+	// create proposal for defaultTemplate DN
+	if (templ_cn != "")
+	{
+	    string tdn = sformat ("cn=%1,%2", templ_cn, base_config_dn);
+	    integer i = 0;
+	    while (GetLDAPEntry (tdn) != $[])
+	    {
+		tdn = sformat ("cn=%1%2,%3", templ_cn, i, base_config_dn);
+		i = i + 1;
+	    }
+	    templs = [ tdn ];
+	}
+	obj ["defaultTemplate"] = templs;
+	// create proposal for defaultBase DN
+	if (default_base == "" || GetLDAPEntry (default_base) == $[])
+	{
+	    default_base = sformat ("ou=people,%1", domain);
+	    if (GetLDAPEntry (default_base) == $[])
+		default_base = domain;
+	}
+	obj ["defaultBase"] = default_base;
 	return AddMissingAttributes (obj);
     }
 
@@ -803,32 +1043,66 @@ global define string LDAPAskAndBind (boolean anonymous) ``{
     global define list GetGroupsDN (string base) ``{
 
 	if (groups_dn == [])
-	    groups_dn = ReadGroupsDN (base);
+	    groups_dn = ReadDN (base, "objectClass=posixGroup");
 	return groups_dn;
     }
 
     /**
-     * Searches for DN's of groups (objectClass=posixGroup) in given base
+     * Searches for DN's of all objects defined by filter in given base ("sub")
+     * @param base search base
+     * @param search_filter if filter is empty, "objectClass=*" is used
      */
-    global define list ReadGroupsDN (string base) ``{
+    global define list ReadDN (string base, string search_filter) ``{
 
-	map groups = SCR::Read (.ldap.search, $[
+	list all = SCR::Read (.ldap.search, $[
 	    "base_dn":	base,
-	    "filter":   "objectClass=posixGroup",
-	    "attrs":	["cn"],
+	    "filter":   search_filter,
+	    "attrs":	["cn"], // not necessary, just not read all values
 	    "attrsOnly":true,
 	    "scope":	2,
-	    "map":	true,
+	    "dn_only":	true,
 	]);
-	if (groups == nil)
+	if (all == nil)
 	{
 	    LDAPErrorMessage ("read", LDAPError());
 	    return [];
 	}
-	return maplist (`dn, `group, groups, ``{ return dn;});
+	return all;
     }
 
     /**
+     * Check if given DN exist and if it points to some template
+     * @return empty map if DN don't exist, template map if DN points
+     *  to template object, nil if object with given DN is not template
+     */
+    global define map CheckTemplateDN (string dn) ``{
+
+	map object = GetLDAPEntry (dn);
+	if (object == nil)
+	    return nil;
+	if (object == $[])
+	{
+	    // OK, does not exist
+	    return $[];
+	}
+	else if (contains (object ["objectClass"]:[], "objectTemplate"))
+	{
+	    // exists as a template -> return object
+	    object = ConvertDefaultValues (object);
+	    object ["modified"] = "edited";
+	    return AddMissingAttributes (object);
+	}
+	else
+	{
+	    // error message
+	    Popup::Error (_("Object with selected DN exists, but it is not Template Object!
+Please select another one."));
+	    return nil;
+	}
+    }
+
+    /**
+     * Save the edited map of configuration modules to global map
      */
     global define boolean CommitConfigModules (map modules) ``{
 
@@ -847,19 +1121,20 @@ global define string LDAPAskAndBind (boolean anonymous) ``{
 		    if (!haskey (modmap, "modified"))
 			config_modules [dn, "modified"] = "edited";
 		    ldap_modified = true;
-		    y2internal ("modified: %1", val);
+		    y2debug ("modified value: %1", val);
 		}
 	    });
 	});
 	return true;
     }
 
-    // TODO - same function as above...
+    /**
+     * Save the edited map of templates to global map
+     */
     global define boolean CommitTemplates (map templs) ``{
 
 	foreach (`dn, `template, templs, ``{
 
-//	y2internal ("template to commit: %1", template);
 	    if (!haskey (templates, dn))
 	    {
 		// dn changed
@@ -874,7 +1149,7 @@ global define string LDAPAskAndBind (boolean anonymous) ``{
 		    if (!haskey (template, "modified"))
 			templates [dn, "modified"] = "edited";
 		    ldap_modified = true;
-		    y2internal ("modified: %1", val);
+		    y2debug ("modified value: %1", val);
 		}
 	    });
 	});
@@ -883,6 +1158,10 @@ global define string LDAPAskAndBind (boolean anonymous) ``{
 
     /**
      * Writes map of objects to LDAP
+     * @param objects map of objects to write. It is in the form:
+     * $[ DN: (map) attribute_values]
+     * @example TODO
+     * @return empty string on success, error message otherwise
      */
     global define string WriteToLDAP (map objects) ``{
 
@@ -929,6 +1208,8 @@ global define string LDAPAskAndBind (boolean anonymous) ``{
 	    }
 	    if (action == "deleted")
 	    {
+		if (object ["old_dn"]:dn != dn)
+		    dn = object ["old_dn"]:dn;
 		if (!SCR::Write (.ldap.delete, $[ "dn":	dn ]))
 		    ret = LDAPError();
 	    }
@@ -936,29 +1217,82 @@ global define string LDAPAskAndBind (boolean anonymous) ``{
 	return ret;
     }
 
-    // ------------------------------------------------------
-
-
-    /** TODO update to new client
-     * Summary()
-     * returns html formated configuration summary
-     * @return summary
+    /**
+     * Writes map of objects to LDAP. Ask for password, when needed and
+     * shows the error message when necessary.
+     * @return success
      */
+    global define boolean WriteLDAP (map objects) ``{
 
-    global define string Summary ()
-	``{
-	string summary = "";
-	summary = Summary::AddHeader(summary, _("LDAP Client enabled"));
-	summary = Summary::AddLine(summary, (start) ? "Yes" : Summary::NotConfigured());
-	summary = Summary::AddHeader(summary, _("LDAP Domain"));
-	summary = Summary::AddLine(summary, (domain != "") ? domain : Summary::NotConfigured());
-	summary = Summary::AddHeader(summary, _("LDAP Server"));
-	summary = Summary::AddLine(summary,( server!="") ? server : Summary::NotConfigured());
-	summary = Summary::AddHeader(summary, _("LDAP Version 2"));
-	summary = Summary::AddLine(summary, (ldap_v2) ? "Yes" : Summary::NotConfigured());
-	summary = Summary::AddHeader(summary, _("LDAP &TLS/SSL"));
-	summary = Summary::AddLine(summary, (ldap_tls) ? "Yes" : Summary::NotConfigured());
-
-	return summary;
+	string error = "";
+	if (anonymous || bind_pass == nil)
+	{
+	    bind_pass = LDAPAskAndBind (false);
+	}
+	// nil means "canceled"
+	if (bind_pass != nil)
+	{
+	    error = WriteToLDAP (objects);
+	    if (error != "")
+		LDAPErrorMessage ("write", error);
+	}
+	return error == "";
     }
+
+
+    /*
+    TODO popup for browsing the LDAP tree...
+
+    global define string BrowseForDN (string base) ``{
+
+	string dn = base;
+
+	list base_items = maplist (`it, OneLevelDNSearch (base), ``{
+	    return `item(`id(it), it, false, []);
+	});
+	list tree_items = [ `item(`id(base), base , true, base_items) ];
+
+	UI::OpenDialog (
+	    `VBox (
+		`HSpacing (50),
+		`Tree (`id (`ldap_tree),`opt(`notify), _("Select &DN:"), tree_items),
+		`HBox (
+		    `PushButton (`id(`ok), `opt(`default, `key_F10),
+				 Label::OKButton()),
+		    `PushButton (`id(`cancel), `opt(`key_F9),
+				 Label::CancelButton())
+		    )
+		));
+	UI::SetFocus (`id (`ldap_tree));
+	any ret = nil;
+	while (true)
+	{
+	    ret = UI::UserInput();
+
+	    if (ret == `ok)
+		break;
+	    else if (contains ([`cancel, `abort], ret))
+		break;
+	    else
+		y2warning ("current item:%1", UI::QueryWidget(`id(`ldap_tree), `CurrentItem));
+	}
+
+	dn = UI::QueryWidget(`id(`ldap_tree), `CurrentItem);
+
+	UI::CloseDialog ();
+	return dn;
+    }
+    global define list OneLevelDNSearch (string base) ``{
+
+	list ret = SCR::Read (.ldap.search, $[
+	    "base_dn":	base,
+	    "attrs":	["dn"],
+	    "attrsOnly":true,
+	    "scope":	1,
+	    "dn_only":	true
+	]);
+	if (ret == nil) ret = [];
+	return ret;
+    }
+    */
 }

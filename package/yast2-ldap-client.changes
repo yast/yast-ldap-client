@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Fri Jun 27 08:37:46 CEST 2003 - jsuchome@suse.de
+
+- read schema description from server
+- create default values for new entries (config modules or templates)
+  in LDAP directory
+- unified popups for attributes modifications
+- added sysconfig file
+- 2.8.3
+
+-------------------------------------------------------------------
 Fri Jun 20 14:58:37 CEST 2003 - jsuchome@suse.de
 
 - even newer workflow - for various configuration on LDAP server

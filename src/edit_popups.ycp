@@ -14,51 +14,139 @@
 textdomain "ldap-client";
 
 import "Ldap";
+import "Label";
+import "Popup";
 
 /**
  * Generic popup for editing attribute's value
+ * TODO comment
  */
-global define string EditAttributePopup (string attr, string value, list conflicts) ``{
+global define list EditAttributePopup (string attr, list value, list conflicts, boolean single, list offer) ``{
 
-// TODO show description of attributes!
+    /**
+     * Helper for creating items for EditAttribute Popup
+     */
+    define term generate_value_list () ``{
+	term ret = `VBox();
+	if (single)
+	{
+	    ret = add (ret, `TextEntry (`id (0),
+		// textentry label
+		sformat(_("&Value of \"%1\" attribute"), attr), value[0]:""));
+	}
+	else
+	{
+	    ret = add (ret, `TextEntry (`id (0),
+		// textentry label
+		sformat(_("&Values of \"%1\" attribute"), attr), value[0]:""));
+	    integer i = 1;
+	    while (i < value_size)
+	    {
+		ret = add (ret, `TextEntry (`id (i), "", value[i]:""));
+		if (size (value[i]:"" + 10) > hsize)
+		    hsize = size (value[i]:"") + 10;
+		i = i + 1;
+	    }
+	}
+	return ret;
+    }
+
+    // help text
+    string help_text = _("hilfe!");
+
+    list org_value = value;
+    integer value_size = size (value);
+
+    // horizontal size of popup for
+    integer hsize = size (value[0]:"") + 10;
+    term values = generate_value_list ();
+    // button label
+    term add_button = `PushButton(`id(`new), `opt (`key_F3), _("&Add Value"));
+
+    if (size (offer) > 0)
+    {
+	list mb = [ `item(`id(`new), _("&Empty entry")) ];
+	foreach (`item, offer, ``{
+	    mb = add (mb, `item(`id(item), item));
+	});
+	add_button = `MenuButton(`id(`mb), `opt (`key_F3), _("&Add Value"),mb);
+    }
+
     UI::OpenDialog( `opt(`decorated), `HBox(
 	`HSpacing(1),
 	`VBox(
-	    `HSpacing (50),
-	    `VSpacing(0.5),
-	    // textentry label
-	    `TextEntry (`id (attr), sformat(_("&Value of \"%1\""), attr),value),
-	    `VSpacing(0.5),
+	    `HSpacing (hsize > 50 ? hsize : 50),
+	    `ReplacePoint (`id(`rp), values),
 	    `HBox(
-		`PushButton(`id(`ok),`opt(`default, `key_F10), OKButtonLabel()),
-		`PushButton(`id(`cancel), `opt (`key_F9), CancelButtonLabel())
-	    ),
-	    `VSpacing(0.5)),
+		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
+		`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton()),
+		`PushButton(`id(`help),`opt (`key_F2), Label::HelpButton()),
+		(single)? `Empty() :
+		add_button
+	    )
+	),
 	`HSpacing(1)
     ));
     any result = nil;
-    string new_value = value;
+    list new_value = [];
 
-    UI::SetFocus (`id(attr));
+    if (value_size == 0)
+	value_size = 1;
+    UI::SetFocus (`id(value_size-1));
     while (true)
     {
 	result = UI::UserInput ();
 	if (result == `cancel)
 	{
-	    new_value = value;
+	    new_value = org_value;
 	    break;
+	}
+	if ( result == `help )
+	{
+	    Wizard::ShowHelp( help_text );
+	}
+	if ((result == `new) || (contains (offer, result)))
+	{
+	    integer j = 0;
+	    value = [];
+	    while (j < value_size)
+	    {
+		value = add (value, UI::QueryWidget (`id(j), `Value) );
+		j = j + 1;
+	    }
+	    if (contains (offer, result) && value[value_size-1]:"" == "")
+	    {
+		// relace last empty entry
+		value [value_size-1] = result;
+	    }
+	    else
+	    {
+		// add new entry
+		value = add (value, (result == `new)? "" : result);
+		value_size = value_size + 1;
+	    }
+	    UI::ReplaceWidget (`id(`rp), generate_value_list ());
+	    UI::SetFocus (`id(value_size-1));
 	}
 	if (result == `ok)
 	{
-	    // check it?
-	    new_value = UI::QueryWidget (`id(attr), `Value);
-	    if (new_value != value && contains (conflicts, new_value))
+	    integer j = 0;
+	    boolean duplicate = false;
+	    new_value = [];
+	    while (j < value_size && !duplicate)
 	    {
-		//error popup
-		UI::ErrorPopup (_("The entered value already exists.
-Please select another one."));
-		continue;
+		string v = UI::QueryWidget (`id(j), `Value);
+		if (!contains (org_value, v) && contains (conflicts, v))
+		{
+		    //error popup
+		    Popup::Error (sformat (_("The value \'%1\' already exists.
+Please select another one."), v));
+		    duplicate = true;
+		}
+		if (v != "") new_value = add (new_value, v);
+		j = j + 1;
 	    }
+	    if (duplicate) continue;
 	    break;
 	}
     }
@@ -71,26 +159,36 @@ Please select another one."));
  */
 global define map NewModulePopup (list available, list conflicts) ``{
 
+    // help text
+    string help_text = _("hilfe!");
+
+    map descriptions = $[
+	// description of configuration object
+	"userConfiguration": _("Configuration of user management tools"),
+	// description of configuration object
+	"groupConfiguration": _("Configuration of group management tools"),
+    ];
     // label
     term r_buttons = `VBox( `Left(`Label (_("Object Class of New Module"))));
     foreach (`class, available, ``{
-	r_buttons = add (r_buttons, `Left(`RadioButton (`id(class), class, true)));
+	string desc = class;
+	if (descriptions [class]:"" != "")
+	    desc = sformat ("%1 (%2)", class, descriptions [class]:"");
+	r_buttons = add (r_buttons,`Left(`RadioButton (`id(class), desc,true)));
     });
     UI::OpenDialog( `opt(`decorated), `HBox(
 	`HSpacing(1),
 	`VBox(
 	    `HSpacing (50),
-	    `VSpacing(0.5),
 	    `RadioButtonGroup (`id(`rb), r_buttons),
-	    `VSpacing(0.5),
 	    // textentry label, do not translate "cn"
 	    `TextEntry (`id (`cn), _("&Name of New Module (\"cn\" value)")),
-	    `VSpacing(0.5),
 	    `HBox(
-		`PushButton(`id(`ok),`opt(`default, `key_F10), OKButtonLabel()),
-		`PushButton(`id(`cancel), `opt (`key_F9), CancelButtonLabel())
-	    ),
-	    `VSpacing(0.5)),
+		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
+		`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton()),
+		`PushButton(`id(`help),`opt (`key_F2), Label::HelpButton())
+	    )
+	),
 	`HSpacing(1)
     ));
     any result = nil;
@@ -106,13 +204,17 @@ global define map NewModulePopup (list available, list conflicts) ``{
 	    new_value = "";
 	    break;
 	}
+	if ( result == `help )
+	{
+	    Wizard::ShowHelp( help_text );
+	}
 	if (result == `ok)
 	{
 	    new_value = UI::QueryWidget (`id(`cn), `Value);
 	    if (contains (conflicts, new_value))
 	    {
 		//error popup
-		UI::ErrorPopup (_("The entered value already exists.
+		Popup::Error (_("The entered value already exists.
 Please select another one."));
 		continue;
 	    }
@@ -124,139 +226,20 @@ Please select another one."));
     return $[ "class": class, "cn": new_value ];
 }
 
-global define string EditSecondaryGroupPopup (string value, list all_groups) ``{
-
-    list current_groups = splitstring (value, " ");
-    list items = maplist (`group, current_groups, ``{
-	return `item(`id(group), group, true );
-    });
-    foreach (`group, all_groups, ``{
-	if (!contains (current_groups, group))
-	    items = add (items, `item(`id(group), group, false));
-    });
-
-    UI::OpenDialog( `opt(`decorated), `HBox(
-	`VSpacing (15),
-	`HSpacing(1),
-	`VBox(
-	    `HSpacing (50),
-	    `VSpacing(0.5),
-	    // selection box label
-	    `MultiSelectionBox (`id (`groups), _("Default &Secondary Groups"),
-		items),
-	    `VSpacing(0.5),
-	    `HBox(
-		`PushButton(`id(`ok),`opt(`default, `key_F10), OKButtonLabel()),
-		`PushButton(`id(`cancel), `opt (`key_F9), CancelButtonLabel())
-	    ),
-	    `VSpacing(0.5)),
-	`HSpacing(1)
-    ));
-    any result = nil;
-    string new_value = "";
-
-    while (true)
-    {
-	result = UI::UserInput ();
-	if (result == `cancel)
-	{
-	    new_value = "";
-	    break;
-	}
-	if (result == `ok)
-	{
-	    list new_groups = UI::QueryWidget (`id(`groups), `SelectedItems);
-	    new_value = mergestring (new_groups, " ");
-	    break;
-	}
-    }
-    UI::CloseDialog();
-    return new_value;
-}
-
-
 /**
- * Popup for editing default template value
+ * Popup for adding new default value (default value is template's attribute)
  */
-global define map EditTemplatePopup (string value, list all) ``{
-
-    list items = maplist (`dn, all, ``{
-	if (dn == value)
-	    return `item (`id(dn), dn, true);
-	else
-	    return `item (`id(dn), dn);
-    });
-    UI::OpenDialog( `opt(`decorated), `HBox(
-	`VSpacing (15),
-	`HSpacing(1),
-	`VBox(
-	    `HSpacing (70),
-	    `VSpacing(0.5),
-	    // label FIXME
-	    `Label (_("What do you want to do?")),
-	    `VSpacing(0.5),
-	    // richtext text
-	    `RichText (_("You can select template DN from existing ones and this will be used as a value of \"defaultTemplate\".
-<br>
-You can add a new value of DN or edit an existing one to create new template with such DN. Push <b>OK</b> button to confirm.
-<br>
-Or you can rename current DN to new value after clicking <b>Rename</b>.
-")),
-	    // TODO use radio-buttons?
-	    // combobox label FIXME
-	    `ComboBox (`id (attr),`opt (`editable), _("&Select") , items),
-	    `VSpacing(0.5),
-	    `HBox(
-		`PushButton(`id(`ok),`opt(`default, `key_F10), OKButtonLabel()),
-	    // TODO button for removal?
-		`PushButton(`id(`rename),`opt(`key_F6), _("&Rename/Move")),
-		`PushButton(`id(`cancel), `opt (`key_F9), CancelButtonLabel())
-	    ),
-	    `VSpacing(0.5)),
-	`HSpacing(1)
-    ));
-
-    any result = nil;
-    string new_value = value;
-    string action = "select";
-    if (value == "")
-	UI::ChangeWidget (`id(`rename), `Enabled, false);
-    while (true)
-    {
-	result = UI::UserInput ();
-	if (result == `cancel)
-	{
-	    new_value = value;
-	    action = "select";
-	    break;
-	}
-	if (result == `ok)
-	{
-	    new_value = UI::QueryWidget (`id(attr), `Value);
-	    action = "new";
-	    if (contains (all, new_value))
-		action = "select";
-	    break;
-	}
-	if (result == `rename)
-	{
-	    new_value = UI::QueryWidget (`id(attr), `Value);
-	    action = "rename";
-	    if (contains (all, new_value))
-		action = "select";
-	    break;
-	}
-    }
-    UI::CloseDialog();
-    return $[ "action": action, "value": new_value];
-}
-
 global define map AddDefaultValuePopup (list available, list conflicts) ``{
 
+    // help text
+    string help_text = _("hilfe!");
+
     available = filter (`attr, available, ``( !contains (conflicts, attr)));
+    /*
     if (available == [])
 	//TODO warning
 	return $[];
+    */
 
     UI::OpenDialog( `opt(`decorated), `HBox(
 	`HSpacing(1),
@@ -264,14 +247,16 @@ global define map AddDefaultValuePopup (list available, list conflicts) ``{
 	    `HSpacing (50),
 	    `VSpacing(0.5),
 	    // combobox label
-	    `Left(`ComboBox (`id (`attr), _("Attribute &Name"), available)),
+	    `Left(`ComboBox (`id (`attr),`opt(`editable), _("Attribute &Name"),
+		available)),
 	    `VSpacing(0.5),
 	    // textentry label
 	    `TextEntry (`id (`val), _("Attribute &Value")),
 	    `VSpacing(0.5),
 	    `HBox(
-		`PushButton(`id(`ok),`opt(`default, `key_F10), OKButtonLabel()),
-		`PushButton(`id(`cancel), `opt (`key_F9), CancelButtonLabel())
+		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
+		`PushButton(`id(`cancel), `opt(`key_F9), Label::CancelButton()),
+		`PushButton(`id(`help),`opt (`key_F2), Label::HelpButton())
 	    ),
 	    `VSpacing(0.5)),
 	`HSpacing(1)
@@ -288,6 +273,10 @@ global define map AddDefaultValuePopup (list available, list conflicts) ``{
 	{
 	    new_value = "";
 	    break;
+	}
+	if ( result == `help )
+	{
+	    Wizard::ShowHelp( help_text );
 	}
 	if (result == `ok)
 	{

@@ -26,7 +26,7 @@ the <b>%1</b> packages must be installed.</p>
 <p>Install these packages now?</p>
 ")))
     {
-	UI::MessagePopup(_("The configuration of the LDAP client
+	Popup::Message(_("The configuration of the LDAP client
 cannot be completed without the mentioned packages."));
 	return `auto;
     }

@@ -3,6 +3,8 @@
 # neededforbuild  yast2-devel-packages
 
 @HEADER@
+PreReq:         %fillup_prereq
+
 Requires:	yast2 yast2-network yast2-pam yast2-packager yast2-ldap
 
 Provides:	yast2-config-ldap_client
@@ -25,6 +27,9 @@ Summary:	Configuration of LDAP client
 
 @CLEAN@
 
+%post
+%{fillup_only -n ldap}
+
 %files
 %defattr(-,root,root)
 @configdir@/ldap.y2cc
@@ -34,3 +39,5 @@ Summary:	Configuration of LDAP client
 @clientdir@/ldap*.ycp
 @scrconfdir@/*.scr
 %doc @docdir@
+
+/var/adm/fillup-templates/sysconfig.ldap

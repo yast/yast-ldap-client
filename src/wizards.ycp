@@ -12,6 +12,7 @@
 textdomain "ldap";
 
 import "Wizard";
+import "Label";
 
 include "wizard/sequencer.ycp";
 
@@ -52,7 +53,7 @@ global define symbol LdapSequence() ``{
 
     Wizard::CreateDialog();
     Wizard::SetContentsButtons(caption, contents, "",
-	    BackButtonLabel(), NextButtonLabel());
+	    Label::BackButton(), Label::NextButton());
 
     any ret = WizardSequencer(aliases, sequence);
 
@@ -72,7 +73,7 @@ global define symbol LdapAutoSequence() ``{
 
     Wizard::CreateDialog();
     Wizard::SetContentsButtons(caption, contents, "",
-	    BackButtonLabel(), NextButtonLabel());
+	    Label::BackButton(), Label::NextButton());
 
     any ret = MainSequence();
 
@@ -88,8 +89,6 @@ global define symbol MainSequence() ``{
 
     map aliases = $[
 	"ldap"		: ``( LdapDialog() ),
-//	"users"		: ``( UsersConfigureDialog() ),
-//	"defaults"	: ``( DefaultsConfigureDialog() ),
 	"abort"		: ``( ReallyAbort()),
 	"advanced"	: ``( AdvancedConfigurationDialog ()),
 	"configure"	: ``( ModuleConfigurationDialog ()),
@@ -103,25 +102,10 @@ global define symbol MainSequence() ``{
 	"ldap" : $[
 	    `abort	: "abort",
 	    `cancel	: "abort",
-//	    `details	: "users",
 	    `advanced	: "advanced",
-//	    `advanced	: "read_ldap",
-//	    `next	: `next
-//	    `next	: "advanced",
-	    `next	: "confirm_write"
+//	    `next	: "confirm_write"
+	    `next	: `next
 	],
-	/*
-	"users" : $[// OBSOLETE
-	    `abort	: "abort",
-	    `cancel	: "abort",
-	    `next	: "defaults"
-	],
-	"defaults" : $[// OBSOLETE
-	    `abort	: "abort",
-	    `cancel	: "abort",
-	    `next	: "ldap"
-	],
-	*/
 	"abort": $[
 	    `abort	: `abort,
 	    `next	: `abort,
@@ -131,33 +115,25 @@ global define symbol MainSequence() ``{
 	"read_ldap": $[
 	    `abort	: `abort,
 	    `cancel	: `abort,
-//	    `next	: "advanced",
 	    `next	: "configure",
 	    `skip	: "ldap"
 	],
 	"advanced": $[
 	    `abort	: "abort",
 	    `cancel	: "abort",
-//	    `next	: "ldap",
-//	    `next	: `next,
-	    `next	: "read_ldap",
-//	    `configure	: "configure"
-//	    `configure	: "read_ldap"
+	    `next	: "ldap",
+	    `configure	: "read_ldap"
 	],
 	"configure": $[
 	    `abort	: "abort",
 	    `cancel	: "abort",
 	    `next	: "advanced",
-//	    `template	: "template"
-//	    `templ	: "template",
 //	    `next	: "template",
-	    `next	: "ldap",
 	],
 	/*
 	"template": $[
 	    `abort	: "abort",
 	    `cancel	: "abort",
-//	    `next	: "advanced",
 	    `next	: "configure",
 	],
 	*/

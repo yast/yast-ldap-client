@@ -13,7 +13,8 @@ client_DATA =		\
 ynclude_DATA =		\
 	ui.ycp		\
 	wizards.ycp	\
-	edit_popups.ycp
+	edit_popups.ycp	\
+	routines.ycp
 
 module_DATA =		\
 	Ldap.ycp

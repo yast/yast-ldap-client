@@ -1,0 +1,11 @@
+## Path:	System/Yast2/Ldap
+## Description:	YaST2 Ldap-client configuration
+## Type:        yesno
+## Default:     no
+#
+# If this machine acts as a file server for home directories of LDAP users,
+# this value is "yes". It is used by YaST2 Users module to check if managing
+# (creating, renaming, deleting) such home directories is possible.
+#
+#
+FILE_SERVER="no"
