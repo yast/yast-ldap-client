@@ -1301,7 +1301,7 @@ Select another one.
 
 	    // modify sources in /etc/nsswitch.conf
 	    foreach (string entry, list value, nsswitch, ``{
-		new_nsswitch [entry] = mergestring ( value, " " );
+		new_nsswitch [entry] = mergestring ( (list<string>)value, " " );
 		if (!contains (value, "ldap"))
 		    new_nsswitch [entry] = new_nsswitch [entry]:"" + " ldap";
 	    });
@@ -1324,7 +1324,7 @@ Select another one.
 
 	    foreach (string entry, list value, nsswitch, ``{
 		new_nsswitch [entry] = mergestring (
-		    (list)filter (string v, value, ``(v != "ldap")), " ");
+		    (list<string>)filter (string v, value, ``(v != "ldap")), " ");
 		// just to make sure that something remains...
 		if (new_nsswitch [entry]:"" == "")
 		    new_nsswitch [entry] = "files";
