@@ -18,7 +18,7 @@ import "Ldap";
  * Get first value from dn (it is assumed to be "cn")
  * (Can't work in general cases!)
  */
-global define string get_cn (string dn) ``{
+define string get_cn (string dn) ``{
 
     list dn_list = splitstring (dn, ",");
     return substring (dn_list[0]:"", find (dn_list[0]:"", "=")+1);
@@ -28,7 +28,7 @@ global define string get_cn (string dn) ``{
  * Create DN from cn by adding base config DN
  * (Can't work in general cases!)
  */
-global define string get_dn (string cn) ``{
+define string get_dn (string cn) ``{
 
     return sformat ("cn=%1,%2", cn, Ldap::base_config_dn);
 }
@@ -37,7 +37,7 @@ global define string get_dn (string cn) ``{
  * Create new DN from DN by changing leading cn value
  * (Can't work in general cases!)
  */
-global define string get_new_dn (string cn, string dn) ``{
+define string get_new_dn (string cn, string dn) ``{
 
     return sformat ("cn=%1%2", cn, substring (dn, find (dn, ",")));
 }
@@ -45,7 +45,7 @@ global define string get_new_dn (string cn, string dn) ``{
 /**
  * Get RDN (relative distinguished name) from dn
  */
-global define string get_rdn (string dn) ``{
+define string get_rdn (string dn) ``{
 
     list dn_list = splitstring (dn, ",");
     return dn_list[0]:dn;
@@ -55,9 +55,9 @@ global define string get_rdn (string dn) ``{
  * Get string value of attribute from map.
  * (Generaly, it is supposed to be list or string.)
  */
-global define string get_string (map object, string attr) ``{
+define string get_string (map object, string attr) ``{
 
-    if (is (object [attr]:[], list))
+    if (is (object [attr]:nil, list))
 	return object [attr,0]:"";
     return (string) (object [attr]:"");
 }

@@ -22,7 +22,7 @@ include "ldap/ui.ycp";
  * Main workflow of the ldap-client configuration
  * @return sequence result
  */
-global define any MainSequence() ``{
+define any MainSequence() ``{
 
     map aliases = $[
 	"ldap"		: ``( LdapDialog() ),
@@ -76,7 +76,7 @@ global define any MainSequence() ``{
  * For use with autoinstallation.
  * @return sequence result
  */
-global define symbol LdapAutoSequence() ``{
+define symbol LdapAutoSequence() ``{
 
     string caption = _("LDAP Client Configuration");
     term contents = `Label(_("Initializing ..."));
@@ -95,7 +95,7 @@ global define symbol LdapAutoSequence() ``{
  * Whole configuration of ldap-client
  * @return sequence result
  */
-global define symbol LdapSequence() ``{
+define symbol LdapSequence() ``{
 
     map aliases = $[
 	"read"	: [ ``( ReadDialog() ), true ],

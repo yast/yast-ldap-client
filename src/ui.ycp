@@ -25,7 +25,7 @@
 
     include "ldap/routines.ycp";
 
-    global define boolean Modified () ``{
+    define boolean Modified () ``{
 
 	return (Ldap::modified || Ldap::ldap_modified);
     }
@@ -34,7 +34,7 @@
      * The dialog that appears when the [Abort] button is pressed.
      * @return `abort if user really wants to abort, `back otherwise
      */
-    global define symbol ReallyAbort () ``{
+    define symbol ReallyAbort () ``{
 
 	boolean ret = true;
 	if (!Mode::cont)
@@ -55,7 +55,7 @@
      * Read settings dialog
      * @return `abort if aborted and `next otherwise
      */
-    global define symbol ReadDialog () ``{
+    define symbol ReadDialog () ``{
 	boolean ret = Ldap::Read();
         return ret ? `next : `abort;
     }
@@ -64,7 +64,7 @@
      * Write settings dialog
      * @return `next
      */
-    global define symbol WriteDialog() ``{
+    define symbol WriteDialog() ``{
 
 	// popup text
 	block<boolean> abort = ``{
@@ -88,7 +88,7 @@
      * The main dialog for ldap-client configuration
      * @return	`back, `next or `abort
      */
-    global define symbol LdapDialog () ``{
+    define symbol LdapDialog () ``{
 
 	// help text 1/6
 	string help_text = _("<p>Here, your machine can be set up as an
@@ -246,7 +246,7 @@ removed.</p>") +
 /**
  * Configuration of advanced settings (how to get to config data on server)
  */
-global define symbol AdvancedConfigurationDialog () ``{
+define symbol AdvancedConfigurationDialog () ``{
 
     // help text 1/4
     string help_text = _("<p>First, set <b>Configuration Base DN</b>.
@@ -367,7 +367,7 @@ directories.</p>
  * Initialize connection to LDAP server, bind and read the settings.
  * Everything is done before entering the Module Configuration Dialog.
  */
-global define symbol LDAPReadDialog () ``{
+define symbol LDAPReadDialog () ``{
 
     string msg = "";
 
@@ -411,7 +411,7 @@ All changes will be lost.
 /**
  * Dialog for configuration one object template
  */
-global define map TemplateConfigurationDialog (map templ) ``{
+define map TemplateConfigurationDialog (map templ) ``{
 
     // help text 1/3
     string help_text = _("<p>Here, configure the template used for
@@ -634,7 +634,7 @@ Are you sure?")))
 /**
  * Dialog for configuration of one "configuration module"
  */
-global define symbol ModuleConfigurationDialog () ``{
+define symbol ModuleConfigurationDialog () ``{
 
     // helptext 1/4
     string help_text = _("<p>Here, manage the configuration stored in LDAP directory.</p>") +
