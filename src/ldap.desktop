@@ -56,3 +56,4 @@ Name[sl]=LDAP odjemalec
 GenericName[sl]=Nastavi LDAP odjemalca
 Name[tr]=LDAP istemcisi
 GenericName[tr]=LDAP istemcisini yapılandır
+X-KDE-SubstituteUID=true
