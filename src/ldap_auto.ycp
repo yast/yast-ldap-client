@@ -77,7 +77,7 @@ else if (func == "Write") {
     Progress::on();
 }
 else if (func == "Packages") {
-    ret = Ldap::required_packages;
+    ret = Ldap::AutoPackages();
 }
 /* Unknown function */
 else {

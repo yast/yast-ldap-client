@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Sep  9 01:08:49 CEST 2003 - nashif@suse.de
+
+- #30291: return required packages for autoinstallation
+
+-------------------------------------------------------------------
 Fri Sep  5 09:41:39 CEST 2003 - jsuchome@suse.cz
 
 - merged in proofread texts

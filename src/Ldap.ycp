@@ -1344,4 +1344,18 @@ Select another one.
 	}
 	return error == $[];
     }
+
+    /**
+     * Return needed packages and packages to be removed
+     * during autoinstallation.
+     * @return map of lists.
+     *
+     **/
+
+    global  define map AutoPackages() ``{
+      list install_pkgs = required_packages;
+      list remove_pkgs = [];
+      return ($["install": install_pkgs, "remove": remove_pkgs]);
+    }
+
 }
