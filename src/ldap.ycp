@@ -17,13 +17,14 @@
     textdomain "ldap-client";
 
     import "Require";
+    import "Popup";
 
     include "ldap/wizards.ycp";
 
     if (!Require::RequireAndConflict (["pam_ldap","nss_ldap"], [],
 			     _("<p>To configure and access LDAP services,
-the <b>%1</b> packages must be installed.</p>
-<p>Install these packages now?</p>
+the <b>%1</b> packages must be installed.<br>
+Install these packages now?</p>
 ")))
     {
 	Popup::Message(_("The configuration of the LDAP client
@@ -31,5 +32,4 @@ cannot be completed without the mentioned packages."));
 	return `auto;
     }
     return LdapSequence();
-
 }

@@ -18,6 +18,7 @@
     import "Summary";
     import "Progress";
     import "Label";
+    import "Popup";
     import "Mode";
 
     include "ldap/routines.ycp";
@@ -265,8 +266,7 @@
 	// summary text
 	sformat (_("<b>Base DN</b>:%1<br>"), domain != "" ? domain : nc) +
 	// summary text (yes/no follows)
-	sformat ("<b>Client Enabled</b>:%1</br>",
-	    deletechars (start ? Label::YesButton(): Label::NoButton(),"&"));
+	sformat (_("<b>Client Enabled</b>:%1<br>"), start ? _("Yes") : _("No"));
 	return summary;
     }
 
@@ -542,7 +542,7 @@ Object Class not found."),
 	    `VBox(
 		`VSpacing (0.5),
 		// label
-		`Left(`Heading (_("Error"))),
+		`Left(`Heading (Label::ErrorMsg())),
 		// default error message
 		`Label (error_type[type]:_("Unknown LDAP error")),
 		`ReplacePoint (`id(`rp), `Empty()),

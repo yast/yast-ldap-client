@@ -72,8 +72,9 @@ possible values you can use for currently edited attribute.</p>");
 
     if (desc != "")
 	// help text 3/3, %1 is attribute name, %2 description (not translated)
-	help_text = help_text + sformat (_("<p>The description of attribute <b>%1</b><br>(available only in english):</p>
-<p><i>%2</i></p>"), attr, desc);
+	help_text = help_text + sformat (_("<p>The description of attribute <b>%1</b><br>(available only in english):</p>"), attr) +
+
+	sformat ("<p><i>%1</i></p>", desc);
 
     list org_value = value;
     integer value_size = size (value);
@@ -284,7 +285,7 @@ list of allowed attributes for objects described in \"defaultObjectClass\"
 entry of current template.</p>") +
 
     // help text 3/3 do not translate "homeDirectory"
-    _("You can use special syntax to create attribute
+    _("<p>You can use special syntax to create attribute
 values from existing ones. The expression <i>%attr_name</i> will be replaced
 by the value of attribute \"attr_name\" (for example, you can use \"/home/%uid\"
 as a value of \"homeDirectory\" attribute).</p>");

@@ -454,10 +454,10 @@ global define symbol ModuleConfigurationDialog () ``{
     string help_text = _("<p>Here you can manage the configuration stored in LDAP directory.</p>") +
 
     // helptext 2/4
-    _("Each configuration set is called <b>configuration module</b>. If there
+    _("<p>Each configuration set is called <b>configuration module</b>. If there
 is no configuration module in the provided location (Base Configuration),
 you can create new one with <b>New</b> button. You can delete current module
-using <b>Delete</b> button.") +
+using <b>Delete</b> button.</p>") +
 
     // helptext 3/4
     _("<p>Edit the values of attributes in table with <b>Edit</b> button.
