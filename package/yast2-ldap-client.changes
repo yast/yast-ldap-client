@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Jul 22 11:38:25 PDT 2002 - kukuk@suse.de
+
+- merged proofread texts
+
+-------------------------------------------------------------------
 Fri Jul 12 16:33:23 CEST 2002 - arvin@suse.de
 
 - use proper namespace for Args and CallFunction (#16776)
