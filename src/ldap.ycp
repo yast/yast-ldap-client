@@ -46,7 +46,7 @@ cannot be completed without the mentioned packages."));
  * @param options  a list of parameters passed as args
  * @return boolean true on success
  */
-define boolean LdapEnableHandler( map options ) ``{
+define boolean LdapEnableHandler( map<string,string> options ) ``{
     // check the "command" to be present exactly once
     string command = CommandLine::UniqueOption( options,
 	["enable", "disable" ] );

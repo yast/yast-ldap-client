@@ -186,7 +186,7 @@
      * Available configuration modules (objectClass names)
      * TODO update
      */
-    global list available_config_modules = [
+    global list<string> available_config_modules = [
 	"userConfiguration",
 	"groupConfiguration"
     ];
@@ -1001,7 +1001,7 @@ The object with the selected DN cannot be created.
      * @param class additional objectClass of new module (e.g.userConfiguration)
      * @return new module map
      */
-    global define map CreateModule (string cn, string class) ``{
+    global define map<string,any> CreateModule (string cn, string class) ``{
 
 	map obj = $[
 	    "cn":		[ cn ],
@@ -1054,7 +1054,7 @@ The object with the selected DN cannot be created.
 		default_base = domain;
 	}
 	obj ["defaultBase"] = [ default_base ];
-	return AddMissingAttributes (obj);
+	return (map<string,any>) AddMissingAttributes (obj);
     }
 
     /**
@@ -1063,9 +1063,9 @@ The object with the selected DN cannot be created.
      * @param search_filter if filter is empty, "objectClass=*" is used
      * @return list of DN's (list of strings)
      */
-    global define list ReadDN (string base, string search_filter) ``{
+    global define list<string> ReadDN (string base, string search_filter) ``{
 
-	list all = (list)SCR::Read (.ldap.search, $[
+	list<string> all = (list<string>)SCR::Read (.ldap.search, $[
 	    "base_dn":	base,
 	    "filter":   search_filter,
 	    "attrs":	["cn"], // not necessary, just not read all values
