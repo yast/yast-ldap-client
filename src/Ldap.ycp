@@ -1591,8 +1591,11 @@ Select another one.
 	    });
 	}
 
-	// write the changes in ldap.conf now
+	// write the changes in /etc/ldap.conf and /etc/openldap/ldap.conf now
 	SCR::Write(.etc.ldap_conf, nil);
+
+	// write changes to /etc/security/pam_unix2.conf now
+	PamSettings::Write (["pam_unix2"]);
 
 	// write sysconfig values
 	SCR::Write (.sysconfig.ldap.FILE_SERVER, file_server? "yes": "no");

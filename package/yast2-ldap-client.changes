@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Fri Mar 12 12:46:40 CET 2004 - jsuchome@suse.cz
+
+- updated helptext
+
+-------------------------------------------------------------------
+Thu Mar 11 08:52:14 CET 2004 - jsuchome@suse.cz
+
+- set icon also for ldap_config client
+
+-------------------------------------------------------------------
 Wed Mar 10 13:32:20 CET 2004 - jsuchome@suse.cz
 
 - NFB: no need of yast2-installation
