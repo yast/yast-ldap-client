@@ -28,16 +28,16 @@
     global define symbol LdapDialog () ``{
 
 // help text 1/5
-	string help_text = UI(_("<p>Here your machine can be set up as
+	string help_text = UI(_("<p>Here, your machine can be set up as an
 <b>LDAP client</b> to authenticate your user with an OpenLDAP server.
-Enter the name of the search base (base DN, e.g, dc=mydomain,dc=com)
+Enter the name of the search base (base DN, such as dc=mydomain,dc=com)
 in the first entry and the LDAP server's address (e.g., ldap.example.com
 or 10.20.0.2) in the second. Specify multiple servers by separating their
 addresses with spaces.
-To deactivate LDAP services, click the button <b>Do not use LDAP</b>.</p>"));
+To deactivate LDAP services, click <b>Do not use LDAP</b>.</p>"));
 
 // help text 2/5
-	help_text = help_text + UI(_("<p>Some LDAP servers supports
+	help_text = help_text + UI(_("<p>Some LDAP servers support
 StartTLS [RFC2830]. If your server supports it and it is configured,
 activate <b>LDAP TLS/SSL</b> to encrypt your communication
 with the LDAP server.</p>"));
@@ -129,7 +129,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 		if (domain == "")
 		{
 		   // error popup label
-                    Report::Error(_("You need to enter a LDAP base DN."));
+                    Report::Error(_("Enter an LDAP base DN."));
                     result = nil;
                     continue;
                 }
@@ -137,7 +137,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 		if (server == "")
 		{
 		    // error popup label
-		    Report::Error(_("You need to enter at least one address of a LDAP server."));
+		    Report::Error(_("Enter at least one address of an LDAP server."));
 		    result = nil;
 		    continue;
 		}
