@@ -57,9 +57,9 @@ global define string get_rdn (string dn) ``{
  */
 global define string get_string (map object, string attr) ``{
 
-    if (is (object [attr]:"", list))
+    if (is (object [attr]:[], list))
 	return object [attr,0]:"";
-    return object [attr]:"";
+    return (string) (object [attr]:"");
 }
 
 }
