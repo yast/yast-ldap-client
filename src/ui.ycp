@@ -301,16 +301,6 @@ _("<p>The automounter package will be installed.</p>");
 	    {
 		if (result == `next)
 		{
-		    /*
-		    if (autofs &&
-			!Require::IsAnyPackageInstalled (["autofs", "autofs4"]))
-		    {
-			Require::RequireAndConflict (["autofs"],[],
-			// popup message
-			_("<p>The automounter package will be installed.</p>"));
-		    }
-		    */
-
 		    if (start && !Ldap::start)
 		    {
 			// popup text
@@ -721,14 +711,9 @@ removing current ones.</p>
 		offer		= Ldap::GetGroupsDN (Ldap::GetDomain());
 	    if (attr == "susenamingattribute")
 	    {
-		offer		= Ldap::GetObjectAttributes (
-		    template["susedefaultobjectclass"]:[]);
+		list classes	= Ldap::GetDefaultObjectClasses (template);
+		offer		= Ldap::GetObjectAttributes (classes);
 	    }
-	    /* TODO
-	    if (attr == "defaultObjectClass")
-		- offer all available object classes
-		- mark "structural" ones
-	    */
 	    if (attr == "cn")
 	    {
 		string base = substring (template_dn, find (template_dn,",")+1);
@@ -750,10 +735,10 @@ removing current ones.</p>
 	{
 	    list conflicts =
 		maplist (string attr, string val, default_values,``(attr));
-	    list classes = template["susedefaultobjectclass"]:[];
+	    list classes = Ldap::GetDefaultObjectClasses (template);
 	    list available = Ldap::GetObjectAttributes (classes);
-	    // filter out objectclass (there is already defaultObjectClass)
-	    map dfl = LdapPopup::AddDefaultValue (available,
+	    // filter out objectclass
+	    map dfl = LdapPopup::AddDefaultValue (sort (available),
 		add (conflicts, "objectclass"));
 	    if (dfl["value"]:"" == "")
 		continue;

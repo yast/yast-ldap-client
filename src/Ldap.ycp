@@ -1157,6 +1157,28 @@ The object with the selected DN cannot be created.
     }
 
     /**
+     * Return list of default object classes for user or group
+     * There is fixed list here, it is not saved anywhere (only in default
+     * users plugin for LDAP objects)
+     * @param template used for differ if we need user or group list
+     */
+    global define list GetDefaultObjectClasses (map template) {
+
+	list ocs = maplist (string c,template["objectclass"]:[],``(tolower(c)));
+	y2internal ("ocs: %1", ocs);
+	if (contains (ocs, "susegrouptemplate"))
+	{
+	    return ["top", "posixgroup", "groupofnames"];
+	    // TODO sometimes there is groupofuniquenames...
+	}
+	else if (contains (ocs, "suseusertemplate"))
+	{
+	    return ["top","posixaccount","shadowaccount", "inetorgperson"];
+	}
+	return [];
+    }
+
+    /**
      * Creates default new map for a new object template
      * @param cn cn of new template
      * @param classes object classes of the object the template will belong to
