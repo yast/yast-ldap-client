@@ -283,6 +283,7 @@
     global define boolean SetDefaults (map settings) ``{
 
 	initial_defaults = eval (settings);
+	return true;
     }
 
     /* ------------- auto_yast functions -------------------------------- */
