@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Fri Aug 15 15:05:19 CEST 2003 - jsuchome@suse.cz
+
+- added default value for nextUniqueId (configuration on LDAP server)
+
+-------------------------------------------------------------------
 Thu Aug 14 11:28:40 CEST 2003 - jsuchome@suse.de
 
 - removed confirmation popup (#28729)

@@ -106,6 +106,7 @@
 	    "passwordHash"	: ["crypt"],
 	    "skelDir"		: ["/etc/skel"],
 	    "minUniqueId"	: ["500"],
+	    "nextUniqueId"	: ["500"],
 	    "maxUniqueId"	: ["60000"],
 	    "minPasswordLength" : ["5"],
 	    "maxPasswordLength" : ["8"],
@@ -113,6 +114,7 @@
 	"groupConfiguration"	: $[
 	    "searchFilter"	: ["objectClass=posixGroup"],
 	    "minUniqueId"	: ["500"],
+	    "nextUniqueId"	: ["500"],
 	    "maxUniqueId"	: ["60000"],
 	],
 	"userTemplate"		: $[
