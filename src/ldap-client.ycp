@@ -1,6 +1,7 @@
 /**
  * Author:  Jiri Suchomel <jsuchome@suse.cz>
  * Summary: Just a redirection
+ * $Id$
  */
 {
     string target = "ldap";

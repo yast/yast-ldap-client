@@ -12,13 +12,13 @@
  *   libscr
  *   man ldap.conf
  * Example:
- *   Dir(.etc.ldap_conf)
+ *   Dir(.etc.ldap_conf.v."/etc/ldap.conf")
  *   (["base", "host"])
  **
- *   Read(.etc.ldap_conf.host)
+ *   Read(.etc.ldap_conf.v."/etc/ldap/conf".host)
  *   ("10.10.0.149")
  **
- *   Write(.etc.ldap_conf.base, "dc=myodmain, dc=com")
+ *   Write(.etc.ldap_conf.v."/etc/ldap/conf".base, "dc=myodmain, dc=com")
  *   (true)
  *
  * $Id$
@@ -29,8 +29,8 @@
 
 `ag_ini(
   IniAgent(
-    "/etc/ldap.conf",
-    $[ "options" : [ "ignore_case", "global_values", "flat" ],
+    [ "/etc/ldap.conf", "/etc/openldap/ldap.conf" ],
+    $[ "options" : [ "ignore_case", "global_values"],
        "comments" : [ "^#.*", "^[ \t]*$", ],
        "params" : [
          $[ "match" : [ "^[ \t]*([a-zA-Z0-9_]+)[ \t]+(.*[^ \t]|)[ \t]*$",

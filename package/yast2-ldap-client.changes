@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Aug 29 11:19:27 CEST 2003 - jsuchome@suse.de
+
+- write basic settings also to /etc/openldap/ldap.conf (#29514)
+- 2.8.7
+
+-------------------------------------------------------------------
 Fri Aug 22 09:37:37 CEST 2003 - jsuchome@suse.cz
 
 - Add variable for required packages and return them in auto client

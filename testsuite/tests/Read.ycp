@@ -17,14 +17,18 @@
 		"group"  : "compat ldap"
 	    ],
 	    "ldap_conf" : $[
-		"host" : "localhost",
-		"base" : "dc=suse,dc=cz",
-		"nss_base_passwd" : nil,
-		"nss_base_shadow" : nil,
-		"nss_base_group" : nil,
-		"ldap_version": nil,
-		"ssl": nil,
-		"pam_password": "crypt",
+		"v" : $[
+		    "/etc/ldap.conf": $[
+			"host" : "localhost",
+			"base" : "dc=suse,dc=cz",
+			"nss_base_passwd" : nil,
+			"nss_base_shadow" : nil,
+			"nss_base_group" : nil,
+			"ldap_version": nil,
+			"ssl": nil,
+			"pam_password": "crypt",
+		    ]
+		]
 	    ],
 	],
 	"sysconfig": $[

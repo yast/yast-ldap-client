@@ -18,10 +18,11 @@
 
     import "Require";
     import "Popup";
+    import "Ldap";
 
     include "ldap/wizards.ycp";
 
-    if (!Require::RequireAndConflict (["pam_ldap","nss_ldap"], [],
+    if (!Require::RequireAndConflict (Ldap::required_packages, [],
 			     _("<p>To configure and access LDAP services,
 the <b>%1</b> packages must be installed.<br>
 Install these packages now?</p>

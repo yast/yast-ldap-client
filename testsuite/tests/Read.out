@@ -1,13 +1,13 @@
 Dump	==== reading... ============================
 Execute	.target.bash "/usr/bin/grep '^passwd:.*ldap' /etc/nsswitch.conf" 0
-Read	.etc.ldap_conf."host" "localhost"
-Read	.etc.ldap_conf."base" "dc=suse,dc=cz"
-Read	.etc.ldap_conf."ldap_version" nil
-Read	.etc.ldap_conf."ssl" nil
-Read	.etc.ldap_conf."nss_base_passwd" nil
-Read	.etc.ldap_conf."nss_base_shadow" nil
-Read	.etc.ldap_conf."nss_base_group" nil
-Read	.etc.ldap_conf."pam_password" "crypt"
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."host" "localhost"
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."base" "dc=suse,dc=cz"
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."ldap_version" nil
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."ssl" nil
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_passwd" nil
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_shadow" nil
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_group" nil
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."pam_password" "crypt"
 Read	.etc.nsswitch_conf.passwd "compat ldap"
 Read	.etc.nsswitch_conf.group "compat ldap"
 Read	.sysconfig.ldap.BASE_CONFIG_DN nil

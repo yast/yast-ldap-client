@@ -20,6 +20,7 @@
     import "Label";
     import "Popup";
     import "Mode";
+    import "Require";
 
     import "PamSettings";
 
@@ -46,6 +47,7 @@
      * IP addresses of LDAP server.
      */
     global string  server = "";
+    global string  old_server = "";
 
     // local settings modified?
     global boolean modified = false;
@@ -300,7 +302,7 @@
      */
     define string ReadLdapConfEntry (string entry, string defvalue) ``{
 
-	string ret = SCR::Read(add (.etc.ldap_conf, entry));
+	string ret = SCR::Read(add (.etc.ldap_conf.v."/etc/ldap.conf", entry));
 	if (ret == nil)
 	    ret = defvalue;
 	return ret;
@@ -316,6 +318,7 @@
 	server = ReadLdapConfEntry ("host", "");
 	domain  = ReadLdapConfEntry ("base", "");
 	old_domain = domain;
+	old_server = server;
 
 	ldap_v2 = (ReadLdapConfEntry ("ldap_version", "3") == "2");
 	ldap_tls = (ReadLdapConfEntry ("ssl", "no") == "start_tls");
@@ -407,19 +410,22 @@
 	if (start) // ldap used
 	{
 	    // update ldap.conf
-	    SCR::Write(.etc.ldap_conf.host, server);
-	    SCR::Write(.etc.ldap_conf.base, domain);
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".host, server);
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".base, domain);
+
+	    WriteOpenLdapConf();
+
 	    if (ldap_v2)
-		SCR::Write(.etc.ldap_conf.ldap_version, "2");
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ldap_version, "2");
 	    else
-		SCR::Write(.etc.ldap_conf.ldap_version, "3");
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ldap_version, "3");
 
 	    if (ldap_tls)
-		SCR::Write(.etc.ldap_conf.ssl, "start_tls");
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ssl, "start_tls");
 	    else
-		SCR::Write(.etc.ldap_conf.ssl, "no");
+		SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".ssl, "no");
 
-	    SCR::Write(.etc.ldap_conf.pam_password, pam_password);
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".pam_password, pam_password);
 
 	    // save the user and group bases (check the LDAP config before)
 	    user_base = domain;
@@ -430,15 +436,15 @@
 		if (contains (mod["objectClass"]:[], "groupConfiguration"))
 		    group_base = mod["defaultBase",0]:user_base;
 	    });
-	    SCR::Write(.etc.ldap_conf.nss_base_passwd,
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_passwd,
 		(nss_base_passwd != "")? nss_base_passwd : user_base);
-	    SCR::Write(.etc.ldap_conf.nss_base_shadow,
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_shadow,
 		(nss_base_shadow != "")? nss_base_shadow : user_base);
-	    SCR::Write(.etc.ldap_conf.nss_base_group,
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf".nss_base_group,
 		(nss_base_group != "")? nss_base_group : group_base);
 
 	    // write the changes in ldap.conf now
-	    SCR::Write(.etc.ldap_conf, nil);
+	    SCR::Write(.etc.ldap_conf.v."/etc/ldap.conf", nil);
 
 	    // pam settigs
 	    foreach (`type, [ "account", "auth", "password" ], ``{
@@ -512,6 +518,38 @@
 	Progress::NextStage ();
 
 	return `next;
+    }
+
+    /**
+     * Modify also /etc/openldap/ldap.conf for the use of
+     * ldap client utilities (like ldapsearch)
+     * @return modified?
+     */
+    global define boolean WriteOpenLdapConf () ``{
+
+	boolean write_openldap_conf = false;
+
+	if (!Require::IsAnyPackageInstalled (["openldap2-client"]))
+	    return false;
+
+	map out = SCR::Execute(.target.bash_output, "/bin/rpm -V openldap2-client");
+	// if the config file was not modified by user yet
+	if (!issubstring(out["stdout"]:"", "/etc/openldap/ldap.conf"))
+	    write_openldap_conf = true;
+	// if there are same values as in /etc/ldap.conf
+	else if (
+	    old_server == SCR::Read (.etc.ldap_conf.v."/etc/openldap/ldap.conf".host) &&
+	    old_domain == SCR::Read (.etc.ldap_conf.v."/etc/openldap/ldap.conf".base))
+		write_openldap_conf = true;
+
+	if (write_openldap_conf)
+	{
+	    // update ldap.conf
+	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".host, server);
+	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base, domain);
+	    y2milestone ("file /etc/openldap/ldap.conf was modified");
+	}
+	return write_openldap_conf;
     }
 
     /* ------------- functions for work with LDAP tree contents ------------ */
