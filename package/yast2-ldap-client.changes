@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Mar 26 11:22:30 CET 2004 - jsuchome@suse.cz
+
+- show warning when user enables LDAP client, while NIS client is in use
+  (#36981)
+- 2.9.11
+
+-------------------------------------------------------------------
 Thu Mar 25 17:36:17 CET 2004 - jsuchome@suse.cz
 
 - do not check 'defaultObjectClass' attribute (not present now)
