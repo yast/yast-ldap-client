@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Fri Sep 21 12:39:00 CEST 2001 - kukuk@suse.de
+
+- Add icon to filelist ...
+- Fix typo (now nscd will be restarted)
+- Add missing translation hooks
+- Don't save data if nothing is changed
+
+-------------------------------------------------------------------
 Wed Sep 19 15:15:19 CEST 2001 - kukuk@suse.de
 
 - Add icon for YCC

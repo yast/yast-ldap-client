@@ -46,9 +46,12 @@
     help_text = help_text + UI(_("<p>If you activate LDAP, NSS and PAM
     will be configured accordingly to use LDAP for user authentification.</p>"));
 
-    boolean ldap_client = (SCR (`Execute (.target.bash, "grep '^passwd:.*ldap' /etc/nsswitch.conf")) == 0);
-    string ldap_domain  = SCR::Read(.etc.openldap.ldap_conf.base);
-    string ldap_address = SCR::Read(.etc.openldap.ldap_conf.host);
+    boolean ldap_client      = (SCR (`Execute (.target.bash, "/usr/bin/grep '^passwd:.*ldap' /etc/nsswitch.conf")) == 0);
+    string  ldap_domain      = SCR::Read(.etc.openldap.ldap_conf.base);
+    string  ldap_address     = SCR::Read(.etc.openldap.ldap_conf.host);
+    boolean old_ldap_client  = ldap_client;
+    string  old_ldap_domain  = ldap_domain;
+    string  old_ldap_address = ldap_address;
 
 // frame label
     term con = `HVSquash(`Frame (_("LDAP client"),
@@ -103,9 +106,17 @@
             }
         }
 
-        if (result == `next &&
-            ! UI::YesNoPopup(_("The configuration of the LDAP client will be saved\nand the client will be restarted.")))
-            result = nil;
+        if (result == `next)
+	  {
+	    // if nothing is changed go back.
+	    if (old_ldap_client == ldap_client &&
+	        old_ldap_domain == ldap_domain &&
+                old_ldap_address == ldap_address)
+	      result = `back;
+            else
+	      if (! UI::YesNoPopup(_("The configuration of the LDAP client will be saved\nand the client will be restarted.")))
+                result = nil;
+	  }
 
     } while (result != `back && result != `next && result != `cancel);
 
@@ -118,8 +129,8 @@
 <b>%1</b> packages must be installed.</p>
 <p>Do you wish to install now?</p>")))
               {
-                 UI::MessagePopup("The configuration of the LDAP client
-cannot be completed without this packages.");
+                 UI::MessagePopup(_("The configuration of the LDAP client
+cannot be completed without this packages."));
 	         return;
               }
 	   }
@@ -129,9 +140,9 @@ cannot be completed without this packages.");
 					  "ldap_address" : ldap_address])))
          {
            if (ldap_client)
-             UI::MessagePopup("The configuration of the LDAP client was saved and is ready for use.");
+             UI::MessagePopup(_("The configuration of the LDAP client was saved and is ready for use."));
            else
-             UI::MessagePopup("The configuration of the LDAP client was saved.");
+             UI::MessagePopup(_("The configuration of the LDAP client was saved."));
          }
       }
 
