@@ -497,8 +497,16 @@ Value of DN is missing or invalid."),
 	    "port":         GetFirstPort (server),
 	    "version":      ldap_v2 ? 2 : 3
 	];
-	if (!(boolean)SCR::Execute (.ldap, args))
+	boolean init = (boolean) SCR::Execute (.ldap, args);
+	if (init == nil)
+	{
+	    // error message
+	    ret = _("Unknown error - maybe 'yast2-ldap' is not available?");
+	}
+	else if (!init)
+	{
 	    ret = LDAPError();
+	}
 	return ret;
     }
 
@@ -1432,5 +1440,13 @@ exists on the LDAP server. Create it now?
      */
     global define void SetBindPassword (string pass) ``{
 	bind_pass = pass;
+    }
+
+    /**
+     * Set the value of 'anonymous' variable (= bind without password)
+     * @param anon new value
+     */
+    global define void SetAnonymous (boolean anon) ``{
+	anonymous = anon;
     }
 }
