@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Mon Apr  5 10:05:32 CEST 2004 - jsuchome@suse.cz
+
+- fix: really write /etc/sysconfig/ldap (#38249)
+- correctly update nss_base_* values (#37711)
+- 2.9.14
+
+-------------------------------------------------------------------
 Fri Apr  2 15:51:52 CEST 2004 - jsuchome@suse.cz
 
 - changed license to GPL

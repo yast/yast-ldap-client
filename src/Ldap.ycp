@@ -145,16 +145,16 @@
 	    "susesearchfilter"	: ["objectclass=posixaccount"],
 	    "susepasswordhash"	: ["CRYPT"],
 	    "suseskeldir"	: ["/etc/skel"],
-	    "suseminuniqueid"	: ["500"],
-	    "susenextuniqueid"	: ["500"],
+	    "suseminuniqueid"	: ["1000"],
+	    "susenextuniqueid"	: ["1000"],
 	    "susemaxuniqueid"	: ["60000"],
 	    "suseminpasswordlength" : ["5"],
 	    "susemaxpasswordlength" : ["8"],
 	],
 	"susegroupconfiguration": $[
 	    "susesearchfilter"	: ["objectclass=posixgroup"],
-	    "suseminuniqueid"	: ["500"],
-	    "susenextuniqueid"	: ["500"],
+	    "suseminuniqueid"	: ["1000"],
+	    "susenextuniqueid"	: ["1000"],
 	    "susemaxuniqueid"	: ["60000"],
 	],
 	"suseusertemplate"	: $[
@@ -1581,15 +1581,25 @@ Select another one.
 	    // see bug #37665
 	    AddLdapConfEntry ("pam_filter", "objectclass=posixAccount");
 
-	    // save the user and group bases (check the LDAP config before)
+	    // save the user and group bases
 	    user_base = domain;
 	    group_base = domain;
+	    /*
 	    foreach (string dn, map mod, (map<string,map<string,any> >)config_modules, ``{
 		if (contains (mod["objectclass"]:[], "suseuserconfiguration"))
 		    user_base = mod["susedefaultbase",0]:domain;
 		if (contains (mod["objectclass"]:[], "sisegroupconfiguration"))
 		    group_base = mod["susedefaultbase",0]:user_base;
 	    });
+	    */
+	    // if nss_base_* were equeal to base DN, update them
+	    if (nss_base_passwd != "" && nss_base_passwd == old_domain)
+		nss_base_passwd	= domain;
+	    if (nss_base_shadow != "" && nss_base_shadow == old_domain)
+		nss_base_shadow	= domain;
+	    if (nss_base_group != "" && nss_base_group == old_domain)
+		nss_base_group	= domain;
+
 	    WriteLdapConfEntry ("nss_base_passwd",
 		(nss_base_passwd != "")? nss_base_passwd : user_base);
 	    WriteLdapConfEntry ("nss_base_shadow",
@@ -1650,7 +1660,10 @@ Select another one.
 	}
 
 	// write the changes in /etc/ldap.conf and /etc/openldap/ldap.conf now
-	SCR::Write(.etc.ldap_conf, nil);
+	if (!SCR::Write(.etc.ldap_conf, nil))
+	{
+	    y2error ("error writing ldap.conf file");
+	}
 
 	// write changes to /etc/security/pam_unix2.conf now
 	PamSettings::Write (["pam_unix2"]);
@@ -1661,6 +1674,12 @@ Select another one.
 	SCR::Write (.sysconfig.ldap.BASE_CONFIG_DN, base_config_dn);
 
 	SCR::Write (.sysconfig.ldap.BIND_DN, bind_dn);
+
+	// write the changes in /etc/sysconfig/ldap now
+	if (!SCR::Write (.sysconfig.ldap, nil))
+	{
+	    y2error ("error writing /etc/sysconfig/ldap");
+	}
 
 	if (_autofs_allowed)
 	{
