@@ -26,6 +26,7 @@
 
     include "commandline/commandline.ycp";
 
+    any ret = `auto;
     if (!Require::RequireAndConflict (Ldap::required_packages, [],
 			     // popup: requred applications (%1)
 			     _("<p>To configure and access LDAP services,
@@ -36,7 +37,7 @@ Install these packages now?</p>
 	// popup: requred applications were not installed
 	Popup::Message(_("The configuration of the LDAP client
 cannot be completed without the mentioned packages."));
-	return `auto;
+	return ret;
     }
 
 // --------------------------------------------------------------------------
@@ -75,14 +76,14 @@ global define boolean LdapSummaryHandler (map options ) ``{
 global define boolean LdapChangeConfiguration (map options ) ``{
 
     boolean ret = false;
-    string server = options["server"]:nil;
-    if( server != nil )
+    string server = options["server"]:"";
+    if( server != "" )
     {
 	Ldap::server = server;
 	ret = true;
     }
-    string base = options["base"]:nil;
-    if( base != nil )
+    string base = options["base"]:"";
+    if( base != "" )
     {
 	Ldap::SetDomain (base);
 	ret = true;
@@ -104,19 +105,27 @@ map cmdline = $[
     "guihandler"	: ``(LdapSequence()),
     "initialize"	: ``(Ldap::Read()),
     "finish"		: ``(LdapWrite()),
+    /* TODO NI
+    "guihandler"	: LdapSequence,
+    "initialize"	: Ldap::Read,
+    "finish"		: LdapWrite,
+    */
     "actions"		: $[
 	"pam" :$[
 	    "handler"	: ``(LdapEnableHandler()),
+//	    "handler"	: LdapEnableHandler, TODO NI
 	    // translators: command line help text for pam action
 	    "help"	: _("Enable or disable authentication with LDAP")
 	],
 	"summary" :$[
 	    "handler"	: ``(LdapSummaryHandler()),
+//	    "handler"	: LdapSummaryHandler, TODO NI
 	    // translators: command line help text for summary action
 	    "help"	: _("Configuration summary of LDAP client")
 	],
 	"configure"	: $[
 	    "handler"	: ``(LdapChangeConfiguration()),
+//	    "handler"	: LdapChangeConfiguration, TODO NI
 	    // translators: command line help text for configure action
 	    "help"	: _("Change the global settings of LDAP client")
 	]
@@ -148,5 +157,6 @@ map cmdline = $[
     ]
 ];
 
-   return CommandLineRun( cmdline );
+   ret = CommandLineRun( cmdline );
+   return ret;
 }

@@ -703,8 +703,8 @@ Value of DN is missing or invalid."),
 	    "attrs":    [ "subschemaSubentry" ],
 	    "scope":    0, //0:base
 	]);
-	string schema_dn = schemas[0,"subschemaSubentry",0]:nil;
-	if (schemas == nil || schema_dn == nil)
+	string schema_dn = schemas[0,"subschemaSubentry",0]:"";
+	if (schemas == nil || schema_dn == "")
 	{
 	    LDAPErrorMessage ("schema", LDAPError());
 	    return false;

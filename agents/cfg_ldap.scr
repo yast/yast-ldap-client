@@ -13,5 +13,5 @@
 .sysconfig.ldap
 
 `ag_ini(
-  SysConfigFile("/etc/sysconfig/ldap")
+  `SysConfigFile("/etc/sysconfig/ldap")
 )
