@@ -1,8 +1,4 @@
 Dump	==== reading... ============================
-Read	.etc.nsswitch_conf."passwd" "compat"
-Read	.etc.nsswitch_conf."group" "compat"
-Read	.etc.nsswitch_conf."passwd_compat" "ldap"
-Read	.etc.nsswitch_conf."group_compat" "ldap"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."host" "localhost"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."base" "dc=suse,dc=cz"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."ldap_version" nil
