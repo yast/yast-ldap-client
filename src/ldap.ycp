@@ -22,6 +22,8 @@
 
     include "ldap/wizards.ycp";
 
+    include "commandline/commandline.ycp";
+
     if (!Require::RequireAndConflict (Ldap::required_packages, [],
 			     _("<p>To configure and access LDAP services,
 the <b>%1</b> packages must be installed.<br>
@@ -32,5 +34,72 @@ Install these packages now?</p>
 cannot be completed without the mentioned packages."));
 	return `auto;
     }
-    return LdapSequence();
+//    return LdapSequence();
+
+// --------------------------------------------------------------------------
+// ----------------------------------------- pokusy s cmd-line
+
+global define boolean LdapEnableHandler( map options ) ``{
+    // check the "command" to be present exactly once
+    string command = CommandLine::UniqueOption( options,
+	["enable", "disable" ] );
+    if( command == nil ) return false;
+
+    Ldap::start = ( command == "enable" );
+    // TODO: save pam settings + nss_switch now
+    // (currently works only for "verbose")
+    return true;
+}
+
+global define boolean LdapSummaryHandler( map options ) ``{
+
+    import "RichText";
+    CommandLine::Print (RichText::Rich2Plain ("<br>" + Ldap::ShortSummary ()));
+    return true;
+}
+
+global define boolean LdapWrite () ``{
+
+    return (Ldap::Write(``{ return false; }) == `next);
+}
+
+/* the command line description map */
+map cmdline = $[
+    "id"		: "ldap-client",
+    // translators: command line help text for Ldap client module
+    "help"		: _("Ldap client configuration module."),
+    "guihandler"	: ``(LdapSequence()),
+    "initialize"	: ``(Ldap::Read()),
+//    "finish"		: ``(Ldap::Write(``{ return false; })),
+    "finish"		: ``(LdapWrite()),
+    "actions"		: $[
+	"pam" :$[
+	    "handler"	: ``(LdapEnableHandler()),
+	    // translators: command line help text for winbind action
+	    "help"	: _("Enable or disable the LDAP authentication")
+	],
+	"summary" :$[
+	    "handler"	: ``(LdapSummaryHandler()),
+	    // translators: command line help text for winbind action
+	    "help"	: _("Configuration summary of LDAP client")
+	],
+    ],
+    "options"		: $[
+	"enable"	:$[
+	    // translators: command line help text for winbind enable option
+	    "help"	: _("Enable the service")
+	],
+	"disable"	:$[
+	    // translators: command line help text for winbind disable option
+	    "help"	: _("Disable the service")
+	],
+    ],
+    "mappings"		: $[
+	"pam"		: [ "enable", "disable" ],
+	"summary"	: [],
+    ]
+];
+
+
+   return CommandLineRun( cmdline );
 }

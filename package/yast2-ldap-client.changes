@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Sep  1 16:59:23 CEST 2003 - jsuchome@suse.cz
+
+- added test for object class existence
+- 2.8.8
+
+-------------------------------------------------------------------
 Mon Sep 01 12:17:38 CEST 2003 - arvin@suse.de
 
 - use Popup::ConfirmAbort

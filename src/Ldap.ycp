@@ -802,6 +802,15 @@ Value of DN is missing or invalid."),
     }
 
     /**
+     * Returns true id given object class exists in schema
+     */
+    global define boolean ObjectClassExists (string class) ``{
+
+	return SCR::Read (.ldap.schema.oc.check, $["name":class]);
+    }
+
+
+    /**
      * Returns allowed and required attributes of given object class
      * Read it from LDAP if it was not done yet.
      */
