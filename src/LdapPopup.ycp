@@ -274,11 +274,13 @@ to an object using the current template. Such values are used as defaults when
 the new object is created.</p>
 ") +
 
+    /*
     // help text 2/3 do not translate "defaultObjectClass"
     _("<p>The list of attributes provided in <b>Attribute Name</b> is the
 list of allowed attributes for objects described in the \"defaultObjectClass\"
 entry of the current template.</p>
 ") +
+    */
 
     // help text 3/3 do not translate "homedirectory"
     _("<p>You can use special syntax to create attribute
