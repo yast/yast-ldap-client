@@ -1,0 +1,43 @@
+/* ldap_client_write.ycp - Module for writing the configuration of
+ *                         the LDAP client
+ *
+ * Author: Thorsten Kukuk <kukuk@suse.de>
+ * $Id$
+ *
+ * The configuration to save is in the firts argument. It looks like:
+ *
+ * $[ "start_ldap"    : true|false, // true/false - start/don't start LDAP client when booting
+ *    "ldap_domain"   : <string>,  // written only when "start_ldap" is true
+ *    "ldap_address"  : <string>  // written only when "start_ldap" is true
+ * ]
+ */
+
+{
+
+  textdomain "ldap_client";
+  map ldap_conf = Args(0);
+
+  boolean start_ldap = lookup(ldap_conf, "start_ldap", false);
+
+  /* The end of the definitions */
+
+  if (start_ldap) {
+    SCR::Execute(.target.bash, "echo base $DOMAIN > /etc/openldap/ldap.conf", $["DOMAIN" : lookup(ldap_conf, "ldap_domain")]);
+    SCR::Execute(.target.bash, "echo host $SERVER >> /etc/openldap/ldap.conf", $["SERVER" : lookup(ldap_conf, "ldap_address")]);
+    SCR::Execute(.target.bash, "mkdir -p /var/lib/yast2-config-ldap_client");
+    SCR::Execute(.target.bash, "cp /etc/pam.d/* /var/lib/yast2-config-ldap_client");
+    SCR::Execute(.target.bash, "cp /usr/share/doc/packages/pam_ldap/pam.d/* /etc/pam.d/");
+
+    SCR::Execute(.target.bash, "if [ ! -f /etc/nsswitch.conf.no_ldap_client ]; then /bin/cp /etc/nsswitch.conf /etc/nsswitch.conf.no_ldap_client; fi", $[]);
+
+    // XXX SCR::Execute(.target.bash, "/bin/cp /etc/nsswitch.ldap_client /etc/nsswitch.conf", $[]);
+
+    } else {
+
+    // restore old nsswitch.conf
+    SCR::Execute(.target.bash, "if [ -f /etc/nsswitch.conf.no_ldap_client ]; then /bin/cp /etc/nsswitch.conf.no_ldap_client /etc/nsswitch.conf; fi", $[]);
+    SCR::Execute(.target.bash, "cp /var/lib/yast2-config-ldap_client/* /etc/pam.d");
+  }
+
+  return true;
+}

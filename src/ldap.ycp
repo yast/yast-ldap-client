@@ -1,0 +1,141 @@
+/* $Id$
+ *
+ * Module:              ldap_client.ycp
+ *
+ *
+ * Authors:             Thorsten Kukuk (kukuk@suse.de)
+ *
+ * Purpose:             Set up the host as LDAP client
+ *
+ * Modify:              /etc/nsswitch.conf, /etc/pam.d/*,
+ *			/etc/openlap/ldap.conf
+ *
+ */
+
+
+{
+    textdomain "ldap_client";
+
+    include "require.ycp";
+    include "ui/wizard_dialog.ycp";
+    include "ui/common_popups.ycp";
+
+    include "network/dns.ycp";
+
+    UI::CreateWizardDialog ();
+    //UI::ReplaceWizardAbortButton(`Empty (`id (`abort)));
+
+// ===== main =====
+
+// help text 1/3
+    string help_text = UI(_("<p>Here your machine can be set up as a
+ <b>LDAP client</b> to authenticate your User with an OpenLDAP server. Just
+ enter the distinguished name of the search base
+ (base DN, e.g, dc=mydomain,dc=com) as the first entry and the LDAP server's
+ IP address (e.g., 10.20.0.2) as the second.
+ To deactivate LDAP services, select the <b>Do not use LDAP</b> button.</p>"));
+
+// help text 2/3
+    help_text = help_text + UI(_("<p>If you deactivate LDAP, the current
+ LDAP entry for passwd in /etc/nsswitch.conf will be removed and replaced
+ with <i>compat</i>. The PAM configuration will be modified and the LDAP
+ module removed.</p>"));
+
+// help text 3/3
+    help_text = help_text + UI(_("<p>If you activate LDAP, the NSS and PAM
+    configuration will be modified to use LDAP for user
+    authentification.</p>"));
+
+    // XXX Look if ldap is configured
+    boolean ldap_client = (SCR (`Execute (.target.bash, "false")) == 0);
+    string ldap_domain   = "";
+    string ldap_address  = "";
+
+// frame label
+    term con = `HVSquash(`Frame (_("LDAPO client"),
+                                 `VBox (`VSpacing (0.2),
+                                        `RadioButtonGroup(`id(`rd),
+                                                          // radio button label
+                                                          `Left(`HVSquash(`VBox (`Left (`RadioButton(`id(`ldapno), `opt (`notify), _("Do &not use LDAP"), !ldap_client)),
+                                                                                 // radio button label
+                                                                                 `Left(`RadioButton(`id(`ldapyes), `opt (`notify), _("&Use LDAP"), ldap_client)))))),
+                                        // text entry label
+                                        `HSquash(`TextEntry (`id (`ldapd), _("LDAP &base DN"), ldap_domain)),
+                                        // text entry label
+                                        `HSquash(`TextEntry (`id (`ldapa), _("&IP address of the LDAP server"), ldap_address)),
+                                        `VSpacing (0.2)
+                                     )
+                             ));
+
+    // dialog title
+    UI::SetWizardContents (_("Configuration of LDAP client"), con, help_text, true, true);
+    // "Finish" button: Proceed to finish the configuration
+    UI::ChangeWidget (`id(`next), `Label, FinishButtonLabel());
+    UI::ChangeWidget(`id(`ldapd), `Enabled, ldap_client);
+    UI::ChangeWidget(`id(`ldapa), `Enabled, ldap_client);
+
+    any result = nil;
+    do {
+        result = UI::UserInput ();
+
+        ldap_client = (UI::QueryWidget(`id(`rd), `CurrentButton) == `ldapyes);
+
+        if (result == `ldapyes || result == `ldapno) {
+            UI::ChangeWidget(`id(`ldapd), `Enabled, ldap_client);
+            UI::ChangeWidget(`id(`ldapa), `Enabled, ldap_client);
+        }
+
+        if (result == `next && ldap_client) {
+            ldap_domain = UI::QueryWidget(`id(`ldapd), `Value);
+            ldap_address = UI::QueryWidget(`id(`ldapa), `Value);
+
+            // if (!check_domainname (ldap_domain)) {
+    	    //	// error popup label
+            //    UI::MessagePopup(_("The domain name is not correct."));
+            //    result = nil;
+            //    continue;
+            // }
+
+            if (!checkIP (ldap_address)) {
+    		// error popup label
+                UI::MessagePopup(_("The IP address is not correct."));
+                result = nil;
+                continue;
+            }
+        }
+
+        if (result == `next &&
+            ! UI::YesNoPopup(_("The configuration of the LDAP client will be saved\nand the client will be restarted.")))
+            result = nil;
+
+    } while (result != `back && result != `next && result != `cancel);
+
+    if (result == `next)
+    {
+       if (CallFunction(`ldap_client_write($[ "start_ldap" : ldap_client,
+                                          "ldap_domain" : ldap_domain,
+					  "ldap_address" : ldap_address])))
+       {
+         if (ldap_client)
+           {
+              if (!RequireAndConflict (["pam_ldap","nss_ldap"], [],
+                  _("<p>To configure and access the LDAP Services, the
+<b>%1</b> packages must be installed.</p>
+<p>Do you wish to install it now?</p>")))
+              {
+                 UI::MessagePopup("The configuration of the LDAP client
+cannot be finished without this packages.");
+	         return;
+              }
+
+               UI::MessagePopup("The configuration of the LDAP client
+was saved and can be used.");
+           }
+         else
+           UI::MessagePopup("The configuration of the LDAP
+client was saved.");
+       }
+    }
+
+    return UI::CloseDialog();
+}

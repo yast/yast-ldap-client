@@ -1,0 +1,48 @@
+#
+# spec file for package @RPMNAME@
+#
+# Copyright  (c)  2001  SuSE GmbH  Nuernberg, Germany.
+#
+# please send bugfixes or comments to @MAINTAINER@
+#
+
+# neededforbuild  autoconf automake ycpdoc yast2-base libycp liby2 libyui libscr yast2-core-wfm yast2-core-scr
+
+Vendor:		SuSE GmbH, Nuernberg, Germany
+Distribution:	SuSE Linux 6.4 (i386)
+Name:		@RPMNAME@
+Release:	1
+Copyright:	(c) 2001 SuSE GmbH
+Group:		System Environment/YaST
+Requires:	yast2 yast2-trans-ldap_client yast2-lib-wizard yast2-lib-sequencer yast2-agent-pam yast2-config-package-manager
+BuildArchitectures:	noarch
+
+Packager:	@MAINTAINER@
+
+Summary:	Configuration of NIS+
+Version:	@VERSION@
+Source0:	@RPMNAME@-%{version}.tar.bz2
+
+%description
+-
+
+%prep
+%setup
+
+%build
+./configure
+make
+
+%install
+make install
+make check
+%{?suse_check}
+
+%files
+%dir @YAST2DIR@/clients
+%dir @YAST2DIR@/menuentries
+@YAST2DIR@/menuentries/menuentry_ldap_client.ycp
+@YAST2DIR@/clients/ldap_client.ycp
+@YAST2DIR@/clients/ldap_client_write.ycp
+%dir @DOCDIR@
+@DOCDIR@/*
