@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Feb  7 13:15:30 CET 2002 - kukuk@suse.de
+
+- Allow setting of LDAP protocol version [Bug #12503]
+- Version 2.5.3
+
+-------------------------------------------------------------------
 Mon Jan 28 12:51:38 EST 2002 - nashif@suse.de
 
 - WriteOnly() for autoinstall
