@@ -25,18 +25,6 @@
     import "RichText";
 
     any ret = `auto;
-    if (!Require::RequireAndConflict (Ldap::required_packages, [],
-			     // popup: requred applications (%1)
-			     _("<p>To configure and access LDAP services,
-the <b>%1</b> packages must be installed.<br>
-Install these packages now?</p>
-")))
-    {
-	// popup: requred applications were not installed
-	Popup::Message(_("The configuration of the LDAP client
-cannot be completed without the mentioned packages."));
-	return ret;
-    }
 
 // --------------------------------------------------------------------------
 // --------------------------------- cmd-line handlers

@@ -89,7 +89,7 @@
      */
     define symbol LdapDialog () ``{
 
-	// help text 1/6 SLES: removed "to authenticate your users with an OpenLDAP server"
+	// help text 1/6
 	string help_text = _("<p>Here, your machine can be set up as an
 <b>LDAP client</b>.</p>") +
 
@@ -122,12 +122,7 @@ to encrypt your communication with the LDAP server.</p>") +
 an LDAP server using protocol 2 (for example, OpenLDAP v1), activate
 <b>LDAP Version 2</b>.</p>
 ") +
-	/*
-	// help text 4/6
-	_("<p>If you activate LDAP, NSS and PAM will be configured accordingly
-to use LDAP for user authentication.</p>
-") +
-*/
+
 	// help text 6/6
 	_("<p>For configuration of advanced LDAP settings, click
 <b>Advanced Configuration</b>.</p>
@@ -205,14 +200,6 @@ automatically.</p>
 	    Label::BackButton(),
 	    Mode::cont ? Label::NextButton(): Label::FinishButton());
 
-	/*
-	UI::ChangeWidget (`id (`ldapd), `Enabled, start);
-	UI::ChangeWidget (`id (`ldapa), `Enabled, start);
-	UI::ChangeWidget (`id (`ldaps), `Enabled, start);
-	UI::ChangeWidget (`id (`ldapv), `Enabled, start);
-	UI::ChangeWidget (`id (`advanced), `Enabled, start);
-
-	*/
 	// during installation, only enabling makes sence
 	if (Mode::cont)
 	{
@@ -224,17 +211,6 @@ automatically.</p>
 	    result = (symbol) UI::UserInput ();
 
 	    start = (UI::QueryWidget(`id(`rd), `CurrentButton) == `ldapyes);
-
-	    /*
-	    if (result == `ldapyes || result == `ldapno) {
-		UI::ChangeWidget(`id(`ldapd), `Enabled, start);
-		UI::ChangeWidget(`id(`ldapa), `Enabled, start);
-		UI::ChangeWidget(`id(`ldaps), `Enabled, start);
-		UI::ChangeWidget (`id (`ldapv), `Enabled, start);
-		UI::ChangeWidget (`id (`advanced), `Enabled, start);
-
-            }
-	    */
 
 	    if (result == `next || result == `advanced) {
 		domain	= (string) UI::QueryWidget(`id(`ldapd), `Value);
@@ -265,16 +241,55 @@ automatically.</p>
 	    {
 		result = `not_next;
 	    }
-	    if (result == `next && start && !Ldap::start && Ldap::nis_available)
+	    if (result == `next && (start || autofs))
 	    {
-		// popup question: user enabled LDAP now, but probably has
-		// enabled NIS client before
-		if (!Popup::YesNo (_("When you configure your machine as an LDAP client,
-you cannot retrieve the data from NIS.  Are you sure?")))
+		if (start && !Ldap::start && Ldap::nis_available)
 		{
-		    result = `not_next;
-		    continue;
+		    // popup question: user enabled LDAP now, but probably has
+		    // enabled NIS client before
+		    if (!Popup::YesNo (_("When you configure your machine as an LDAP client,
+you cannot retrieve the data from NIS.  Are you sure?")))
+		    {
+			result = `not_next;
+			continue;
+		    }
 		}
+
+		    // popup: requred applications (%1)
+		    string install_text =
+_("<p>To configure and access LDAP services,
+these packages must be installed:
+<br>
+<b>%1</b></p>");
+
+		    if (start && !Require::AreAllPackagesInstalledTarget (
+			    ["pam_ldap","nss_ldap"]))
+		    {
+			Ldap::required_packages = union (
+			    Ldap::required_packages, [ "pam_ldap","nss_ldap"]);
+		    }
+		    if (autofs && !Require::IsAnyPackageInstalledTarget (
+			    ["autofs", "autofs4"]))
+		    {
+			Ldap::required_packages = union (
+			    Ldap::required_packages, ["autofs"]);
+			if (size (Ldap::required_packages) == 1)
+			    install_text =
+// popup message (requred application)
+_("<p>The automounter package will be installed.</p>");
+		    }
+		    if (!Require::RequireAndConflictTarget ((list<string>)
+			    Ldap::required_packages, [], install_text))
+		    {
+			if (start && !Require::AreAllPackagesInstalledTarget (
+			    ["pam_ldap","nss_ldap"]))
+			{
+			    start = false;
+			    result = `not_next;
+			    UI::ChangeWidget(`id(`rd), `CurrentButton, `ldapno);
+			    continue;
+			}
+		    }
 	    }
 	} while (!contains ([`back, `next, `cancel, `abort, `advanced], result));
 
@@ -286,6 +301,7 @@ you cannot retrieve the data from NIS.  Are you sure?")))
 	    {
 		if (result == `next)
 		{
+		    /*
 		    if (autofs &&
 			!Require::IsAnyPackageInstalled (["autofs", "autofs4"]))
 		    {
@@ -293,6 +309,7 @@ you cannot retrieve the data from NIS.  Are you sure?")))
 			// popup message
 			_("<p>The automounter package will be installed.</p>"));
 		    }
+		    */
 
 		    if (start && !Ldap::start)
 		    {

@@ -40,8 +40,9 @@
 
     /**
      * Required packages for this module to operate
+     * -- they are now required only when LDAP is set for authentication
      */
-    global list<string> required_packages = ["pam_ldap","nss_ldap"];
+    global list required_packages = [];
 
     /**
      * Write only, used during autoinstallation.
@@ -301,7 +302,7 @@
 	_autofs_allowed = haskey (settings, "start_autofs");
 	_start_autofs	= settings["start_autofs"]:false;
 	if (_start_autofs)
-	    required_packages = add (required_packages, "autofs");
+	    required_packages = union (required_packages, ["autofs"]);
 
 	old_domain		= domain;
 	old_server		= server;
@@ -1998,7 +1999,7 @@ exists on the LDAP server. Create it now?
      * @return map of lists.
      */
     global  define map AutoPackages() ``{
-      list<string> install_pkgs = required_packages;
+      list<string> install_pkgs = (list<string>) required_packages;
       list remove_pkgs = [];
       return ($["install": install_pkgs, "remove": remove_pkgs]);
     }
