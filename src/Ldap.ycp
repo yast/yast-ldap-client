@@ -17,6 +17,13 @@
     import "Report";
     import "Summary";
 
+
+	/**
+	 * Write only, used during autoinstallation.
+	 * Don't run services and SuSEconfig, it's all done at one place.
+	 */
+	global boolean write_only = false;
+
     /**
      * Should ypbind be started at boot?
      * If not, other settings are not touched.
@@ -160,24 +167,17 @@
 	return true;
     }
 
-    /**
-     * Only write new configuration w/o starting any scripts
-     * @return true on success
-     */
-    global define boolean WriteOnly()``{
-	return (Write(true));
-    }
 
     /**
      * Saves LDAP configuration.
      * (No parameters because it is too short to abort)
      * @return true on success
      */
-    global define boolean Write (boolean writeonly) ``{
+    global define boolean Write () ``{
 
     boolean ypbind_running = false;
 
-	if (!writeonly)
+	if (!write_only)
     {
         ypbind_running = (Runlevel::ServiceStatus ("ypbind") == 0);
 	    Runlevel::RunInitScript ("ypbind", "stop");
@@ -221,7 +221,7 @@
 	    SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
 	}
 
-    if (Runlevel::ServiceStatus ("nscd") == 0 && !writeonly) {
+    if (Runlevel::ServiceStatus ("nscd") == 0 && !write_only) {
 	    Runlevel::RunInitScript ("nscd", "restart");
 	}
 

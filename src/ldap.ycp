@@ -42,7 +42,7 @@ cannot be completed without the mentioned packages."));
 
     if (result == `next)
     {
-	if (Ldap::Write (false))
+	if (Ldap::Write ())
 	{
 	    if (Ldap::start)
 	    {
