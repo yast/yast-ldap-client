@@ -334,10 +334,34 @@ automatically.</p>
 		    // popup question: user enabled LDAP now, but probably has
 		    // enabled NIS client before
 		    if (!Popup::YesNo (_("When you configure your machine as an LDAP client,
-you cannot retrieve the data from NIS.  Are you sure?")))
+you cannot retrieve the data from NIS. Are you sure?")))
 		    {
 			result = `not_next;
 			continue;
+		    }
+		}
+
+		if (start && Ldap::krb_first && Ldap::krb_authentication == nil)
+		{
+		    any ret = Popup::AnyQuestion3 (
+			Popup::NoHeadline(),
+			// popup question
+_("An active configurtion of Kerberos client is present.
+What do you want to use as a primary authentication service?"),
+			_("&Ldap"),
+			_("&Kerberos"),
+			Label::CancelButton (),
+			`focus_yes
+		    );
+		    if (ret == `retry)
+		    {
+			result = `not_next;
+			continue;
+		    }
+		    else
+		    {
+			Ldap::modified	= true;
+			Ldap::krb_authentication = (ret == `no);
 		    }
 		}
 

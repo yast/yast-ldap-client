@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Jan 21 15:29:17 CET 2005 - jsuchome@suse.cz
+
+- detect configuration Kerberos client and offer conflict resolution
+  (#49894)
+- 2.11.6
+
+-------------------------------------------------------------------
 Thu Jan  6 15:23:36 CET 2005 - jsuchome@suse.cz
 
 - read server name before asking for password

@@ -151,6 +151,16 @@
     // if LDAP configuration objects should be created automaticaly
     global boolean create_ldap	= false;
 
+    // if authentication is currently done via Kerberos
+    global boolean krb_first		= false;
+
+    // if kerberos authentication should remain primary one
+    global boolean krb_authentication	= nil;
+
+    // current pam modules called by pam_unix (value of call_modules=... in
+    // /etc/security/pam_unix2)
+    list<string> auth_modules = [];
+
     /**
      * defaults for adding new config objects and templates
      */
@@ -493,7 +503,7 @@
      * Reads LDAP settings from the SCR
      * @return success
      */
-    global define boolean Read () ``{
+    global define boolean Read () {
 
 	foreach (string db,["passwd","group","passwd_compat","group_compat"],``{
 	    nsswitch[db]	= Nsswitch::ReadDb (db);
@@ -569,6 +579,32 @@
 		if (plus[size (plus) -1]:"" == "/sbin/nologin")
 		    login_enabled	= false;
 	    });
+	}
+
+	list<string> auth = PamSettings::GetValues ("pam_unix2", "auth");
+	integer	ldap_pos = -1;
+	integer	krb_pos = -1;
+	integer pos	= -1;
+	boolean comment	= false;
+	foreach (string val, auth, {
+	    pos	= pos + 1;
+	    if (substring (val, 0, 1) == "#")
+		comment = true;
+	    if (comment)
+		return;
+	    if (issubstring (val, "krb5"))
+		krb_pos	= pos;
+	    if (val == "use_ldap")
+		ldap_pos = pos;
+	    if (issubstring (val, "call_modules="))
+	    {
+		list line_split	= splitstring (val, "=");
+		auth_modules	= splitstring (line_split[1]:"",",");
+	    }
+	});
+	if (krb_pos != -1 && (ldap_pos == -1 || krb_pos < ldap_pos))
+	{
+	    krb_first	= true;
 	}
 
 	Autologin::Read ();
@@ -1670,10 +1706,10 @@ Select another one.
 
 	// check which objects already exist...
 	foreach (string dn, map m, (map<string,map>) config_modules, ``{
-	    list c = maplist (string c, m["objectclass"]:[],``(tolower(c)));
-	    if (contains (c, "suseuserconfiguration"))
+	    list cl = maplist (string c, m["objectclass"]:[],``(tolower(c)));
+	    if (contains (cl, "suseuserconfiguration"))
 	        user_dn = dn;
-	    if (contains (c, "susegroupconfiguration"))
+	    if (contains (cl, "susegroupconfiguration"))
 	        group_dn = dn;
 	});
 
@@ -1845,8 +1881,24 @@ Select another one.
 		(nss_base_group != "")? nss_base_group : user_base);
 
 	    // pam settigs
-	    foreach (string type, [ "account", "auth", "password" ], ``{
+	    foreach (string type, [ "account", "auth", "password" ], {
 		PamSettings::AddValue ("pam_unix2", type, "use_ldap");
+
+		// prefer kerberos authentication (see #49894)
+		if (krb_authentication == true)
+		{
+		    PamSettings::RemoveValue ("unix2", type, "use_krb5");
+		    if (contains (auth_modules, "krb5afs"))
+		    {
+			PamSettings::RemoveValue ("unix2", type,"call_modules");
+			PamSettings::AddValue ("unix2", type, "call_modules=" +
+			    mergestring (auth_modules,","));
+		    }
+		    else
+		    {
+			PamSettings::AddValue ("unix2", type, "use_krb5");
+		    }
+		}
 	    });
 
 	    // modify sources in /etc/nsswitch.conf
@@ -1874,7 +1926,8 @@ Select another one.
 		Nsswitch::WriteDb (db, nsswitch[db]:["compat"]);
 		Nsswitch::WriteDb (new_db, nsswitch[new_db]:[]);
 	    });
-	    SCR::Write(.etc.nsswitch_conf, nil);
+
+	    Nsswitch::Write ();
 
 	    foreach (string type, [ "account", "auth", "password" ], ``{
 		PamSettings::RemoveValue ("pam_unix2", type, "use_ldap");
