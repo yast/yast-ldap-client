@@ -5,7 +5,7 @@
 @HEADER@
 PreReq:         %fillup_prereq
 
-Requires:	yast2 yast2-pam yast2-ldap yast2-packager
+Requires:	yast2 yast2-pam yast2-ldap
 
 Provides:	yast2-config-ldap_client
 Obsoletes:	yast2-config-ldap_client

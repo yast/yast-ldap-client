@@ -3,13 +3,14 @@
  * Module:	Configuration of LDAP client
  * Summary:	Manage the configuration stored in LDAP directory
  *		(e.g. user/group templates)
- * Authors:
+ * Authors:	Jiri Suchomel <jsuchome@suse.cz>
  *
  * $Id$
  */
 
 {
     import "Ldap";
+    import "Wizard";
 
     include "ldap/ui.ycp";
 

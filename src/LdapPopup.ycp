@@ -371,7 +371,8 @@ as a value of \"homeDirectory\").</p>
 		`PushButton(`id (`cancel),`opt (`key_F9),Label::CancelButton()),
 		// pushbutton label
 		textmode ?
-		  `Right (`PushButton (`id (`open), `opt (`key_F6), _("Open"))):
+		  // button label
+		  `Right (`PushButton (`id (`open), `opt (`key_F6),_("&Open"))):
 		  `Empty (),
 		`HSpacing (1.5)
 	    ),

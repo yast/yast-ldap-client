@@ -18,9 +18,9 @@
     import "Ldap";
     import "LdapPopup";
     import "Mode";
+    import "Package";
     import "Popup";
     import "Report";
-    import "Require";
     import "Wizard";
 
     include "ldap/routines.ycp";
@@ -104,7 +104,7 @@ removed.</p>") +
 
 
 	// help text 3.5/6
-	_("Enter the <b>Distinguished Name</b> of the search base (\"base DN\", such as
+	_("<p>Enter the <b>Distinguished Name</b> of the search base (\"base DN\", such as
 dc=example,dc=com) in the first entry and the LDAP server's address
 (e.g., ldap.example.com or 10.20.0.2) in the second. Specify multiple servers
 by separating their addresses with spaces. It must be possible to resolve the
@@ -255,33 +255,21 @@ you cannot retrieve the data from NIS.  Are you sure?")))
 		    }
 		}
 
-		    // popup: requred applications (%1)
-		    string install_text =
-_("<p>To configure and access LDAP services,
-these packages must be installed:
-<br>
-<b>%1</b></p>");
-
-		    if (start && !Require::AreAllPackagesInstalledTarget (
+		    if (start && !Package::InstalledAll (
 			    ["pam_ldap","nss_ldap"]))
 		    {
 			Ldap::required_packages = union (
 			    Ldap::required_packages, [ "pam_ldap","nss_ldap"]);
 		    }
-		    if (autofs && !Require::IsAnyPackageInstalledTarget (
-			    ["autofs", "autofs4"]))
+		    if (autofs && !Package::InstalledAny(["autofs", "autofs4"]))
 		    {
 			Ldap::required_packages = union (
 			    Ldap::required_packages, ["autofs"]);
-			if (size (Ldap::required_packages) == 1)
-			    install_text =
-// popup message (requred application)
-_("<p>The automounter package will be installed.</p>");
 		    }
-		    if (!Require::RequireAndConflictTarget ((list<string>)
-			    Ldap::required_packages, [], install_text))
+		    if (!Package::InstallAll (
+			    (list<string>) Ldap::required_packages))
 		    {
-			if (start && !Require::AreAllPackagesInstalledTarget (
+			if (start && !Package::InstalledAll (
 			    ["pam_ldap","nss_ldap"]))
 			{
 			    start = false;

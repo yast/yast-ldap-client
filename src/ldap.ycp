@@ -1,7 +1,7 @@
 /**
  * File:	clients/ldap.ycp
  * Module:	Configuration of LDAP client
- * Summary:	Main file
+ * Summary:	Client file, including commandline handlers
  * Authors:	Thorsten Kukuk <kukuk@suse.de>
  *		Anas Nashif <nashif@suse.de>
  *
@@ -16,13 +16,11 @@
 
     textdomain "ldap-client";
 
+    import "CommandLine";
     import "Ldap";
+    import "RichText";
 
     include "ldap/wizards.ycp";
-    import "Require";
-    import "Popup";
-    import "CommandLine";
-    import "RichText";
 
     any ret = `auto;
 

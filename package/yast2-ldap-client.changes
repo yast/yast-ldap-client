@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Tue Jul 27 11:23:33 CEST 2004 - jsuchome@suse.cz
+
+- use Message module for common messages
+- use Package module instead of Require
+- yast2-packager is not required
+- 2.10.1
+
+-------------------------------------------------------------------
 Thu Jul 15 15:59:46 CEST 2004 - jsuchome@suse.cz
 
 - install pam related packages at the and and only when LDAP is
@@ -10,7 +18,6 @@ Wed Jul 14 17:47:09 CEST 2004 - jsuchome@suse.cz
 
 - first version of browse popup
 - GetRequiredAttributes now gets attributes also from superior classes
-- 2.10.1
 
 -------------------------------------------------------------------
 Mon Jul 12 20:40:40 CEST 2004 - jsuchome@suse.cz
