@@ -179,10 +179,17 @@ automatically.</p>
 	    `Frame (_("LDAP client"), `HBox (`HSpacing (0.5), `VBox(
 		`VSpacing (0.5),
 		// text entry label
-		`TextEntry (`id (`ldapd), _("LDAP base &DN"), domain),
-		// text entry label
 		`TextEntry (`id (`ldapa), _("Addresses of LDAP &Servers"),
 		    server),
+		`HBox (
+		    // text entry label
+		    `TextEntry (`id (`ldapd), _("LDAP base &DN"), domain),
+		    `VBox (
+			`Label (""),
+			// push button label
+			`PushButton (`id(`fetch), _("F&etch DN"))
+		    )
+		),
 		`VSpacing (0.2),
 		// check box label
 		`Left (`CheckBox (`id(`ldaps), _("LDAP &TLS/SSL"), ldap_tls)),
@@ -215,11 +222,24 @@ automatically.</p>
 
 	    start = (UI::QueryWidget(`id(`rd), `CurrentButton) == `ldapyes);
 
+	    server	= (string) UI::QueryWidget(`id(`ldapa), `Value);
+	    ldap_v2	= (boolean) UI::QueryWidget(`id(`ldapv), `Value);
+	    ldap_tls	= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
+
+	    if (result == `fetch)
+	    {
+		string dn = LdapPopup::InitAndBrowseTree ("", $[
+		    "hostname"	: Ldap::GetFirstServer (server),
+		    "port"	: Ldap::GetFirstPort (server),
+		    "version"	: ldap_v2 ? 2 : 3,
+		    "use_tls"	: ldap_tls ? "yes" : "no"
+		]);
+		if (dn != "")
+		    UI::ChangeWidget (`id(`ldapd), `Value, dn);
+	    }
+
 	    if (result == `next || result == `advanced) {
 		domain	= (string) UI::QueryWidget(`id(`ldapd), `Value);
-		server	= (string) UI::QueryWidget(`id(`ldapa), `Value);
-		ldap_v2 = (boolean) UI::QueryWidget(`id(`ldapv), `Value);
-		ldap_tls= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
 		autofs	= Ldap::_autofs_allowed &&
 		    (boolean) UI::QueryWidget (`id (`autofs), `Value);
 
