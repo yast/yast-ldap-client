@@ -1,7 +1,4 @@
-## configure.in.in for yast2-config-nisplus
-##
-## 'y2tool y2autoconf' should be called
-## from Makefile.cvs to get configure.in
+## YCP module configure.in.in
 
 ## Initialize
 @YAST2-INIT-COMMON@
