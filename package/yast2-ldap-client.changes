@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Mar 12 12:57:07 CET 2003 - kukuk@suse.de
+
+- Force writing of config files [Bug #25143]
+- Fix typo in reading ldap.conf
+
+-------------------------------------------------------------------
 Mon Mar  3 16:44:31 CET 2003 - jsuchome@suse.de
 
 - merged proofreaded texts

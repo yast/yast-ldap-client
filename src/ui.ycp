@@ -135,7 +135,7 @@ groups on the LDAP server, click <b>Set up User Configuration Tool</b> and compl
 		UI::ChangeWidget(`id(`ldaps), `Enabled, start);
 		UI::ChangeWidget (`id (`ldapv), `Enabled, start);
 		UI::ChangeWidget (`id (`cpu), `Enabled, start);
-        }
+            }
 
 	    if ((result == `next || result == `cpu) && start) {
 		domain = UI::QueryWidget(`id(`ldapd), `Value);

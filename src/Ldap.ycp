@@ -175,7 +175,7 @@
 	}
 	ldap_v2 = (SCR::Read(.etc.openldap.ldap_conf.ldap_version) == "2");
 	ldap_tls = (SCR::Read(.etc.openldap.ldap_conf.ssl) == "start_tls");
-	pam_password = SRC::Read(.etc.openldap.ldap_conf.pam_password);
+	pam_password = SCR::Read(.etc.openldap.ldap_conf.pam_password);
 	if (pam_password == nil) {
 	  pam_password = "crypt"; /* else plain text is used, bad idea.  */
 	}
@@ -221,6 +221,7 @@
             else
 	      SCR::Write(.etc.openldap.ldap_conf.ssl, "no");
             SCR::Write(.etc.openldap.ldap_conf.pam_password, pam_password);
+            SCR::Write(.etc.openldap.ldap_conf, nil);
 
 	    SCR::Write(.pam.all.account.pam_unix2, "+use_ldap");
 	    SCR::Write(.pam.all.auth.pam_unix2, "+use_ldap");
@@ -233,6 +234,7 @@
         });
 	    SCR::Write(.etc.nsswitch_conf.passwd, new_nsswitch["passwd"]:"");
 	    SCR::Write(.etc.nsswitch_conf.group, new_nsswitch["group"]:"");
+	    SCR::Write(.etc.nsswitch_conf, nil);
 	} else {
 
         foreach (`entry, `value, nsswitch, ``{
@@ -249,7 +251,6 @@
 	    SCR::Write(.pam.all.account.pam_unix2, "-use_ldap");
 	    SCR::Write(.pam.all.auth.pam_unix2, "-use_ldap");
 	    SCR::Write(.pam.all.password.pam_unix2, "-use_ldap");
-
 
 	    SCR::Execute(.target.bash, "/bin/cp -a /var/lib/yast2-config-ldap_client/* /etc/pam.d");
 	    SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
@@ -286,7 +287,8 @@
         }
         if (group_base != "")
             SCR::Write(.etc.openldap.ldap_conf.nss_base_group, group_base);
-
+        if (user_base != "" || group_base != "")
+            SCR::Write(.etc.openldap.ldap_conf, nil);
     }
 
     /**
