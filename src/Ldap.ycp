@@ -10,7 +10,7 @@
  *
  * Authors:
  *   Thorsten Kukuk <kukuk@suse.de>
- *   Anas Nashif <nashif@suse.de> 
+ *   Anas Nashif <nashif@suse.de>
  *
  * $Id$
  *
@@ -39,6 +39,9 @@
     string domain = "";
     string old_domain = nil;
     boolean domain_changed = false;
+
+    /* Do we have an v2 or v3 ldap server? */
+    global boolean ldap_v2 = false;
 
     /**
      * If the domain has changed from a nonempty one, it may only be
@@ -87,7 +90,7 @@
 	}
 
 	boolean missing = false;
-	foreach (`k, ["start_ldap", "ldap_domain", "ldap_server"], ``{
+	foreach (`k, ["start_ldap", "ldap_domain", "ldap_server", "ldap_v2"], ``{
 	    if (! haskey (settings, k))
 	    {
 		y2error ("Missing at Import: '%1'.", k);
@@ -102,6 +105,7 @@
 	start = lookup (settings, "start_ldap", false);
 	server = lookup (settings, "ldap_server", "");
 	domain = lookup (settings, "ldap_domain", "");
+	ldap_v2 = lookup (settings, "ldap_v2", false);
 	old_domain = domain;
 	return true;
     }
@@ -115,6 +119,7 @@
 	    "start_ldap": start,
 	    "ldap_server": server,
 	    "ldap_domain": domain,
+	    "ldap_v2": ldap_v2,
 	    ];
     }
 
@@ -126,10 +131,11 @@
 	start = (SCR::Execute (.target.bash, "/usr/bin/grep '^passwd:.*ldap' /etc/nsswitch.conf") == 0);
 	server = SCR::Read(.etc.openldap.ldap_conf.host);
 	domain  = SCR::Read(.etc.openldap.ldap_conf.base);
+	ldap_v2 = (SCR::Read(.etc.openldap.ldap_conf.ldap_version) == "2");
 	old_domain = domain;
 	return true;
     }
-    
+
     /**
      * Only write new configuration w/o starting any scripts
      * @return true on success
@@ -137,7 +143,7 @@
     global define boolean WriteOnly()``{
 	return (Write(true));
     }
-    
+
     /**
      * Saves LDAP configuration.
      * (No parameters because it is too short to abort)
@@ -146,37 +152,39 @@
     global define boolean Write (boolean writeonly) ``{
 	if (!writeonly)
 	    Runlevel::RunInitScript ("ypbind", "stop");
-	
+
 	if (start) {
 	    SCR::Write(.etc.openldap.ldap_conf.host, server);
 	    SCR::Write(.etc.openldap.ldap_conf.base, domain);
-	    SCR::Write(.etc.openldap.ldap_conf, nil);
-	    
+	    if (ldap_v2)
+	      SCR::Write(.etc.openldap.ldap_conf.ldap_version, "2");
+	    else
+	      SCR::Write(.etc.openldap.ldap_conf.ldap_version, "3");
+	    SCR::Write(.pam.all.account.pam_unix2, "+use_ldap");
+	    SCR::Write(.pam.all.auth.pam_unix2, "+use_ldap");
+	    SCR::Write(.pam.all.password.pam_unix2, "+use_ldap");
+
 	    SCR::Write(.etc.nsswitch_conf.passwd, "files ldap");
 	    SCR::Write(.etc.nsswitch_conf.group, "files ldap");
-	    SCR::Write(.etc.nsswitch_conf, nil);
 	    if (Runlevel::ServiceStatus ("nscd") == 0 && !writeonly) {
 		Runlevel::RunInitScript ("nscd", "restart");
-	    }	
-	    
-
-	    SCR::Execute(.target.bash, "/bin/mkdir -p /var/lib/yast2-config-ldap_client");
-	    SCR::Execute(.target.bash, "/bin/cp -a /etc/pam.d/* /var/lib/yast2-config-ldap_client");
-	    SCR::Execute(.target.bash, "/bin/cp -a /usr/share/doc/packages/pam_ldap/pam.d/* /etc/pam.d/");
-
+	    }
 	} else {
-
 	    SCR::Write(.etc.nsswitch_conf.passwd, "compat");
 	    SCR::Write(.etc.nsswitch_conf.group, "compat");
 	    SCR::Write(.etc.nsswitch_conf, nil);
+	    SCR::Write(.pam.all.account.pam_unix2, "-use_ldap");
+	    SCR::Write(.pam.all.auth.pam_unix2, "-use_ldap");
+	    SCR::Write(.pam.all.password.pam_unix2, "-use_ldap");
+
 	    if (Runlevel::ServiceStatus ("nscd") == 0 && !writeonly) {
 		Runlevel::RunInitScript ("nscd", "restart");
-	    }	  
+	    }
 
 	    SCR::Execute(.target.bash, "/bin/cp -a /var/lib/yast2-config-ldap_client/* /etc/pam.d");
 	    SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
 	}
-	
+
 	return true;
     }
 }

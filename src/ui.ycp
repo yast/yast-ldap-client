@@ -32,8 +32,8 @@
      * @return	`back or `next
      */
     global define symbol LdapDialog () ``{
-	
-// help text 1/3
+
+// help text 1/4
 	string help_text = UI(_("<p>Here your machine can be set up as
 <b>LDAP client</b> to authenticate your user with an OpenLDAP server.
 Enter the name of the search base (base DN, e.g, dc=mydomain,dc=com)
@@ -41,23 +41,30 @@ in the first entry and the IP address of the LDAP server (e.g., 10.20.0.2)
 in the second.
 To deactivate LDAP services, click the button <b>Do not use LDAP</b>.</p>"));
 
-// help text 2/3
+// help text 2/4
+	help_text = help_text + UI(_("<p>Normally, the LDAP version 3 protocol
+will be used. If you have a LDAP server using protocol 2 (for example
+OpenLDAP v1), you should activate <b>LDAP Version 2</b>.</p>"));
+
+// help text 3/4
 	help_text = help_text + UI(_("<p>If you deactivate LDAP, the current
 LDAP entry for passwd in /etc/nsswitch.conf will be removed and replaced
 with <i>compat</i>. The PAM configuration will be modified and
 the LDAP entry removed.</p>"));
 
-// help text 3/3
+// help text 4/4
 	help_text = help_text + UI(_("<p>If you activate LDAP, NSS and PAM
 will be configured accordingly to use LDAP for user authentification.</p>"));
 
 	boolean start = Ldapclient::start;
 	string domain  = Ldapclient::GetDomain ();
 	string server = Ldapclient::server;
+	boolean ldap_v2 = Ldapclient::ldap_v2;
 	boolean old_start = start;
 	string old_domain = domain;
 	string old_server = server;
-	
+	boolean old_ldap_v2 = ldap_v2;
+
 	term con = `HVSquash(
 			     `Frame (_("LDAP client"),
 				     `VBox (`VSpacing (0.2),
@@ -70,24 +77,27 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
                                                                                  // radio button label
 										     `Left(`RadioButton(`id(`ldapyes), `opt (`notify), _("&Use LDAP"), start)))))),
 					    // text entry label
-					    `HSquash(`TextEntry (`id (`ldapd), _("LDAP &base DN"), domain)),
+					    `HSquash(`TextEntry (`id (`ldapd), _("LDAP base &DN"), domain)),
 					    // text entry label
 					    `HSquash(`TextEntry (`id (`ldapa), _("&IP address of the LDAP server"), server)
 						     ),
+					    // check box label
+					    `CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2),
 					    `VSpacing (0.2)
 					    )
 				     )
 			     );
 
-	
+
 
 	Wizard::SetContentsButtons (
 	    // dialog title
-	    _("LDAP Client Configuration"), con, help_text, 
+	    _("LDAP Client Configuration"), con, help_text,
 	    BackButtonLabel (), FinishButtonLabel ());
-	
+
 	UI::ChangeWidget (`id (`ldapd), `Enabled, start);
 	UI::ChangeWidget (`id (`ldapa), `Enabled, start);
+	UI::ChangeWidget (`id (`ldapv), `Enabled, start);
 
 	any result = nil;
 	do {
@@ -98,12 +108,14 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 	    if (result == `ldapyes || result == `ldapno) {
 		UI::ChangeWidget(`id(`ldapd), `Enabled, start);
 		UI::ChangeWidget(`id(`ldapa), `Enabled, start);
+		UI::ChangeWidget (`id (`ldapv), `Enabled, start);
 	    }
 
 	    if (result == `next && start) {
 		domain = UI::QueryWidget(`id(`ldapd), `Value);
 		server = UI::QueryWidget(`id(`ldapa), `Value);
-	    
+		ldap_v2 = UI::QueryWidget(`id(`ldapv), `Value);
+
 		if (!checkIP (server))
 		{
 		    // error popup label
@@ -118,7 +130,8 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 		// if nothing is changed go back.
 		if (old_start == start &&
 		    old_domain == domain &&
-		    old_server == server)
+		    old_server == server &&
+		    old_ldap_v2 == ldap_v2)
 		    result = `back;
 		else
 		    if (!Ldapclient::auto && ! UI::YesNoPopup(_("The configuration of the LDAP client will be saved\nand the client will be restarted.")))
@@ -132,6 +145,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 	    Ldapclient::start = start;
 	    Ldapclient::SetDomain (domain);
 	    Ldapclient::server = server;
+	    Ldapclient::ldap_v2 = ldap_v2;
 	}
 
 	return result;
