@@ -8,7 +8,6 @@ clientsdir = $(YAST2DIR)/clients
 yincludedir = $(YAST2DIR)/include/ldap_client
 modulesdir = $(YAST2DIR)/modules
 menudir = $(YAST2DIR)/menuentries
-autoinstdir = $(YAST2DIR)/autoinstall
 
 clients_DATA =		\
 	ldap_client.ycp		\
@@ -23,6 +22,4 @@ modules_DATA =		\
 
 menu_DATA = menuentry_ldap_client.y2cc 
 
-autoinst_DATA = autoinst_ldap_client.conf
-
-EXTRA_DIST = $(clients_DATA) $(yinclude_DATA) $(modules_DATA) $(menu_DATA) $(autoinst_DATA)
+EXTRA_DIST = $(clients_DATA) $(yinclude_DATA) $(modules_DATA) $(menu_DATA)

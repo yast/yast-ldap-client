@@ -35,4 +35,9 @@ SortKey =
 ; which textdomain to use for translations (important!)
 Textdomain = ldap_client
 
+; Autoinstall features
+Autoinst = all
+
+; Resource in autoinstallation Control file
+AutoinstResource = ldap
 ; vim:syntax=dosini

@@ -114,6 +114,19 @@
     }
 
     /**
+     * Only set variables, without checking anything
+     * @return: void
+     */
+    global define void Set(map settings)  ``{
+	start = lookup (settings, "start_ldap", false);
+	server = lookup (settings, "ldap_server", "");
+	domain = lookup (settings, "ldap_domain", "");
+	ldap_v2 = lookup (settings, "ldap_v2", false);
+	ldap_tls = lookup (settings, "ldap_tls", false);
+	return;
+    }
+    
+    /**
      * Dump the LDAP settings to a map, for autoinstallation use.
      * @return $["start":, "servers":[...], "domain":]
      */
