@@ -27,6 +27,7 @@ define string get_cn (string dn) ``{
 /**
  * Create DN from cn by adding base config DN
  * (Can't work in general cases!)
+ * FIXME test the case objects are deeper...
  */
 define string get_dn (string cn) ``{
 
@@ -39,7 +40,7 @@ define string get_dn (string cn) ``{
  */
 define string get_new_dn (string cn, string dn) ``{
 
-    return sformat ("cn=%1%2", cn, substring (dn, find (dn, ",")));
+    return tolower (sformat ("cn=%1%2", cn, substring (dn, find (dn, ","))));
 }
 
 /**

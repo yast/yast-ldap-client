@@ -47,7 +47,8 @@
 	],
 	"passwd": $[
 	    "passwd": $[
-		"plusline": "+"
+		"plusline": "+",
+		"pluslines": ["+"]
 	    ]
 	],
 	"product" : $[ "features" :

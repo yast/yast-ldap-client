@@ -1,4 +1,85 @@
 -------------------------------------------------------------------
+Wed May 26 12:23:31 CEST 2004 - jsuchome@suse.cz
+
+- write nss_map_attribute even if it is not present in ldap.conf (#41212)
+- use the correct case (uniqueMember, not uniquemember)
+- 2.9.23
+
+-------------------------------------------------------------------
+Mon May 24 15:39:08 CEST 2004 - jsuchome@suse.cz
+
+- save the settings also when LDAP authentication is disabled (#41079)
+- 2.9.22
+
+-------------------------------------------------------------------
+Thu May 20 17:18:38 CEST 2004 - jsuchome@suse.cz
+
+- "Configure Template" is PushButton, not MenuButton (#40919)
+- take care for uppercase in DN (#40919)
+- 2.9.21
+
+-------------------------------------------------------------------
+Wed May 19 14:01:45 CEST 2004 - jsuchome@suse.cz
+
+- only "Enable LDAP" is available during installation (#40844)
+- during write, exit on initialization error and don't try to continue (#40844)
+
+-------------------------------------------------------------------
+Tue May 18 18:19:43 CEST 2004 - jsuchome@suse.cz
+
+- do not ask for password when 'anonymous' is set from outside
+- work correcly with +/- lines in /etc/passswd (#40571)
+- 2.9.20
+
+-------------------------------------------------------------------
+Thu May 13 15:17:52 CEST 2004 - jsuchome@suse.cz
+
+- create LDAP configuration objects automatically (#40484)
+- adapted help text for the new checkbox
+- 2.9.19
+
+-------------------------------------------------------------------
+Wed May 12 10:56:52 CEST 2004 - jsuchome@suse.cz
+
+- fix of renaming LDAP objects (#40420)
+- enable creating configuration object in LDAP without popups (#40366)
+- 2.9.18
+
+-------------------------------------------------------------------
+Thu May  6 13:51:11 CEST 2004 - jsuchome@suse.cz
+
+- do not use unencrypted connection if TLS is set (#37393)
+
+-------------------------------------------------------------------
+Wed May  5 20:23:28 CEST 2004 - jsuchome@suse.cz
+
+- enable setting the password from outside (during installation: #39901)
+
+-------------------------------------------------------------------
+Wed May  5 13:55:00 CEST 2004 - jsuchome@suse.cz
+
+- do not discard LDAP configuration without asking (#39908)
+- 2.9.17
+
+-------------------------------------------------------------------
+Tue May  4 08:54:29 CEST 2004 - jsuchome@suse.cz
+
+- merged in proofread text
+
+-------------------------------------------------------------------
+Tue Apr 27 13:24:35 CEST 2004 - jsuchome@suse.cz
+
+- enabled configuration of LDAP client without using LDAP for authentication
+- possibility to show initial values proposed from outside (Ldap::SetDefaults) 
+- 2.9.16 
+
+-------------------------------------------------------------------
+Wed Apr 21 09:19:06 CEST 2004 - jsuchome@suse.cz
+
+- fix of testsuite, failing in build
+- 2.9.15
+
+-------------------------------------------------------------------
 Tue Apr 20 10:15:04 CEST 2004 - jsuchome@suse.cz
 
 - on LDAP error, show also additional message produced by server (#38668)
