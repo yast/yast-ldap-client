@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Sep 23 12:31:12 CEST 2003 - jsuchome@suse.cz
+
+- disable autologin when LDAP is enabled (#31470)
+- 2.8.12 
+
+-------------------------------------------------------------------
 Sun Sep 14 20:43:18 CEST 2003 - adrian@suse.de
 
 - make it working inside of kcontrol
