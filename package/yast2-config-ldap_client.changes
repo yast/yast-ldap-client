@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Mon Jan 28 12:51:38 EST 2002 - nashif@suse.de
+
+- WriteOnly() for autoinstall
+- Fixed cofnig file read 
+- 2.5.2
+
+-------------------------------------------------------------------
 Tue Jan  8 08:28:26 CET 2002 - nashif@suse.de
 
 - use y2tool
