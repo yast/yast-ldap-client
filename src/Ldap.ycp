@@ -1430,6 +1430,10 @@ Select another one.
 		[server]);
 	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base,
 		[domain]);
+	    if (ldap_tls)
+	    {
+		SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".TLS_REQCERT, ["allow"]);
+	    }
 	    y2milestone ("file /etc/openldap/ldap.conf was modified");
 	}
 	return write_openldap_conf;
