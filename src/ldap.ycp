@@ -67,6 +67,7 @@ define boolean LdapChangeConfiguration (map options ) ``{
     if( server != "" )
     {
 	Ldap::server	= server;
+	Ldap::modified	= true;
     }
     string base = options["base"]:"";
     if( base != "" )

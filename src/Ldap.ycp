@@ -796,6 +796,7 @@ Value of DN is missing or invalid."),
             `HSpacing(40),
             // password entering label
             `Password(`id(`pw), _("&Enter the Password for LDAP Server:")),
+	    `Label (GetFirstServer (server)),
             `HBox(
               `PushButton (`id(`ok),`opt(`key_F10, `default),
 		Label::OKButton()),
@@ -1886,6 +1887,10 @@ Select another one.
 	{
 	    y2error ("error writing ldap.conf file");
 	}
+	if (Stage::cont ())
+	{
+	    SCR::UnmountAgent (.etc.ldap_conf);
+	}
 
 	// write changes to /etc/security/pam_unix2.conf now
 	PamSettings::Write (false);
@@ -1979,6 +1984,17 @@ Select another one.
 	// ldap-client can be called more times from users module so we
 	// will have to know it is necessary to bind again
 	bound = false;
+	if (modified)
+	{
+	    ldap_initialized    = false;
+	    old_server          = server;
+	    old_domain          = domain;
+	}
+	if (ldap_modified)
+	{
+	    config_modules  = $[];
+            templates       = $[];
+	}
 
 	// now clear the initial default values, so next time Read will read
 	// real values
