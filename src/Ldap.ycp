@@ -412,7 +412,7 @@
 	list<string> values	= [];
 	foreach (string val, current, ``{
 	    list lval	= splitstring (val, " \t");
-	    if (lval[0]:"" != value[0]:"")
+	    if (tolower (lval[0]:"") != tolower (value[0]:""))
 		values	= add (values, val);
 	    else
 		values	= add (values, mergestring (value, " "));
@@ -420,6 +420,22 @@
 	SCR::Write (add (.etc.ldap_conf.v."/etc/ldap.conf", entry), values);
     }
 
+    /**
+     * Add a new value to the entry in /etc/ldap.conf
+     * @param entry name
+     * @param value
+     */
+    define void AddLdapConfEntry (string entry, string value) ``{
+
+	list<string> current	= ReadLdapConfEntries (entry);
+	current = maplist (string e, current, ``(tolower (e)));
+
+	if (!contains (current, tolower (value)))
+	{
+	    SCR::Write (add (.etc.ldap_conf.v."/etc/ldap.conf", entry),
+		union (current, [value]));
+	}
+    }
 
     /**
      * Reads a database entry from nsswitch_conf and returns it as a list
@@ -1561,6 +1577,9 @@ Select another one.
 		WriteLdapConfEntry ("ssl", "no");
 
 	    WriteLdapConfEntry ("pam_password", pam_password);
+
+	    // see bug #37665
+	    AddLdapConfEntry ("pam_filter", "objectclass=posixAccount");
 
 	    // save the user and group bases (check the LDAP config before)
 	    user_base = domain;

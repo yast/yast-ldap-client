@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Wed Mar 31 14:00:50 CEST 2004 - jsuchome@suse.cz
+
+- fix of #37665: save pam_filter to /etc/ldap.conf
+
+-------------------------------------------------------------------
 Wed Mar 31 12:43:57 CEST 2004 - jsuchome@suse.cz
 
 - fix of #37664: group support (write +::: to /etc/group)
