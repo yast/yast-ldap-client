@@ -273,8 +273,7 @@ you cannot retrieve the data from NIS.  Are you sure?")))
 		    if (start && !Package::InstalledAll (
 			    ["pam_ldap","nss_ldap"]))
 		    {
-			Popup::Error (
-			    Message::CannotContinueWithoutPackagesInstalled ());
+			Popup::Error (Message::FailedToInstallPackages ());
 			start = false;
 			result = `not_next;
 			UI::ChangeWidget(`id(`rd), `CurrentButton, `ldapno);
@@ -656,7 +655,7 @@ removing current ones.</p>
 	    _("Value")),
 	    table_items),
         `HBox (
-            `PushButton(`id(`edit), `opt(`key_F4), Label::EditButton()),
+            `PushButton(`id(`edit), Label::EditButton()),
 	    `HStretch()
 	),
 	// label (table folows)
