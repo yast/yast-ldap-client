@@ -75,7 +75,7 @@ else if (func == "Write") {
     import "Progress";
     Ldap::write_only = true;
     Progress::off();
-    ret = Ldap::Write();
+    ret = Ldap::Write(``{});
     Progress::on();
 }
 /* Unknown function */
