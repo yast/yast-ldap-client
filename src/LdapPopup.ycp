@@ -61,16 +61,20 @@ import "Wizard";
 
 	UI::OpenDialog (`opt (`decorated), contents);
 
-	list<term> items = maplist (string dn,
-	    (list<string>) SCR::Read (.ldap.search, $[
+	list<term> items	= [];
+	list<string> search	= (list<string>) SCR::Read (.ldap.search, $[
 		"base_dn"	: root_dn,
 		"scope"		: 1,
 		"dn_only"	: true,
-		"not_found_ok": true ]), {
-
-	    dns [dn]	= false;
-	    return `item (dn, false, []);
-	});
+		"not_found_ok"	: true ]
+	);
+	if (size (search) > 0)
+	{
+	    items = maplist (string dn, search, {
+		dns [dn]	= false;
+		return `item (dn, false, []);
+	    });
+	}
 
 	if (size (items) > 0)
 	{
@@ -189,7 +193,6 @@ import "Wizard";
 	    y2error ("init failed");
 	    return root_dn;
 	}
-
 	return BrowseTree (root_dn);
     }
 
