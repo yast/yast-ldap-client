@@ -1,0 +1,57 @@
+[Desktop Entry]
+Type=Application
+Categories=Qt;X-SuSE-YaST-Net_advanced;
+
+X-KDE-ModuleType=Library
+X-KDE-RootOnly=true
+X-KDE-HasReadOnlyMode=true
+X-KDE-Library=yast2
+X-KDE-FactoryName=ldap
+
+X-SuSE-YaST-Group=Net_advanced
+X-SuSE-YaST-Argument=
+X-SuSE-YaST-RootOnly=true
+X-SuSE-YaST-AutoInst=all
+X-SuSE-YaST-Geometry=
+X-SuSE-YaST-SortKey=
+X-SuSE-YaST-AutoinstResource=ldap
+
+Icon=ldap_client
+Exec=/sbin/yast2 ldap 
+
+Name=LDAP client
+GenericName=Configure LDAP client
+Name[cs]=Klient LDAP
+GenericName[cs]=Nastavit klienta LDAP
+Name[de]=LDAP-Client
+GenericName[de]=LDAP-Client konfigurieren
+Name[es]=Cliente LDAP
+GenericName[es]=Configurar cliente LDAP
+Name[hu]=LDAP kliens
+GenericName[hu]=Az LDAP kliens beállítása
+Name[it]=Client LDAP
+GenericName[it]=Configura il client LDAP
+Name[ko]=LDAP 클라이언트
+GenericName[ko]=LDAP 클라이언트 설정
+Name[nl]=LDAP cliënt
+GenericName[nl]=Configureer LDAP cliënt
+Name[pt]=Cliente LDAP
+GenericName[pt]=Configure o cliente LDAP
+Name[sk]=LDAP klient
+GenericName[sk]=Konfigurovať LDAP klienta
+Name[sv]=LDAP-klient
+GenericName[sv]=Ställ in LDAP-klient
+Name[da]=LDAP-klient
+GenericName[da]=Konfigurér LDAP-klient
+Name[el]=Πελάτης LDAP
+GenericName[el]=Ρύθμιση πελάτη LDAP
+Name[fr]=Client LDAP
+GenericName[fr]=Configurer le client LDAP
+Name[ja]=LDAP クライアント
+GenericName[ja]=LDAP クライアントの設定
+Name[lt]=LDAP klientas
+GenericName[lt]=Konfigūruoti LDAP klientą
+Name[sl]=LDAP odjemalec
+GenericName[sl]=Nastavi LDAP odjemalca
+Name[tr]=LDAP istemcisi
+GenericName[tr]=LDAP istemcisini yapılandır
