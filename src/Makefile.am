@@ -12,4 +12,6 @@ modules_DATA =	\
 menu_DATA = \
 	menuentry_ldap_client.ycp
 
+icon_DATA = $(wildcard *.png)  
+
 EXTRA_DIST = $(modules_DATA) $(menu_DATA)
