@@ -762,6 +762,21 @@ Value of DN is missing or invalid."),
     }
 
     /**
+     * Returns required attributes of given object class
+     * Read it from LDAP if it was not done yet.
+     * @param string class name of object class
+     * @return attribute names (list of strings)
+     */
+    global define list<string> GetRequiredAttributes (string class) ``{
+
+	if (!haskey (object_classes, class))
+	{
+	    GetAllAttributes (class);
+	}
+	return object_classes [class, "must"]:[];
+    }
+
+    /**
      * Returns the list of all allowed and required attributes for each
      * object class, given in the list of object classes
      * @param classes list of object classes whose attributes we want

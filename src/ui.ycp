@@ -151,7 +151,7 @@ automatically.</p>
 	    autofs_con		= `VBox (
 		    `VSpacing (1),
 		    // check box label
-		    `CheckBox (`id(`autofs), _("Start &Automounter"), autofs)
+		    `CheckBox (`id(`autofs), _("Start Auto&mounter"), autofs)
 	    );
 	    help_text	= help_text + autofs_help_text;
 	}
@@ -639,9 +639,26 @@ removing current ones.</p>
 	    break;
 	if (result == `next)
 	{
+	    boolean cont = false;
+
+	    // check the template required attributes...
+	    foreach (string oc, template["objectClass"]:[], ``{
+		if (cont) return;
+		foreach (string attr, Ldap::GetRequiredAttributes (oc), ``{
+		    any val = template[attr]:nil;
+		    if (!cont && val == nil || val == [] || val == "") {
+			//error popup, %1 is attribute name
+			Popup::Error (sformat (_("The \"%1\" attribute is mandatory.
+Enter a value."), attr));
+			UI::SetFocus (`id(`table));
+			cont = true;
+		    }
+		});
+	    });
+	    if (cont) continue;
+
 	    template ["default_values"] = default_values;
 
-	    boolean cont = false;
 	    boolean structural = false;
 	    // check the object classes in defaultObjectClass entry:
 	    foreach (string oc, template["defaultObjectClass"]:[], ``{
@@ -821,6 +838,24 @@ click <b>Configure Template</b>.
 	result		= UI::UserInput ();
 	string attr	= (string)UI::QueryWidget (`id(`table), `CurrentItem);
 
+	// check the correctness of entry
+	if (contains (modules [current_dn, "defaultTemplate"]:[], result) ||
+	    result == `next || result == `modules || result == `new)
+	{
+	    foreach (string oc, modules [current_dn, "objectClass"]:[], ``{
+		foreach (string attr, Ldap::GetRequiredAttributes (oc), ``{
+		    any val = modules [current_dn, attr]:nil;
+		    if (val == nil || val == [] || val == "") {
+			//error popup, %1 is attribute name
+			Popup::Error (sformat (_("The \"%1\" attribute is mandatory.
+Enter a value."), attr));
+			UI::SetFocus (`id(`table));
+			result = `notnext;
+			continue;
+		    }
+		});
+	    });
+	}
 	// change the focus to new module
 	if (result == `modules)
 	{
@@ -904,7 +939,7 @@ of each type, so you cannot add a new one."));
 	    UI::ChangeWidget (`id(`table), `Items,
 		modules_attrs_items[current_cn]:[]);
 	    UI::ChangeWidget (`id(`table), `CurrentItem, attr);
-	    if (attr == "cn")
+	    if (attr == "cn" && value != [])
 	    {
 		string cn = value [0]:current_cn;
 		modules_attrs_items[cn] = modules_attrs_items[current_cn]:[];

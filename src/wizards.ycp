@@ -11,10 +11,9 @@
 
 textdomain "ldap-client";
 
+import "Sequencer";
 import "Wizard";
 import "Label";
-
-include "wizard/sequencer.ycp";
 
 include "ldap/ui.ycp";
 
@@ -29,7 +28,6 @@ define any MainSequence() ``{
 	"abort"		: ``( ReallyAbort()),
 	"advanced"	: ``( AdvancedConfigurationDialog ()),
 	"configure"	: ``( ModuleConfigurationDialog ()),
-//	"template"	: ``( TemplateConfigurationDialog ()),
 	"read_ldap"	: [``(LDAPReadDialog ()), true ],
     ];
 
@@ -66,7 +64,7 @@ define any MainSequence() ``{
 	],
     ];
 
-    any ret = WizardSequencer(aliases, sequence);
+    any ret = Sequencer::Run (aliases, sequence);
 
     return ret;
 }
@@ -121,7 +119,7 @@ define symbol LdapSequence() ``{
 
     Wizard::CreateDialog();
 
-    any ret = WizardSequencer(aliases, sequence);
+    any ret = Sequencer::Run (aliases, sequence);
 
     UI::CloseDialog();
     return (symbol) ret;

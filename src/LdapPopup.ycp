@@ -179,14 +179,6 @@ Please select another one."), v));
 		j = j + 1;
 	    }
 	    if (duplicate) continue;
-	    if (new_value == [] && attr == "cn")//TODO how to get from schema?
-	    {
-		//error popup
-		Popup::Error (_("The \"cn\" attribute is mandatory. Enter
-a value.
-"));
-		continue;
-	    }
 	    break;
 	}
     }
