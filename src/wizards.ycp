@@ -25,7 +25,6 @@ define any MainSequence() ``{
 
     map aliases = $[
 	"ldap"		: ``( LdapDialog() ),
-	"abort"		: ``( ReallyAbort()),
 	"advanced"	: ``( AdvancedConfigurationDialog ()),
 	"configure"	: ``( ModuleConfigurationDialog ()),
 	"read_ldap"	: [``(LDAPReadDialog ()), true ],
@@ -38,12 +37,6 @@ define any MainSequence() ``{
 	    `cancel	: `abort,
 	    `advanced	: "advanced",
 	    `next	: `next
-	],
-	"abort": $[
-	    `abort	: `abort,
-	    `next	: `abort,
-	    `cancel	: `back,
-	    `back	: `back
 	],
 	"read_ldap": $[
 	    `abort	: `abort,

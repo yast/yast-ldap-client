@@ -40,7 +40,7 @@
     define symbol ReallyAbort () ``{
 
 	boolean ret = true;
-	if (!Stage::cont ())
+	if (!Stage::cont () || contains (WFM::Args (), "from_users"))
 	{
 	    ret = Popup::ReallyAbort (Modified());;
 	}
@@ -90,7 +90,7 @@
      * The main dialog for ldap-client configuration
      * @return	`back, `next or `abort
      */
-    define symbol LdapDialog () ``{
+    define symbol LdapDialog () {
 
 	// help text 1/6
 	string help_text = _("<p>Here, your machine can be set up as an
@@ -210,8 +210,10 @@ automatically.</p>
 	    Label::BackButton(),
 	    Stage::cont () ? Label::NextButton(): Label::FinishButton());
 
+	Wizard::RestoreAbortButton ();
+
 	// during installation, only enabling makes sence
-	if (Stage::cont ())
+	if (Stage::cont () && !contains (WFM::Args (), "from_users"))
 	{
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
 	}
@@ -342,7 +344,7 @@ Do the restart during writing?
 /**
  * Configuration of advanced settings (how to get to config data on server)
  */
-define symbol AdvancedConfigurationDialog () ``{
+define symbol AdvancedConfigurationDialog () {
 
     string help_text =
 
@@ -442,7 +444,7 @@ have changed your configuration.</p>
 		`HBox (
 		    `TextEntry (`id (`base_config_dn),
 			// textentry label
-			_("&Configuration Base DN"), base_config_dn),
+			_("Configuration &Base DN"), base_config_dn),
 		    `VBox (
 			`Label (""),
 			// button label
@@ -452,7 +454,7 @@ have changed your configuration.</p>
 		`VSpacing(0.5),
 		`TextEntry (`id (`bind_dn),
 		    // textentry label
-		    _("&Administrator DN"), bind_dn),
+		    _("Administrator &DN"), bind_dn),
 		`VSpacing(0.5),
 		`Left (`CheckBox (`id(`create_ldap),
 		    // checkbox label
@@ -470,7 +472,8 @@ have changed your configuration.</p>
 
     // dialog label
     Wizard::SetContentsButtons(_("Advanced Configuration"),
-            contents, help_text, Label::BackButton(), Label::NextButton());
+            contents, help_text, Label::CancelButton(), Label::AcceptButton());
+    Wizard::HideAbortButton ();
 
     symbol result = `notnext;
 
@@ -484,12 +487,9 @@ have changed your configuration.</p>
     while (true)
     {
 	result = (symbol) UI::UserInput ();
-	if ((result == `abort || result == `cancel) &&
-	    ReallyAbort () != `abort)
-	{
+	if (result == `cancel && ReallyAbort () != `abort)
 	    result = `not_next;
-	}
-	if (contains ([`back, `cancel, `abort], result))
+	if (result == `back || result == `cancel)
 	    break;
 
 	if (result == `br)
@@ -625,7 +625,7 @@ All changes will be lost.
 /**
  * Dialog for configuration one object template
  */
-define map<string,any> TemplateConfigurationDialog (map templ) ``{
+define map<string,any> TemplateConfigurationDialog (map templ) {
 
     // help text 1/3
     string help_text = _("<p>Here, configure the template used for
@@ -697,8 +697,10 @@ removing current ones.</p>
 	    _("Default Value")),
 	    default_items),
         `HBox (
-            `PushButton(`id(`add_dfl), `opt(`key_F3), Label::AddButton()),
-            `PushButton(`id(`edit_dfl), `opt(`key_F4), Label::EditButton()),
+	    // button label (with non-default shortcut)
+            `PushButton (`id(`add_dfl), `opt(`key_F3), _("A&dd")),
+	    // button label
+            `PushButton (`id(`edit_dfl), `opt(`key_F4), _("&Edit")),
             `PushButton(`id(`delete_dfl), `opt(`key_F5), Label::DeleteButton()),
             `HStretch()
 	),
@@ -709,7 +711,7 @@ removing current ones.</p>
     Wizard::OpenNextBackDialog ();
     // dialog label
     Wizard::SetContentsButtons(_("Object Template Configuration"),
-            contents, help_text, Label::BackButton(), Label::OKButton());
+            contents, help_text, Label::CancelButton(), Label::AcceptButton());
     Wizard::HideAbortButton();
 
     if (size (table_items) > 0)
@@ -952,7 +954,7 @@ click <b>Configure Template</b>.
 	UI::ReplaceWidget (`id(`rp_templs),
 	    `PushButton (`id(`templ_pb), `opt(`key_F7),
 		// button label
-		_("&Configure Template")));
+		_("C&onfigure Template")));
 	UI::ChangeWidget (`id(`templ_pb), `Enabled, items != []);
     }
 
@@ -983,7 +985,8 @@ click <b>Configure Template</b>.
 
     // dialog label
     Wizard::SetContentsButtons(_("Module Configuration"),
-            contents, help_text, Label::BackButton(), Label::NextButton());
+            contents, help_text, Label::CancelButton(), Label::AcceptButton());
+    Wizard::HideAbortButton ();
 
     if (size (modules_attrs_items[current_cn]:[]) > 0)
     {
@@ -1203,12 +1206,9 @@ of each type, so you cannot add a new one."));
 	    Ldap::CommitTemplates (templates);
 	    break;
 	}
-	if ((result == `abort || result == `cancel) &&
-	    ReallyAbort () != `abort)
-	{
+	if (result == `cancel && ReallyAbort () != `abort)
 	    result = `not_next;
-	}
-	if (is (result,symbol) && contains ([`back, `cancel, `abort], (symbol)result))
+	if (result == `back || result == `cancel)
 	    break;
     }
 

@@ -26,9 +26,6 @@ y2milestone("----------------------------------------");
 y2milestone("Ldap auto started");
 
 import "Ldap";
-import "Wizard";
-import "Summary";
-import "Require";
 include "ldap/wizards.ycp";
 
 
@@ -64,7 +61,7 @@ else if (func == "Reset") {
 }
 /* Change configuration (run AutoSequence) */
 else if (func == "Change") {
-	ret = LdapAutoSequence ();
+    ret = LdapAutoSequence ();
 }
 /* Return actual state */
 else if (func == "Export") {
@@ -89,9 +86,9 @@ else if (func == "SetModified") {
 else if (func == "Write") {
     import "Progress";
     Ldap::write_only = true;
-    Progress::off();
+    boolean progress_orig = Progress::set (false);
     ret = Ldap::Write(abort_block);
-    Progress::on();
+    Progress::set (progress_orig);
 }
 else if (func == "Packages") {
     ret = Ldap::AutoPackages();
