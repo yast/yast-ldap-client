@@ -87,7 +87,7 @@
 	}
 
 	boolean missing = false;
-	foreach (`k, ["start", "domain", "server"], ``{
+	foreach (`k, ["start_ldap", "ldap_domain", "ldap_server"], ``{
 	    if (! haskey (settings, k))
 	    {
 		y2error ("Missing at Import: '%1'.", k);
@@ -99,9 +99,9 @@
 	    return false;
 	}
 
-	start = lookup (settings, "start", false);
-	server = lookup (settings, "server", "");
-	domain = lookup (settings, "domain", "");
+	start = lookup (settings, "start_ldap", false);
+	server = lookup (settings, "ldap_server", "");
+	domain = lookup (settings, "ldap_domain", "");
 	old_domain = domain;
 	return true;
     }
@@ -112,9 +112,9 @@
      */
     global define map Export () ``{
 	return $[
-	    "start": start,
-	    "server": server,
-	    "domain": domain,
+	    "start_ldap": start,
+	    "ldap_server": server,
+	    "ldap_domain": domain,
 	    ];
     }
 

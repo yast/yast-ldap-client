@@ -1,5 +1,5 @@
 #
-# Makefile.am for y2c_nis/src
+# Makefile.am for y2c_ldap_client/src
 #
 # $Id$
 #
