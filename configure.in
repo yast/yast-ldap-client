@@ -12,12 +12,14 @@ YAST2DIR=/usr/lib/YaST2
 prefix=$YAST2DIR
 
 AM_INIT_AUTOMAKE($RPMNAME, $VERSION) dnl searches for some needed programs
+ICONDIR=$prefix/images
 
 AC_SUBST(VERSION)
 AC_SUBST(RPMNAME)
 AC_SUBST(MAINTAINER)
 AC_SUBST(DOCDIR)
 AC_SUBST(YAST2DIR)
+AC_SUBST(ICONDIR)
 
 dnl Checks for programs.
 AC_PROG_INSTALL
