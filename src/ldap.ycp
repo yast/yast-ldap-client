@@ -63,20 +63,18 @@ define boolean LdapSummaryHandler (map options ) ``{
  */
 define boolean LdapChangeConfiguration (map options ) ``{
 
-    boolean ret = false;
     string server = options["server"]:"";
     if( server != "" )
     {
-	Ldap::server = server;
-	ret = true;
+	Ldap::server	= server;
     }
     string base = options["base"]:"";
     if( base != "" )
     {
 	Ldap::SetDomain (base);
-	ret = true;
+	Ldap::modified	= true;
     }
-    return ret;
+    return Ldap::modified;
 }
 
 define boolean LdapWrite () ``{
