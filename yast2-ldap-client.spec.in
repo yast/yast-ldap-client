@@ -33,6 +33,7 @@ Summary:	Configuration of LDAP client
 %files
 %defattr(-,root,root)
 @configdir@/ldap.y2cc
+@desktopdir@/ldap.desktop
 %dir @yncludedir@/ldap
 @yncludedir@/ldap/*
 @moduledir@/Ldap.ycp
