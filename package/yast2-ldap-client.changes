@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Feb 24 14:40:33 CET 2004 - jsuchome@suse.cz
+
+- enabled start of automounter
+- 2.9.4
+
+-------------------------------------------------------------------
 Fri Feb 20 13:38:29 CET 2004 - jsuchome@suse.cz
 
 - again: force write of ldap.conf

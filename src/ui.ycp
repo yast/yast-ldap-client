@@ -13,15 +13,15 @@
 {
     textdomain "ldap-client";
 
-    import "Wizard";
-    import "Mode";
-    import "Report";
+    import "Autologin";
+    import "Label";
     import "Ldap";
     import "LdapPopup";
-    import "Autologin";
-
-    import "Label";
+    import "Mode";
     import "Popup";
+    import "Report";
+    import "Require";
+    import "Wizard";
 
     include "ldap/routines.ycp";
 
@@ -127,6 +127,14 @@ removed.</p>") +
 	_("<p>For configuration of advanced LDAP settings, click
 <b>Advanced Configuration</b>.</p>
 ");
+	// help text 7/6 (additional)
+	string autofs_help_text = _("<p>Automounter is a daemon that mounts directories automatically,
+such as users' home directories.
+It is assumed that its configuration files (auto.*) already exist,
+either locally or over LDAP.<br>
+If it is not installed and you want to use it, it will be installed
+automatically.</p>");
+
 
 	// during installation, only starting ldap is enabled
 	boolean start		= Mode::cont || Ldap::start;
@@ -135,9 +143,22 @@ removed.</p>") +
 	boolean ldap_tls	= Ldap::ldap_tls;
 	boolean ldap_v2		= Ldap::ldap_v2;
 
+	boolean autofs		= Ldap::_start_autofs;
+	term autofs_con		= `Empty ();
+	if (Ldap::_autofs_allowed)
+	{
+	    autofs_con		= `VBox (
+		    `VSpacing (1),
+		    // check box label
+		    `CheckBox (`id(`autofs), _("Start &Automounter"), autofs)
+	    );
+	    help_text	= help_text + autofs_help_text;
+	}
+
 	term con = `HVSquash(`VBox(
-	    `Frame (_("LDAP client"),
-	    `VBox (`VSpacing (0.2),
+	  // frame label
+	  `Frame (_("LDAP client"), `HBox (`HSpacing (1),
+	    `VBox (`VSpacing (0.5),
 	    `RadioButtonGroup(`id(`rd),
 		`Left(`HVSquash(`VBox (
 		    `Left (`RadioButton(`id(`ldapno), `opt (`notify),
@@ -157,11 +178,14 @@ removed.</p>") +
 	    `VSpacing (0.2),
 	    // check box label
 	    `CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2),
-	    `VSpacing (0.2)
-	    )),
-	    `VSpacing(1),
-	    // pushbutton label
-	    `PushButton (`id(`advanced), _("&Advanced Configuration..."))
+	    `VSpacing (0.5)
+	    ),
+	    `HSpacing (1))
+	  ),
+	  autofs_con,
+	  `VSpacing(1),
+	  // pushbutton label
+	  `PushButton (`id(`advanced), _("&Advanced Configuration..."))
         ));
 
 	Wizard::SetContentsButtons (
@@ -200,10 +224,12 @@ removed.</p>") +
             }
 
 	    if ((result == `next || result == `advanced) && start) {
-		domain = (string) UI::QueryWidget(`id(`ldapd), `Value);
-		server = (string) UI::QueryWidget(`id(`ldapa), `Value);
+		domain	= (string) UI::QueryWidget(`id(`ldapd), `Value);
+		server	= (string) UI::QueryWidget(`id(`ldapa), `Value);
 		ldap_v2 = (boolean) UI::QueryWidget(`id(`ldapv), `Value);
-		ldap_tls = (boolean) UI::QueryWidget(`id(`ldaps), `Value);
+		ldap_tls= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
+		autofs	= Ldap::_autofs_allowed &&
+		    (boolean) UI::QueryWidget (`id (`autofs), `Value);
 
 		if (domain == "")
 		{
@@ -227,17 +253,27 @@ removed.</p>") +
 	{
 	    if (Ldap::start != start || Ldap::GetDomain() != domain ||
 		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||
-		Ldap::ldap_tls != ldap_tls)
+		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs)
 	    {
 		Ldap::SetDomain (domain);
 		Ldap::start	= start;
 		Ldap::server	= server;
 		Ldap::ldap_v2	= ldap_v2;
 		Ldap::ldap_tls	= ldap_tls;
+		Ldap::_start_autofs = autofs;
 		Ldap::modified = true;
 		if (result == `next)
+		{
+		    if (autofs &&
+			!Require::IsAnyPackageInstalled (["autofs", "autofs4"]))
+		    {
+			Require::RequireAndConflict (["autofs"],[],
+			// popup message
+			_("<p>The automounter package will be installed.</p>"));
+		    }
 		    // popup text FIXME something more descriptive...
 		    Autologin::AskForDisabling(_("Now you have enabled LDAP."));
+		}
 	    }
 	}
 	return result;

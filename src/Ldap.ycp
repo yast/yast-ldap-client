@@ -13,18 +13,16 @@
     module "Ldap";
     textdomain "ldap-client";
 
-    import "Runlevel";
-    import "Report";
-    import "Summary";
-    import "Progress";
-    import "Label";
-    import "Popup";
-    import "Mode";
-    import "Require";
     import "Autologin";
-
+    import "Label";
+    import "Mode";
     import "PamSettings";
-
+    import "Popup";
+    import "Progress";
+    import "Report";
+    import "Require";
+    import "Service";
+    import "Summary";
 
     /**
      * show popups with error messages?
@@ -55,6 +53,15 @@
      * If not, other settings are not touched.
      */
     global boolean start = false;
+
+    /**
+     * If no, automounter will not be affected.
+     */
+    global boolean _autofs_allowed = false;
+    /**
+     * Start automounter and import the settings from LDAP
+     */
+    global boolean _start_autofs = false;
 
     /**
      * IP addresses of LDAP server.
@@ -254,6 +261,12 @@
 	bind_dn		= settings ["bind_dn"]:"";
 	file_server	= settings ["file_server"]:false;
 	base_config_dn	= settings ["base_config_dn"]:"";
+
+	// autofs is not touched in Write if the map does not want it
+	_autofs_allowed = haskey (settings, "start_autofs");
+	_start_autofs = settings["start_autofs"]:false;
+	if (_start_autofs)
+		required_packages = add(required_packages, "autofs");
 	return;
     }
 
@@ -368,7 +381,73 @@
 
 	Autologin::Read ();
 
+	// install on demand
+	_autofs_allowed = true;
+	_start_autofs = _autofs_allowed && Service::Enabled ("autofs");
+
 	return true;
+    }
+
+    /**
+     * Reads a database entry from nsswitch_conf and returns it as a list
+     * @param db eg. "passwd"
+     * @return   eg. ["files", "nis"]
+     */
+    define list<string> ReadNssDb (string db) ``{
+	string db_s = (string) SCR::Read (add (.etc.nsswitch_conf, db));
+	if (db_s == nil)
+	{
+	    db_s = "";
+	}
+	return filter (string s, splitstring (db_s, " \t"), ``(s != ""));
+    }
+
+    /**
+     * Writes a database entry as a list to nsswitch_conf
+     * @param db eg. "passwd"
+     * @param entries eg. ["files", "nis"]
+     * @return success?
+     */
+    define boolean WriteNssDb (string db, list<string> entries) ``{
+	// if there are no entries, delete the key using nil
+	string entry = mergestring (entries, " ");
+	return SCR::Write (add (.etc.nsswitch_conf, db),
+			   entry == ""? nil: entry);
+    }
+    /**
+     * Configures the name service switch for autofs
+     * according to chosen settings
+     * @return success?
+     */
+    global define boolean WriteNssAutofs () ``{
+	boolean ok = true;
+
+	// nsswitch automount:
+	// bracket options not allowed, order does not matter
+	list<string> automount_l = ReadNssDb ("automount");
+	boolean enabled = contains (automount_l, "ldap");
+	// enable it if it is not enabled yet and both services run
+	if (start && _start_autofs && !enabled)
+	{
+	    automount_l = add (automount_l, "ldap");
+	    ok = WriteNssDb ("automount", automount_l);
+	    ok = ok && SCR::Write (.etc.nsswitch_conf, nil);
+	}
+	// disable it if it is enabled and either service does not run
+	else if (!(start && _start_autofs) && enabled)
+	{
+	    automount_l = filter (string s, automount_l, ``(s != "ldap"));
+	    ok = WriteNssDb ("automount", automount_l);
+	    ok = ok && SCR::Write (.etc.nsswitch_conf, nil);
+	}
+
+	if (!ok)
+	{
+	    // error popup
+	    Report::Error (sformat (_("Error writing file %1."),
+				    "/etc/nsswitch.conf"));
+	}
+	return ok;
     }
 
     /* ------------- functions for work with LDAP tree contents ------------ */
@@ -1253,8 +1332,8 @@ Select another one.
 
 	if (!write_only)
 	{
-	    ypbind_running = (Runlevel::ServiceStatus ("ypbind") == 0);
-		Runlevel::RunInitScript ("ypbind", "stop");
+	    ypbind_running = (Service::Status ("ypbind") == 0);
+		Service::RunInitScript ("ypbind", "stop");
 	} else if (write_only && Mode::autoinst ){
 		// Read existing nsswitch in autoinstallation mode
         nsswitch["passwd"] = splitstring
@@ -1360,19 +1439,47 @@ Select another one.
 
 	SCR::Write (.sysconfig.ldap.BIND_DN, bind_dn);
 
+	if (_autofs_allowed)
+	{
+	    if (WriteNssAutofs ())
+	    {
+		if (_start_autofs)
+		{
+		    Service::Adjust ("autofs", "enable");
+		}
+		else
+		{
+		    Service::Adjust ("autofs", "disable");
+		}
+	    }
+	}
+
 	// -------------------- start services
 	Progress::NextStage ();
 	if (eval(abort))
 	    return `abort;
 
-	if (Runlevel::ServiceStatus ("nscd") == 0 && !write_only)
+	if (Service::Status ("nscd") == 0 && !write_only)
 	{
-	    Runlevel::RunInitScript ("nscd", "restart");
+	    Service::RunInitScript ("nscd", "restart");
 	}
 
 	if (ypbind_running)
 	{
-	    Runlevel::RunInitScript ("ypbind", "restart");
+	    Service::RunInitScript ("ypbind", "restart");
+	}
+
+	if (_autofs_allowed)
+	{
+	    if (!write_only)
+	    {
+		Service::RunInitScript ("autofs", "stop");
+
+		if (_start_autofs)
+		{
+		    Service::RunInitScript ("autofs", "start");
+		}
+	    }
 	}
 
 	// -------------------- write settings to LDAP

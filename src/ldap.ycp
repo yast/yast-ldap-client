@@ -24,8 +24,6 @@
     import "CommandLine";
     import "RichText";
 
-    include "commandline/commandline.ycp";
-
     any ret = `auto;
     if (!Require::RequireAndConflict (Ldap::required_packages, [],
 			     // popup: requred applications (%1)
@@ -149,6 +147,6 @@ map cmdline = $[
     ]
 ];
 
-   ret = CommandLineRun( cmdline );
+   ret = CommandLine::Run( cmdline );
    return ret;
 }

@@ -37,7 +37,12 @@
 		"BIND_DN": "uid=manager,dc=suse,dc=cz",
 		"FILE_SERVER": "no"
 	    ]
-	]
+	],
+	"init": $[
+	    "scripts": $[
+		"exists": false,
+	    ],
+	],
     ];
 
     map EX = $[
