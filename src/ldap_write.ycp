@@ -26,7 +26,7 @@
 	"variable":"host"]]);
     SCR::Write(.etc.openldap.ldap_conf, [$["value":lookup(ldap_conf, "ldap_domain"),
 	"variable":"base"]]);
-    SCR::Write(.etc.nsswitch_conf, [$["service":["files", "ldap"],
+    SCR::Write(.etc.nsswitch_conf, [$["services":["files", "ldap"],
 	"database":"passwd"]]);
 
     SCR::Execute(.target.bash, "mkdir -p /var/lib/yast2-config-ldap_client");
@@ -36,7 +36,7 @@
     } else {
 
     // restore old nsswitch.conf
-    SCR::Write(.etc.nsswitch_conf, [$["service":["compat"], "database":"passwd"]]);
+    SCR::Write(.etc.nsswitch_conf, [$["services":["compat"], "database":"passwd"]]);
     SCR::Execute(.target.bash, "cp /var/lib/yast2-config-ldap_client/* /etc/pam.d");
   }
 

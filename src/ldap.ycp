@@ -23,7 +23,7 @@
     include "network/dns.ycp";
 
     UI::CreateWizardDialog ();
-    //UI::ReplaceWizardAbortButton(`Empty (`id (`abort)));
+    UI::ReplaceWizardAbortButton(`Empty (`id (`abort)));
 
 // ===== main =====
 
@@ -47,9 +47,9 @@
     authentification.</p>"));
 
     // XXX Look if ldap is configured
-    boolean ldap_client = (SCR (`Execute (.target.bash, "false")) == 0);
-    string ldap_domain   = "";
-    string ldap_address  = "";
+    boolean ldap_client = (SCR (`Execute (.target.bash, "grep '^passwd:.*ldap' /etc/nsswitch.conf")) == 0);
+    string ldap_domain   = ""; //SCR::Read(.etc.openldap.ldap_conf.base);
+    string ldap_address  = ""; //SCR::Read(.etc.openldap.ldap_conf.host);
 
 // frame label
     term con = `HVSquash(`Frame (_("LDAPO client"),
