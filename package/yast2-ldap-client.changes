@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Dec 17 12:59:34 CET 2002 - jsuchome@suse.de
+
+- do not remove nis/compat values from /etc/nsswitch.conf
+
+-------------------------------------------------------------------
 Tue Aug 27 20:00:00 CEST 2002 - jsuchome@suse.cz
 
 - provide/obsolete old translation packages
