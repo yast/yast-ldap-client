@@ -38,7 +38,7 @@ To deactivate LDAP services, click the button <b>Do not use LDAP</b>.</p>"));
 // help text 2/5
 	help_text = help_text + UI(_("<p>Some LDAP servers supports
 StartTLS [RFC2830]. If your server supports it and it is configured,
-you should activate <b>LDAP TLS/SSL</b> to encrypt your communication
+activate <b>LDAP TLS/SSL</b> to encrypt your communication
 with the LDAP server.</p>"));
 
 // help text 3/5

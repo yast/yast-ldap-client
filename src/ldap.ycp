@@ -25,7 +25,7 @@
     if (!RequireAndConflict (["pam_ldap","nss_ldap"], [],
 			     _("<p>To configure and access LDAP services,
 the <b>%1</b> packages must be installed.</p>
-<p>Do you want to install these packages now?</p>
+<p>Install these packages now?</p>
 ")))
               {
 		  UI::MessagePopup(_("The configuration of the LDAP client
