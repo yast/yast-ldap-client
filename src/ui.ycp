@@ -350,7 +350,7 @@ server.</p>
 
     // help text 2/3
     _("<p>To access the data stored on the server, enter the
-<b>Administrator DN</b> (e.g., ou=Management,dc=mydomain,dc=com).</p>
+<b>Administrator DN</b> (e.g., cn=Administrator,dc=mydomain,dc=com).</p>
 ") +
 
     // help text 2.5/3
