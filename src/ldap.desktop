@@ -15,6 +15,7 @@ X-SuSE-YaST-AutoInst=all
 X-SuSE-YaST-Geometry=
 X-SuSE-YaST-SortKey=
 X-SuSE-YaST-AutoInstResource=ldap
+X-SuSE-YaST-AutoInstClonable=true
 
 Icon=ldap_client
 Exec=/sbin/yast2 ldap 

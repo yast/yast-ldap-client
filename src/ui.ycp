@@ -209,7 +209,7 @@ removed.</p>") +
 		{
 		    // error popup label
                     Report::Error(_("Enter an LDAP base DN."));
-                    result = nil;
+                    result = `none;
                     continue;
                 }
 
