@@ -1,5 +1,6 @@
 @HEADER-COMMENT@
-# neededforbuild yast2-devel-packages
+
+# neededforbuild  yast2-devel-packages
 
 @HEADER@
 Requires:	yast2 yast2-network yast2-pam yast2-runlevel yast2-packager
@@ -16,9 +17,9 @@ Summary:	Configuration of LDAP client
 
 @PREP@
 
-@BUILD-YCP@
+@BUILD@
 
-@INSTALL-YCP@
+@INSTALL@
 
 @CLEAN@
 
