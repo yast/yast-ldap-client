@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Feb 18 15:23:10 CET 2003 - mvidner@suse.de
+
+- Preselect to start the service if run during the installation
+  (from the user module, #23733).
+
+-------------------------------------------------------------------
 Sat Feb 15 08:24:47 CET 2003 - kukuk@suse.de
 
 - Use "example" instead of "mydomain" as domainname in help text.

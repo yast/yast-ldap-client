@@ -63,7 +63,7 @@ will be configured accordingly to use LDAP for user authentification.</p>"));
 groups on the LDAP server, click <b>Set up User Configuration Tool</b> and complete the settings.</p>
 "));
 
-	boolean start = Ldap::start;
+	boolean start = Mode::cont || Ldap::start; //#23733
 	string domain  = Ldap::GetDomain ();
 	string server = Ldap::server;
 	boolean ldap_tls = Ldap::ldap_tls;
