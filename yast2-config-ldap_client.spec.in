@@ -21,7 +21,7 @@ Packager:	@MAINTAINER@
 
 Summary:	Configuration of NIS+
 Version:	@VERSION@
-Source0:	@RPMNAME@-%{version}.tar.bz2
+Source0:	@RPMNAME@-@VERSION@.tar.bz2
 
 %description
 -
