@@ -48,7 +48,7 @@ cannot be completed without the mentioned packages."));
  * @param options  a list of parameters passed as args
  * @return boolean true on success
  */
-global define boolean LdapEnableHandler( map options ) ``{
+define boolean LdapEnableHandler( map options ) ``{
     // check the "command" to be present exactly once
     string command = CommandLine::UniqueOption( options,
 	["enable", "disable" ] );
@@ -62,7 +62,7 @@ global define boolean LdapEnableHandler( map options ) ``{
  * Print summary of basic options
  * @return boolean false
  */
-global define boolean LdapSummaryHandler (map options ) ``{
+define boolean LdapSummaryHandler (map options ) ``{
 
     CommandLine::Print (RichText::Rich2Plain ("<br>" + Ldap::ShortSummary ()));
     return false; // do not call Write...
@@ -73,7 +73,7 @@ global define boolean LdapSummaryHandler (map options ) ``{
  * @param options  a list of parameters passed as args
  * @return boolean true on success
  */
-global define boolean LdapChangeConfiguration (map options ) ``{
+define boolean LdapChangeConfiguration (map options ) ``{
 
     boolean ret = false;
     string server = options["server"]:"";
@@ -91,7 +91,7 @@ global define boolean LdapChangeConfiguration (map options ) ``{
     return ret;
 }
 
-global define boolean LdapWrite () ``{
+define boolean LdapWrite () ``{
 
     block<boolean> abort = ``{ return false; };
     return (Ldap::Write(abort) == `next);
@@ -102,30 +102,22 @@ map cmdline = $[
     "id"		: "ldap",
     // translators: command line help text for Ldap client module
     "help"		: _("LDAP client configuration module."),
-    "guihandler"	: ``(LdapSequence()),
-    "initialize"	: ``(Ldap::Read()),
-    "finish"		: ``(LdapWrite()),
-    /* TODO NI
     "guihandler"	: LdapSequence,
     "initialize"	: Ldap::Read,
     "finish"		: LdapWrite,
-    */
     "actions"		: $[
 	"pam" :$[
-	    "handler"	: ``(LdapEnableHandler()),
-//	    "handler"	: LdapEnableHandler, TODO NI
+	    "handler"	: LdapEnableHandler,
 	    // translators: command line help text for pam action
 	    "help"	: _("Enable or disable authentication with LDAP")
 	],
 	"summary" :$[
-	    "handler"	: ``(LdapSummaryHandler()),
-//	    "handler"	: LdapSummaryHandler, TODO NI
+	    "handler"	: LdapSummaryHandler,
 	    // translators: command line help text for summary action
 	    "help"	: _("Configuration summary of LDAP client")
 	],
 	"configure"	: $[
-	    "handler"	: ``(LdapChangeConfiguration()),
-//	    "handler"	: LdapChangeConfiguration, TODO NI
+	    "handler"	: LdapChangeConfiguration,
 	    // translators: command line help text for configure action
 	    "help"	: _("Change the global settings of LDAP client")
 	]

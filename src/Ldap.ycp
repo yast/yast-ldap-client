@@ -36,7 +36,7 @@
     /**
      * Required packages for this module to operate
      */
-    global list required_packages = ["pam_ldap","nss_ldap"];
+    global list<string> required_packages = ["pam_ldap","nss_ldap"];
 
     /**
      * Write only, used during autoinstallation.
@@ -1421,7 +1421,7 @@ exists on the LDAP server. Create it now?
      * @return map of lists.
      */
     global  define map AutoPackages() ``{
-      list install_pkgs = required_packages;
+      list<string> install_pkgs = required_packages;
       list remove_pkgs = [];
       return ($["install": install_pkgs, "remove": remove_pkgs]);
     }

@@ -425,7 +425,7 @@ removing current ones.</p>
     map template = (map) eval (templ);
 
     // helper function converting list value to string
-    define string to_table (string attr, list val) ``{
+    define string to_table (string attr, list<string> val) ``{
 
 	if (Ldap::SingleValued (attr))
 	    return val[0]:"";
@@ -442,7 +442,7 @@ removing current ones.</p>
 	"modified", "old_dn"], attr))
 	    return;
 	if (is (value, list))
-	    val = to_table (attr, (list) val);
+	    val = to_table (attr, (list<string>) val);
 	table_items = add (table_items, `item (`id(attr), attr, val));
     });
 
@@ -504,7 +504,7 @@ removing current ones.</p>
 	// edit attribute
 	if (result == `edit || result == `table)
 	{
-	    list value		= template [attr]:[];
+	    list<string> value	= template [attr]:[];
 	    list offer		= [];
 	    list conflicts	= [];
 	    if (attr == "secondaryGroup")
@@ -671,7 +671,7 @@ click <b>Configure Template</b>.
 		if (Ldap::SingleValued (attr))
 		    val = select ((list)value, 0, "");
 		else
-		    val = mergestring ((list)value, ",");
+		    val = mergestring ((list<string>)value, ",");
 	    }
 	    attrs_items = add (attrs_items, `item(`id(attr), attr, val));
 	});
@@ -836,7 +836,7 @@ of each type, so you cannot add a new one."));
 	// module attribute modification
 	if (result == `edit || result == `table)
 	{
-	    list value		= modules [current_dn, attr]:[];
+	    list<string> value		= modules [current_dn, attr]:[];
 	    list offer		= [];
 	    list conflicts	= [];
 	    if (attr == "cn")

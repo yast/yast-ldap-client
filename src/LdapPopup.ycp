@@ -29,8 +29,8 @@ import "Wizard";
  *  groups for "secondaryGroup" attribute)
  * @return list of atrtibute values (edited or unchanged)
  */
-global define list EditAttribute (string attr, list value, list conflicts,
-				  boolean single, list offer) ``{
+global define list<string> EditAttribute (string attr, list<string> value,
+				list conflicts, boolean single, list offer) ``{
 
     // help text 1/3
     string help_text = _("<p>Set the new value for the current attribute.</p>") +
@@ -55,7 +55,7 @@ possible values to use for the current attribute.</p>
 
 	sformat ("<p><i>%1</i></p>", desc);
 
-    list org_value = value;
+    list<string> org_value = value;
     integer value_size = size (value);
 
     // horizontal size of popup for
@@ -120,7 +120,7 @@ possible values to use for the current attribute.</p>
 	`HSpacing(1)
     ));
     any result = nil;
-    list new_value = [];
+    list<string> new_value = [];
 
     if (value_size == 0)
 	value_size = 1;
