@@ -41,5 +41,5 @@
     }
 
     // The write is a simple one so we don't use Progress
-    return Ldapclient::Import (Args (0)) && Ldapclient::Write ();
+    return Ldapclient::Import (Args (0)) && Ldapclient::WriteOnly ();
 }

@@ -47,22 +47,13 @@ cannot be completed without the mentioned packages."));
     symbol result = LdapDialog ();
 
     if (result == `next)
-    {
-	Ldapclient::SetServers (yp_address);
-	if (Ldapclient::Write ())
+    {	
+	if (Ldapclient::Write (false))
 	{
 	    if (Ldapclient::start)
-	    {
-		if (Ldapclient::DomainChanged ())
-		{
-		    UI::WarningPopup (_("The domain has changed.
-You must reboot for the changes to take effect."));
-		}
-		else
-		{
-		    UI::MessagePopup(_("The configuration of the LDAP client
-was saved and can be used."));
-		}
+	    {				
+		UI::MessagePopup(_("The configuration of the LDAP client
+was saved and can be used."));		
 	    }
 	    else
 	    {

@@ -125,48 +125,57 @@
     global define boolean Read () ``{
 	start = (SCR::Execute (.target.bash, "/usr/bin/grep '^passwd:.*ldap' /etc/nsswitch.conf") == 0);
 	server = SCR::Read(.etc.openldap.ldap_conf.host);
-	domain  = SCR::Read(.etc.openldap.ldap_conf.host);
+	domain  = SCR::Read(.etc.openldap.ldap_conf.base);
 	old_domain = domain;
 	return true;
     }
-
+    
+    /**
+     * Only write new configuration w/o starting any scripts
+     * @return true on success
+     */
+    global define boolean WriteOnly()``{
+	return (Write(true));
+    }
+    
     /**
      * Saves LDAP configuration.
      * (No parameters because it is too short to abort)
      * @return true on success
      */
-    global define boolean Write () ``{
-	Runlevel::RunInitScript ("ypbind", "stop");
-	  if (start) {
-	      SCR::Write(.etc.openldap.ldap_conf.host, server);
-	      SCR::Write(.etc.openldap.ldap_conf.base, domain);
-	      SCR::Write(.etc.openldap.ldap_conf, nil);
-
-	      SCR::Write(.etc.nsswitch_conf.passwd, "files ldap");
-	      SCR::Write(.etc.nsswitch_conf.group, "files ldap");
-	      SCR::Write(.etc.nsswitch_conf, nil);
-	      if (Runlevel::ServiceStatus ("nscd") == 0) {
-		  Runlevel::RunInitScript ("nscd", "restart");
-	      }
+    global define boolean Write (boolean writeonly) ``{
+	if (!writeonly)
+	    Runlevel::RunInitScript ("ypbind", "stop");
+	
+	if (start) {
+	    SCR::Write(.etc.openldap.ldap_conf.host, server);
+	    SCR::Write(.etc.openldap.ldap_conf.base, domain);
+	    SCR::Write(.etc.openldap.ldap_conf, nil);
+	    
+	    SCR::Write(.etc.nsswitch_conf.passwd, "files ldap");
+	    SCR::Write(.etc.nsswitch_conf.group, "files ldap");
+	    SCR::Write(.etc.nsswitch_conf, nil);
+	    if (Runlevel::ServiceStatus ("nscd") == 0 && !writeonly) {
+		Runlevel::RunInitScript ("nscd", "restart");
+	    }	
 	    
 
-	      SCR::Execute(.target.bash, "/bin/mkdir -p /var/lib/yast2-config-ldap_client");
-	      SCR::Execute(.target.bash, "/bin/cp -a /etc/pam.d/* /var/lib/yast2-config-ldap_client");
-	      SCR::Execute(.target.bash, "/bin/cp -a /usr/share/doc/packages/pam_ldap/pam.d/* /etc/pam.d/");
+	    SCR::Execute(.target.bash, "/bin/mkdir -p /var/lib/yast2-config-ldap_client");
+	    SCR::Execute(.target.bash, "/bin/cp -a /etc/pam.d/* /var/lib/yast2-config-ldap_client");
+	    SCR::Execute(.target.bash, "/bin/cp -a /usr/share/doc/packages/pam_ldap/pam.d/* /etc/pam.d/");
 
-	  } else {
+	} else {
 
-	      SCR::Write(.etc.nsswitch_conf.passwd, "compat");
-	      SCR::Write(.etc.nsswitch_conf.group, "compat");
-	      SCR::Write(.etc.nsswitch_conf, nil);
-	      if (Runlevel::ServiceStatus ("nscd") == 0) {
-		  Runlevel::RunInitScript ("nscd", "restart");
-	      }	  
+	    SCR::Write(.etc.nsswitch_conf.passwd, "compat");
+	    SCR::Write(.etc.nsswitch_conf.group, "compat");
+	    SCR::Write(.etc.nsswitch_conf, nil);
+	    if (Runlevel::ServiceStatus ("nscd") == 0 && !writeonly) {
+		Runlevel::RunInitScript ("nscd", "restart");
+	    }	  
 
-	      SCR::Execute(.target.bash, "/bin/cp -a /var/lib/yast2-config-ldap_client/* /etc/pam.d");
-	      SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
-
-	  }
+	    SCR::Execute(.target.bash, "/bin/cp -a /var/lib/yast2-config-ldap_client/* /etc/pam.d");
+	    SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
+	}
 	
 	return true;
     }
