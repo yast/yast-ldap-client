@@ -63,16 +63,16 @@ global define list EditAttribute (string attr, list value, list conflicts, boole
     // help text 1/3
     string help_text = _("<p>Set the new value for current attribute.</p>") +
 
-	// help text 2/3
-	_("<p>If the attribute can have more values, you can add new entries
+    // help text 2/3
+    _("<p>If the attribute can have more values, you can add new entries
 with the <b>Add Value</b> button. Sometimes the button contains the list of
 possible values you can use for currently edited attribute.</p>");
 
     string desc = Ldap::AttributeDescription (attr);
 
     if (desc != "")
-	// help text 3/3, %1 is attribute name, %2 description
-	help_text = help_text + sformat (_("<p>The description of attribute <b>%1</b>:</p>
+	// help text 3/3, %1 is attribute name, %2 description (not translated)
+	help_text = help_text + sformat (_("<p>The description of attribute <b>%1</b><br>(available only in english):</p>
 <p><i>%2</i></p>"), attr, desc);
 
     list org_value = value;

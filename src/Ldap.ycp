@@ -18,7 +18,7 @@
     import "Summary";
     import "Progress";
     import "Label";
-	import "Mode";
+    import "Mode";
 
     include "ldap/routines.ycp";
 
@@ -99,7 +99,7 @@
      */
     global map new_objects = $[
 	"userConfiguration"	: $[
-//TODO	    "searchFilter"		: ["objectClass=posixAccount"],
+	    "searchFilter"		: ["objectClass=posixAccount"],
 	    "passwordHash"	: ["crypt"],
 	    "skelDir"		: ["/etc/skel"],
 	    "minUniqueId"	: ["500"],
@@ -108,7 +108,7 @@
 	    "maxPasswordLength" : ["8"],
 	],
 	"groupConfiguration"	: $[
-//TODO	    "searchFilter"	: ["objectClass=posixGroup"],
+	    "searchFilter"	: ["objectClass=posixGroup"],
 	    "minUniqueId"	: ["500"],
 	    "maxUniqueId"	: ["60000"],
 	],
@@ -122,7 +122,7 @@
 	"groupTemplate"		: $[
 	    "objectClass"	: [ "top", "objectTemplate", "groupTemplate"],
 	    "namingAttribute"	: [ "cn" ],
-	    "defaultObjectClass": [ "top", "posixGroup", "groupOfNames"]
+	    "defaultObjectClass": [ "top", "posixGroup", "groupOfUniqueNames"]
 	]
     ];
 
@@ -809,10 +809,9 @@ Object Class not found."),
 
         map template = add (templ, "default_values", $[]);
 	foreach (`value, templ["defaultValue"]:[], ``{
-	    list line = splitstring (value, "=");
-	    if (size (line) != 2)
-		return;
-	    template ["default_values", line[0]:""] = line[1]:"";
+	    string at = select (splitstring (value, "="), 0, "");
+	    string v = substring (value, find (value, "=") + 1);
+	    template ["default_values", at] = v;
 	});
 	return template;
     }
