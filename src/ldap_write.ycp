@@ -18,6 +18,7 @@
   map ldap_conf = Args(0);
 
   boolean start_ldap = lookup(ldap_conf, "start_ldap", false);
+  boolean nscd_is_running = (SCR (`Execute (.target.bash, "/etc/init.d/nscd status")) == 0);
 
   /* The end of the definitions */
 
@@ -30,20 +31,25 @@
     SCR::Write(.etc.nsswitch_conf.group, "files ldap");
     SCR::Write(.etc.nsswitch_conf, nil);
 
-    // XXX restart nscd if necessary !
+    if (nscd_is_running)
+      SRC::Execute(.target.bash, "/etc/init.d/nscd restart");
 
-    SCR::Execute(.target.bash, "mkdir -p /var/lib/yast2-config-ldap_client");
-    SCR::Execute(.target.bash, "cp /etc/pam.d/* /var/lib/yast2-config-ldap_client");
-    SCR::Execute(.target.bash, "cp /usr/share/doc/packages/pam_ldap/pam.d/* /etc/pam.d/");
+    SCR::Execute(.target.bash, "/bin/mkdir -p /var/lib/yast2-config-ldap_client");
+    SCR::Execute(.target.bash, "/bin/cp -a /etc/pam.d/* /var/lib/yast2-config-ldap_client");
+    SCR::Execute(.target.bash, "/bin/cp -a /usr/share/doc/packages/pam_ldap/pam.d/* /etc/pam.d/");
 
     } else {
+
     SCR::Write(.etc.nsswitch_conf.passwd, "compat");
     SCR::Write(.etc.nsswitch_conf.group, "compat");
     SCR::Write(.etc.nsswitch_conf, nil);
 
-    // XXX restart nscd if necessary !
+    if (nscd_is_running)
+      SRC::Execute(.target.bash, "/etc/init.d/nscd restart");
 
-    SCR::Execute(.target.bash, "cp /var/lib/yast2-config-ldap_client/* /etc/pam.d");
+    SCR::Execute(.target.bash, "/bin/cp -a /var/lib/yast2-config-ldap_client/* /etc/pam.d");
+    SCR::Execute(.target.bash, "/bin/rm -rf /var/lib/yast2-config-ldap_client");
+
   }
 
   return true;

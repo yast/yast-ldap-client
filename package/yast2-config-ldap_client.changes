@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Sep  6 11:32:32 CEST 2001 - kukuk@suse.de
+
+- Restart nscd after changing nsswitch.conf
+
+-------------------------------------------------------------------
 Wed Aug 22 20:18:22 CEST 2001 - kukuk@suse.de
 
 - Use new agent for reading/writing config files, fix typo in label
