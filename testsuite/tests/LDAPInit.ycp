@@ -25,7 +25,7 @@
 
     DUMP (sformat ("==== value of server: \"%1\"", Ldap::server));
 
-    TEST(``(Ldap::LDAPInit ()), [ [], [], EX ], 0);
+    TEST(``(Ldap::LDAPInit ()), [ $[], $[], EX ], 0);
 
     DUMP ("==== init (one server, nonsence port set) ========");
 
@@ -33,7 +33,7 @@
 
     DUMP (sformat ("==== value of server: \"%1\"", Ldap::server));
 
-    TEST(``(Ldap::LDAPInit ()), [ [], [], EX ], 0);
+    TEST(``(Ldap::LDAPInit ()), [ $[], $[], EX ], 0);
 
     DUMP ("==== init (more servers set) =====================");
 
@@ -42,10 +42,10 @@
 
     DUMP (sformat ("==== value of server: \"%1\"", Ldap::server));
 
-    TEST(``(Ldap::LDAPInit ()), [ [], [], EX ], 0);
+    TEST(``(Ldap::LDAPInit ()), [ $[], $[], EX ], 0);
 
     DUMP ("==== init failed =================================");
 
-    TEST(``(Ldap::LDAPInit ()), [ READ, [], EX_F ], 0);
+    TEST(``(Ldap::LDAPInit ()), [ READ, $[], EX_F ], 0);
 
 }

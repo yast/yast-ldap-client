@@ -35,6 +35,7 @@
 	    "ldap": $[
 		"BASE_CONFIG_DN": nil,
 		"BIND_DN": "uid=manager,dc=suse,dc=cz",
+		"FILE_SERVER": "no"
 	    ]
 	]
     ];
@@ -47,7 +48,7 @@
 
     DUMP ("==== reading... ============================");
 
-    TEST(``(Ldap::Read ()), [ READ, [], EX ], 0);
+    TEST(``(Ldap::Read ()), [ READ, $[], EX ], 0);
 
     DUMP ("============================================");
 

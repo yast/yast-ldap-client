@@ -70,18 +70,18 @@
 
     DUMP ("==================================================");
     DUMP (sformat ("===== current object_classes (keys):\n %1",
-	maplist (`k, `v, Ldap::object_classes, ``(k))));
+	maplist (string k, map v, Ldap::object_classes, ``(k))));
     DUMP ("==================================================");
     DUMP ("===== looking for 'userTemplate'==================");
     DUMP ("===== (superior classes already in cache) ========");
     DUMP ("==================================================");
 
 
-    TEST(``(Ldap::GetAllAttributes ("userTemplate")), [ READ1, [], [] ], 0);
+    TEST(``(Ldap::GetAllAttributes ("userTemplate")), [ READ1, $[], $[] ], 0);
 
     DUMP ("==================================================");
     DUMP (sformat ("===== updated object_classes (keys):\n %1",
-	maplist (`k, `v, Ldap::object_classes, ``(k))));
+	maplist (string k, map v, Ldap::object_classes, ``(k))));
 
     DUMP ("==================================================");
     DUMP ("===== looking for non-existent class =============");
@@ -93,10 +93,10 @@
 	],
     ]];
 
-    TEST(``(Ldap::GetAllAttributes ("userTemplat")), [ READ2, [], [] ], 0);
+    TEST(``(Ldap::GetAllAttributes ("userTemplat")), [ READ2, $[], $[] ], 0);
 
     DUMP ("==================================================");
     DUMP (sformat ("===== updated object_classes (keys):\n %1",
-	maplist (`k, `v, Ldap::object_classes, ``(k))));
+	maplist (string k, map v, Ldap::object_classes, ``(k))));
 
 }

@@ -21,7 +21,7 @@
 	]
     ]];
 
-    TEST(``(Ldap::SingleValued ("uid")), [ READ1, [], [] ], 0);
+    TEST(``(Ldap::SingleValued ("uid")), [ READ1, $[], $[] ], 0);
 
     DUMP ("==================================================");
     DUMP ("===== non-existent attribute =====================");
@@ -32,7 +32,7 @@
 	]
     ]];
 
-    TEST(``(Ldap::SingleValued ("skelDi")), [ READ2, [], [] ], 0);
+    TEST(``(Ldap::SingleValued ("skelDi")), [ READ2, $[], $[] ], 0);
 
     DUMP ("==================================================");
     DUMP ("===== non-single attribute =======================");
@@ -44,12 +44,12 @@
 	    ]
 	]
     ]];
-    TEST(``(Ldap::SingleValued ("skelDir")), [ READ3, [], [] ], 0);
+    TEST(``(Ldap::SingleValued ("skelDir")), [ READ3, $[], $[] ], 0);
 
     DUMP ("==================================================");
     DUMP ("===== skelDir once again (already in cache) ======");
 
-    TEST(``(Ldap::SingleValued ("skelDir")), [ READ3, [], [] ], 0);
+    TEST(``(Ldap::SingleValued ("skelDir")), [ READ3, $[], $[] ], 0);
 
     DUMP ("==================================================");
     DUMP ("===== cn (always single) =========================");
@@ -64,7 +64,7 @@
 	]
     ]];
 
-    TEST(``(Ldap::SingleValued ("cn")), [ READ4, [], [] ], 0);
+    TEST(``(Ldap::SingleValued ("cn")), [ READ4, $[], $[] ], 0);
 
     DUMP ("==================================================");
     DUMP ("===== description of new attribute ===============");
@@ -78,11 +78,11 @@
 	]
     ]];
 
-    TEST(``(Ldap::AttributeDescription ("defaultTemplate")), [ READ5, [], [] ], 0);
+    TEST(``(Ldap::AttributeDescription ("defaultTemplate")), [ READ5, $[], $[] ], 0);
     DUMP ("==================================================");
     DUMP ("===== description of used attribute (in cache) ===");
 
-    TEST(``(Ldap::AttributeDescription ("cn")), [ READ5, [], [] ], 0);
+    TEST(``(Ldap::AttributeDescription ("cn")), [ READ5, $[], $[] ], 0);
 
 
 }

@@ -24,9 +24,9 @@
 	]
     ];
 
-    TEST(``(Ldap::ReadLdapConfEntry ("host", "localhost")), [ READ, [], [] ],0);
+    TEST(``(Ldap::ReadLdapConfEntry ("host", "localhost")), [ READ, $[], $[] ],0);
 
-    TEST(``(Ldap::ReadLdapConfEntry ("base", "dc=test")), [ READ, [], [] ],0);
+    TEST(``(Ldap::ReadLdapConfEntry ("base", "dc=test")), [ READ, $[], $[] ],0);
 
-    TEST(``(Ldap::ReadLdapConfEntry ("nss_base_passwd", "")), [ READ,[],[]],0);
+    TEST(``(Ldap::ReadLdapConfEntry ("nss_base_passwd", "")), [ READ,$[],$[]],0);
 }

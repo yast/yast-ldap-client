@@ -11,7 +11,7 @@ Read	.etc.ldap_conf.v."/etc/ldap.conf"."pam_password" "crypt"
 Read	.etc.nsswitch_conf.passwd "compat ldap"
 Read	.etc.nsswitch_conf.group "compat ldap"
 Read	.sysconfig.ldap.BASE_CONFIG_DN nil
-Read	.sysconfig.ldap.FILE_SERVER 0
+Read	.sysconfig.ldap.FILE_SERVER "no"
 Read	.sysconfig.ldap.BIND_DN "uid=manager,dc=suse,dc=cz"
 Return	true
 Dump	============================================

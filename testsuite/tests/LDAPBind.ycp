@@ -22,17 +22,17 @@
 
     Ldap::anonymous = true;
 
-    TEST(``(Ldap::LDAPBind ("pw")), [ [], [], EX ], 0);
+    TEST(``(Ldap::LDAPBind ("pw")), [ $[], $[], EX ], 0);
 
     Ldap::anonymous = false;
     Ldap::bind_dn = "uid=manager,dc=suse,dc=cz";
 
     DUMP ("==== bind failed ====================================");
 
-    TEST(``(Ldap::LDAPBind ("p")), [ READ, [], EX_F ], 0);
+    TEST(``(Ldap::LDAPBind ("p")), [ READ, $[], EX_F ], 0);
 
     DUMP ("==== bind ok ========================================");
 
-    TEST(``(Ldap::LDAPBind ("pw")), [ [], [], EX ], 0);
+    TEST(``(Ldap::LDAPBind ("pw")), [ $[], $[], EX ], 0);
 
 }
