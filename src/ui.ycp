@@ -60,20 +60,6 @@
     }
 
     /**
-     * TODO remove this?
-     * @return
-     */
-    global define symbol WriteConfirmationPopup ()``{
-
-	// yes/no popup text
-	if (!Mode::config && !Mode::cont && Modified() && !Popup::YesNo(_("The configuration of the LDAP client will be saved
-and the client will be restarted.")))
-	    return `back;
-
-	return `next;
-    }
-
-    /**
      * Write settings dialog
      * @return `next
      */

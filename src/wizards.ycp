@@ -94,7 +94,6 @@ global define symbol MainSequence() ``{
 	"configure"	: ``( ModuleConfigurationDialog ()),
 //	"template"	: ``( TemplateConfigurationDialog ()),
 	"read_ldap"	: [``(LDAPReadDialog ()), true ],
-	"confirm_write"	: ``( WriteConfirmationPopup()),
     ];
 
     map sequence = $[
@@ -103,7 +102,6 @@ global define symbol MainSequence() ``{
 	    `abort	: "abort",
 	    `cancel	: "abort",
 	    `advanced	: "advanced",
-//	    `next	: "confirm_write"
 	    `next	: `next
 	],
 	"abort": $[
@@ -128,20 +126,7 @@ global define symbol MainSequence() ``{
 	    `abort	: "abort",
 	    `cancel	: "abort",
 	    `next	: "advanced",
-//	    `next	: "template",
 	],
-	/*
-	"template": $[
-	    `abort	: "abort",
-	    `cancel	: "abort",
-	    `next	: "configure",
-	],
-	*/
-	"confirm_write": $[
-	    `abort	: "abort",
-	    `cancel	: `back,
-	    `next	: `next
-	]
     ];
 
     any ret = WizardSequencer(aliases, sequence);

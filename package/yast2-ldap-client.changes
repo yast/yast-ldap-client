@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Aug 14 11:28:40 CEST 2003 - jsuchome@suse.de
+
+- removed confirmation popup (#28729)
+
+-------------------------------------------------------------------
 Wed Aug 13 17:08:43 CEST 2003 - jsuchome@suse.de
 
 - updated Import/Export functions
