@@ -24,10 +24,10 @@ Summary:	Configuration of NIS+
 
 %files
 %defattr(-,root,root)
-@YAST2DIR@/menuentries/menuentry_ldap_client.y2cc
-@YAST2DIR@/include/*
-@YAST2DIR@/modules/Ldapclient.ycp
-@YAST2DIR@/clients/ldap_client.ycp
-@YAST2DIR@/clients/ldap_client_*.ycp
-@YAST2DIR@/scrconf/ldap_conf.scr
-%doc @DOCDIR@
+@configdir@/ldap_client.y2cc
+@yncludedir@/ldap_client
+@moduledir@/Ldapclient.ycp
+@clientdir@/ldap_client.ycp
+@clientdir@/ldap_client_*.ycp
+@scrconfdir@/ldap_conf.scr
+%doc @docdir@
