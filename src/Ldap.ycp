@@ -54,7 +54,8 @@
     /**
      * Are LDAP services available via nsswitch.conf?
      */
-    global boolean start = false;
+    global boolean start	= false;
+    global boolean old_start	= false;
 
     /**
      * Is NIS service available? If yes, and LDAP client will be enabled, warn
@@ -494,6 +495,8 @@
 	start = contains (nsswitch["passwd"]:[], "ldap") ||
 		(contains (nsswitch["passwd"]:[], "compat") &&
 		 contains (nsswitch["passwd_compat"]:[], "ldap"));
+
+	old_start	= start;
 
 	nis_available	= contains (nsswitch["passwd"]:[], "nis") ||
 	    (contains (nsswitch["passwd"]:[], "compat") &&
@@ -1923,6 +1926,12 @@ Select another one.
 	if (ypbind_running)
 	{
 	    Service::RunInitScript ("ypbind", "restart");
+	}
+
+	if (start && !old_start && !write_only && Service::Status ("sshd") == 0)
+	{
+	    y2milestone ("restarting sshd so it will know about LDAP users...");
+	    Service::Restart ("sshd");
 	}
 
 	if (_autofs_allowed)

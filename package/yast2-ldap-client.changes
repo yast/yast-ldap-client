@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Sep 23 18:05:31 CEST 2004 - jsuchome@suse.cz
+
+- restart sshd if ldap wasn't configured before (#45000)
+- 2.10.6
+
+-------------------------------------------------------------------
 Mon Sep  6 16:16:50 CEST 2004 - jsuchome@suse.cz
 
 - now also build with added Get/SetModified calls in _auto client
