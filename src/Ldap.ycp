@@ -18,6 +18,7 @@
     import "Summary";
     import "Progress";
     import "Label";
+	import "Mode";
 
     include "ldap/routines.ycp";
 
@@ -191,27 +192,6 @@
      * @return	success
      */
     global define boolean Import (map settings) ``{
-	if (size (settings) == 0)
-	{
-	    //Provide defaults for autoinstallation editing:
-	    //Leave empty.
-	    old_domain = domain;
-	    return true;
-	}
-
-	boolean missing = false;
-	foreach (`k, ["start_ldap", "ldap_domain", "ldap_server", "ldap_v2", "ldap_tls"], ``{
-	    if (! haskey (settings, k))
-	    {
-		y2error ("Missing at Import: '%1'.", k);
-		missing = true;
-	    }
-	});
-	if (missing)
-	{
-	    return false;
-	}
-
 	start = lookup (settings, "start_ldap", false);
 	server = lookup (settings, "ldap_server", "");
 	domain = lookup (settings, "ldap_domain", "");
@@ -369,6 +349,12 @@
 	{
 	    ypbind_running = (Runlevel::ServiceStatus ("ypbind") == 0);
 		Runlevel::RunInitScript ("ypbind", "stop");
+	} else if (write_only && Mode::autoinst ){
+		// Read existing nsswitch in autoinstallation mode
+        nsswitch["passwd"] = splitstring
+           (SCR::Read(.etc.nsswitch_conf.passwd)," ");
+        nsswitch["group"] = splitstring
+           (SCR::Read(.etc.nsswitch_conf.group), " ");
 	}
 	map new_nsswitch = $[ "passwd":"", "group": ""];
 

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Jul  8 17:17:14 CEST 2003 - nashif@suse.de
+
+- Read /etc/nsswitch.conf before writing configuration in autoinst
+  mode 
+
+-------------------------------------------------------------------
 Wed Jul  2 13:19:17 CEST 2003 - jsuchome@suse.de
 
 - LdapPopup module offers edit-popups outside (e.g. for users-module)
