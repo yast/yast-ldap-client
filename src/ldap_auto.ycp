@@ -73,7 +73,7 @@ else if (func == "Write") {
     import "Progress";
     Ldap::write_only = true;
     Progress::off();
-    ret = Ldap::Write(``{});
+    ret = Ldap::Write(``{ return false;});
     Progress::on();
 }
 else if (func == "Packages") {
