@@ -22,21 +22,27 @@
   /* The end of the definitions */
 
   if (start_ldap) {
-    SCR::Write(.etc.openldap.ldap_conf, [$["value":lookup(ldap_conf, "ldap_address"),
-	"variable":"host"]]);
-    SCR::Write(.etc.openldap.ldap_conf, [$["value":lookup(ldap_conf, "ldap_domain"),
-	"variable":"base"]]);
-    SCR::Write(.etc.nsswitch_conf, [$["services":["files", "ldap"],
-	"database":"passwd"]]);
+    SCR::Write(.etc.openldap.ldap_conf.host, lookup(ldap_conf, "ldap_address"));
+    SCR::Write(.etc.openldap.ldap_conf.base, lookup(ldap_conf, "ldap_domain"));
+    SCR::Write(.etc.openldap.ldap_conf, nil);
+
+    SCR::Write(.etc.nsswitch_conf.passwd, "files ldap");
+    SCR::Write(.etc.nsswitch_conf.group, "files ldap");
+    SCR::Write(.etc.nsswitch_conf, nil);
+
+    // XXX restart nscd if necessary !
 
     SCR::Execute(.target.bash, "mkdir -p /var/lib/yast2-config-ldap_client");
     SCR::Execute(.target.bash, "cp /etc/pam.d/* /var/lib/yast2-config-ldap_client");
     SCR::Execute(.target.bash, "cp /usr/share/doc/packages/pam_ldap/pam.d/* /etc/pam.d/");
 
     } else {
+    SCR::Write(.etc.nsswitch_conf.passwd, "compat");
+    SCR::Write(.etc.nsswitch_conf.group, "compat");
+    SCR::Write(.etc.nsswitch_conf, nil);
 
-    // restore old nsswitch.conf
-    SCR::Write(.etc.nsswitch_conf, [$["services":["compat"], "database":"passwd"]]);
+    // XXX restart nscd if necessary !
+
     SCR::Execute(.target.bash, "cp /var/lib/yast2-config-ldap_client/* /etc/pam.d");
   }
 

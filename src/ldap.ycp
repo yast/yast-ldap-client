@@ -47,11 +47,11 @@
     will be configured accordingly to use LDAP for user authentification.</p>"));
 
     boolean ldap_client = (SCR (`Execute (.target.bash, "grep '^passwd:.*ldap' /etc/nsswitch.conf")) == 0);
-    string ldap_domain   = ""; //SCR::Read(.etc.openldap.ldap_conf.base);
-    string ldap_address  = ""; //SCR::Read(.etc.openldap.ldap_conf.host);
+    string ldap_domain  = SCR::Read(.etc.openldap.ldap_conf.base);
+    string ldap_address = SCR::Read(.etc.openldap.ldap_conf.host);
 
 // frame label
-    term con = `HVSquash(`Frame (_("LDAPO client"),
+    term con = `HVSquash(`Frame (_("LDAP client"),
                                  `VBox (`VSpacing (0.2),
                                         `RadioButtonGroup(`id(`rd),
                                                           // radio button label
