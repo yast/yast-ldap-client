@@ -1,7 +1,15 @@
 -------------------------------------------------------------------
+Fri Jul 26 14:40:38 CEST 2002 - kukuk@suse.de
+
+- Remove yast2-runlevel from requires
+
+-------------------------------------------------------------------
 Mon Jul 22 11:38:25 PDT 2002 - kukuk@suse.de
 
 - merged proofread texts
+- check, that base DN and server addresses are not empty
+- allow more than one LDAP server addresses
+- release version 2.6.3
 
 -------------------------------------------------------------------
 Fri Jul 12 16:33:23 CEST 2002 - arvin@suse.de
