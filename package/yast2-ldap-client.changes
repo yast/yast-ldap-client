@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Thu Jan  6 15:23:36 CET 2005 - jsuchome@suse.cz
+
+- read server name before asking for password
+- do not treat "cn" attribute as single valued automatically
+- before saving, show message recommending restart of machine (#45000)
+- enable choosing LDAP server from SLP results
+- 2.11.5
+
+-------------------------------------------------------------------
 Wed Dec 15 14:31:20 CET 2004 - jsuchome@suse.cz
 
 - do not show Abort button in 'pseudo-popups' 

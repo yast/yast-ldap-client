@@ -23,6 +23,7 @@
     import "Popup";
     import "Report";
     import "Service";
+    import "SLP";
     import "Stage";
     import "Wizard";
 
@@ -86,51 +87,98 @@
 	return `next;
     }
 
+
+    /**
+     * Select from LDAP servers provided by SLP
+     */
+    define string BrowseServers () {
+
+	string servers	= "";
+
+	UI::OpenDialog (`VBox(
+	    `HSpacing (36),
+	    `ReplacePoint (`id (`rp),
+		`MultiSelectionBox (`id(`sel),
+		// multiselection box label
+		_("LDAP &Servers provided by SLP:"), [])
+	    ),
+	    `HBox (
+		`PushButton (`id(`ok), Label::OKButton()),
+		`PushButton (`id(`cancel), Label::CancelButton())
+	    )
+	));
+	UI::BusyCursor ();
+
+	list items	= [];
+	foreach (map service, SLP::FindSrvs ("service:ldap", ""), {
+	    string s	= service["pcHost"]:service["srvurl"]:"";
+	    items	= add (items, s);
+	});
+	UI::ReplaceWidget (`id(`rp),`MultiSelectionBox (`id(`sel),
+	    // selection box label
+	     _("LDAP &Servers provided by SLP:"),items)
+	);
+
+	UI::NormalCursor ();
+	any ret = "";
+	do
+	{
+	    ret		= UI::UserInput ();
+	    servers	= mergestring (
+		(list<string>)UI::QueryWidget (`id (`sel),`SelectedItems), " ");
+
+	} while (ret != `ok && ret != `cancel);
+
+	UI::CloseDialog ();
+	return ret == `ok ? servers : "";
+    }
+
     /**
      * The main dialog for ldap-client configuration
      * @return	`back, `next or `abort
      */
     define symbol LdapDialog () {
 
-	// help text 1/6
+	// help text 1/9
 	string help_text = _("<p>Here, your machine can be set up as an
 <b>LDAP client</b>.</p>") +
 
-	// help text 2/6
+	// help text 2/9
 	_("<p>To authenticate your users with an OpenLDAP server, select <b>Use LDAP</b>. NSS and PAM will be configured accordingly.</p>") +
 
-	// help text 3/6
+	// help text 3/9
 	_("<p>To deactivate LDAP services, click <b>Do Not Use LDAP</b>.
 If you deactivate LDAP, the current LDAP entry for passwd in /etc/nsswitch.conf
 will be removed. The PAM configuration will be modified and the LDAP entry
 removed.</p>") +
 
 
-	// help text 3.5/6
-	_("<p>Enter the <b>Distinguished Name</b> of the search base (\"base DN\", such as
-dc=example,dc=com) in the first entry and the LDAP server's address
-(e.g., ldap.example.com or 10.20.0.2) in the second. Specify multiple servers
+	// help text 4/9
+	_("<p>Enter the <b>LDAP server's address</b> (e.g., ldap.example.com or 10.20.0.2) in the first entry and <b>Distinguished Name</b> of the search base (\"base DN\", such as dc=example,dc=com) in the second. Specify multiple servers
 by separating their addresses with spaces. It must be possible to resolve the
 addresses without using LDAP. You can also specify the port on which the server is running using the syntax \"server:port\", for example, ldap.example.com:379.
 </p>
 ") +
 
-	// help text 4/6
+	// help text 5/9
+	_("<p>With <b>Find</b> button, select the LDAP server from the list provided by Service Location Protocol (SLP). Using <b>Fetch DN</b>, read the base DN from server.</p>") +
+
+	// help text 6/9
 	_("<p>Some LDAP servers support StartTLS [RFC2830].
 If your server supports it and it is configured, activate <b>LDAP TLS/SSL</b>
 to encrypt your communication with the LDAP server.</p>") +
 
-	// help text 5/6
+	// help text 7/9
 	_("<p>Normally, the LDAP version 3 protocol will be used. If you have
 an LDAP server using protocol 2 (for example, OpenLDAP v1), activate
 <b>LDAP Version 2</b>.</p>
 ") +
 
-	// help text 6/6
+	// help text 8/9
 	_("<p>For configuration of advanced LDAP settings, click
 <b>Advanced Configuration</b>.</p>
 ");
-	// help text 7/6 (additional)
+	// help text 9/9 (additional)
 	string autofs_help_text = _("<p><b>Automounter</b> is a daemon that automatically mounts directories,
 such as users' home directories.
 It is assumed that its configuration files (auto.*) already exist
@@ -178,9 +226,16 @@ automatically.</p>
 	    // frame label
 	    `Frame (_("LDAP client"), `HBox (`HSpacing (0.5), `VBox(
 		`VSpacing (0.5),
-		// text entry label
-		`TextEntry (`id (`ldapa), _("Addresses of LDAP &Servers"),
-		    server),
+		`HBox (
+		    // text entry label
+		    `TextEntry (`id (`ldapa), _("Addresses of LDAP &Servers"),
+			server),
+		    `VBox (
+			`Label (""),
+			// push button label
+			`PushButton (`id(`slp), _("F&ind"))
+		    )
+		),
 		`HBox (
 		    // text entry label
 		    `TextEntry (`id (`ldapd), _("LDAP base &DN"), domain),
@@ -228,6 +283,12 @@ automatically.</p>
 	    ldap_v2	= (boolean) UI::QueryWidget(`id(`ldapv), `Value);
 	    ldap_tls	= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
 
+	    if (result == `slp)
+	    {
+		string srv = BrowseServers ();
+		if (srv != "")
+		    UI::ChangeWidget (`id(`ldapa), `Value, srv);
+	    }
 	    if (result == `fetch)
 	    {
 		string dn = LdapPopup::InitAndBrowseTree ("", $[
@@ -319,13 +380,23 @@ you cannot retrieve the data from NIS.  Are you sure?")))
 		    {
 			// popup text
 			Autologin::AskForDisabling(_("Now you have enabled LDAP."));
-			if (Service::Status ("sshd") == 0 && ! Mode::config())
+			if (!Mode::config())
 			{
-			    // yes/no popup
-			    Ldap::RestartSSHD (Stage::cont () || Popup::YesNo (_("To enable remote login for LDAP users,
-restart of 'sshd' service is necessary.
-Do the restart during writing?
-")));
+			    string message	=
+			    // message popup, part 1/2
+_("This change will only affect newly created processes and not already
+running services.  Restart your services manually or reboot the machine
+for an automatic enablement.");
+
+			    if (Service::Status ("sshd") == 0)
+			    {
+				Ldap::RestartSSHD (true);
+				// message popup, part 1/2
+				message = message + _("
+To enable remote login for LDAP users, service 'sshd' will be
+restarted automaticaly by YaST.");
+			    }
+			    Popup::Message (message);
 			}
 		    }
 		}
@@ -651,7 +722,7 @@ removing current ones.</p>
     // helper function converting list value to string
     define string to_table (string attr, list<string> val) ``{
 
-	if (Ldap::SingleValued (attr))
+	if (Ldap::SingleValued (attr) || attr == "cn")
 	    return val[0]:"";
 	else if (contains (["susesecondarygroup", "susedefaulttemplate"], attr))
 	    return mergestring (val, " ");
@@ -754,7 +825,7 @@ removing current ones.</p>
 		"attr"		: attr,
 		"value"		: value,
 		"conflicts"	: conflicts,
-		"single"	: Ldap::SingleValued (attr),
+		"single"	: Ldap::SingleValued (attr) || attr == "cn",
 		"offer"		: offer,
 		"browse"	: attr == "susesecondarygroup"
 	    ]);
@@ -899,7 +970,7 @@ click <b>Configure Template</b>.
 	    if (is (value, list))
 	    {
 		list lvalue	= (list) value;
-		if (Ldap::SingleValued (attr))
+		if (Ldap::SingleValued (attr) || attr == "cn")
 		    val = lvalue[0]:"";
 		else
 		    val = mergestring ((list<string>)value, ",");
@@ -1107,7 +1178,7 @@ of each type, so you cannot add a new one."));
 		"attr"		: attr,
 		"value"		: value,
 		"conflicts"	: conflicts,
-		"single"	: Ldap::SingleValued (attr),
+		"single"	: Ldap::SingleValued (attr) || attr == "cn",
 		"offer"		: offer,
 		"browse"	:
 		    // TODO function, that checks if value should be DN

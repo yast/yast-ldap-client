@@ -714,6 +714,12 @@ Value of DN is missing or invalid."),
     // this is a hack
     global define string GetFirstServer (string servers) ``{
 
+	if (bind_pass == nil && servers == "")
+	{
+	    y2milestone ("--- server not read yet or empty, reading now");
+	    servers	= ReadLdapConfEntry ("host", "");
+	}
+
 	list l_servers = splitstring (servers, " \t");
 	string srv = l_servers[0]:"";
 	return substring (srv, 0, find (srv, ":"));
@@ -737,7 +743,7 @@ Value of DN is missing or invalid."),
      */
     global define string LDAPInit () ``{
 
-	// TODO what if we have more servers? -> choose dialog!
+	// FIXME what if we have more servers? -> choose dialog?
 	string ret = "";
 	map args = $[
 	    "hostname":	GetFirstServer (server),
@@ -853,9 +859,6 @@ Value of DN is missing or invalid."),
 	    map attr_type = (map)SCR::Read (.ldap.schema.at, $["name":attr]);
 	    if (attr_type == nil)
 		attr_type = $[];
-	    if (attr == "cn")
-		// well, cn is not "single value" according to schema, but...
-		attr_type ["single"] = true;
 	    attr_types [attr] = attr_type;
 	}
 	return attr_types [attr, "single"]:false;
@@ -1854,9 +1857,7 @@ Select another one.
 		Nsswitch::WriteDb (new_db, nsswitch[new_db]:["ldap"]);
 	    });
 
-	    SCR::Write(.etc.nsswitch_conf, nil);
-	    // TODO Nsswitch::Write ()
-
+	    Nsswitch::Write ();
 	    Autologin::Write (write_only);
 	}
 	else // ldap is not used

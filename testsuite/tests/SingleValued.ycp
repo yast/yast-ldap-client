@@ -61,7 +61,7 @@
     TEST(``(Ldap::SingleValued ("skeldir")), [ READ3, $[], $[] ], 0);
 
     DUMP ("==================================================");
-    DUMP ("===== cn (always single) =========================");
+    DUMP ("===== cn (not single) ============================");
 
     map READ4 =	$[ "ldap": $[
 	"schema": $[
