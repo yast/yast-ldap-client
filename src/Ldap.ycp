@@ -1914,7 +1914,7 @@ Select another one.
 	}
 
 	// write changes to /etc/security/pam_unix2.conf now
-	PamSettings::Write (["pam_unix2"]);
+	PamSettings::Write (false);
 
 	// write sysconfig values
 	SCR::Write (.sysconfig.ldap.FILE_SERVER, file_server? "yes": "no");
@@ -1988,8 +1988,9 @@ Select another one.
 
 	if (ldap_modified && ldap_ok)
 	{
-	    if (WriteLDAP (config_modules))
-		WriteLDAP (templates);
+	    if (WriteLDAP (config_modules) && WriteLDAP (templates)) {
+		ldap_modified	= false;
+	    }
 	}
 
 	// final stage

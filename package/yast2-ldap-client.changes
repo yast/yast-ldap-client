@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Jun 28 14:58:23 CEST 2004 - jsuchome@suse.cz
+
+- updated for current yast2-pam usage
+- 2.10.0
+
+-------------------------------------------------------------------
 Wed May 26 12:23:31 CEST 2004 - jsuchome@suse.cz
 
 - write nss_map_attribute even if it is not present in ldap.conf (#41212)
