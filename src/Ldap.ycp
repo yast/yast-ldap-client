@@ -45,6 +45,9 @@
     global boolean ldap_v2 = false;
     global boolean ldap_tls = false;
 
+    /* Which crypt method should be used? If not set, use crypt. */
+    global string pam_password = "";
+
     /* variables for LDAP user configuration, stored in /etc/cpu.cfg */
     global string user_base = "";
     global string group_base = "";
@@ -122,6 +125,7 @@
 	domain = lookup (settings, "ldap_domain", "");
 	ldap_v2 = lookup (settings, "ldap_v2", false);
 	ldap_tls = lookup (settings, "ldap_tls", false);
+	pam_password = lookup (settings, "pam_password", "crypt");
 	old_domain = domain;
 	return true;
     }
@@ -136,6 +140,7 @@
 	domain = lookup (settings, "ldap_domain", "");
 	ldap_v2 = lookup (settings, "ldap_v2", false);
 	ldap_tls = lookup (settings, "ldap_tls", false);
+	pam_password = lookup (settings, "pam_password", "crypt");
 	return;
     }
 
@@ -150,6 +155,7 @@
 	    "ldap_domain": domain,
 	    "ldap_v2": ldap_v2,
 	    "ldap_tls": ldap_tls,
+	    "pam_password": pam_password,
 	    ];
     }
 
@@ -169,6 +175,10 @@
 	}
 	ldap_v2 = (SCR::Read(.etc.openldap.ldap_conf.ldap_version) == "2");
 	ldap_tls = (SCR::Read(.etc.openldap.ldap_conf.ssl) == "start_tls");
+	pam_password = SRC::Read(.etc.openldap.ldap_conf.pam_password);
+	if (pam_password == nil) {
+	  pam_password = "crypt"; /* else plain text is used, bad idea.  */
+	}
 
     nsswitch["passwd"] = splitstring (SCR::Read(.etc.nsswitch_conf.passwd)," ");
     nsswitch["group"] = splitstring (SCR::Read(.etc.nsswitch_conf.group), " ");
@@ -186,6 +196,9 @@
      * @return true on success
      */
     global define boolean Write () ``{
+    if (cpu_modified)
+        WriteCpuSettings ();
+
 
     boolean ypbind_running = false;
 
@@ -207,11 +220,7 @@
 	      SCR::Write(.etc.openldap.ldap_conf.ssl, "start_tls");
             else
 	      SCR::Write(.etc.openldap.ldap_conf.ssl, "no");
-
-        if (user_base != "")
-            SCR::Write(.etc.openldap.ldap_conf.nss_base_passwd, user_base);
-        if (group_base != "")
-            SCR::Write(.etc.openldap.ldap_conf.nss_base_group, group_base);
+            SCR::Write(.etc.openldap.ldap_conf.pam_password, pam_password);
 
 	    SCR::Write(.pam.all.account.pam_unix2, "+use_ldap");
 	    SCR::Write(.pam.all.auth.pam_unix2, "+use_ldap");
@@ -253,9 +262,6 @@
     if (ypbind_running)
         Runlevel::RunInitScript ("ypbind", "restart");
 
-    if (cpu_modified)
-        WriteCpuSettings ();
-
 	return true;
     }
 
@@ -272,6 +278,15 @@
         SCR::Write (.etc.cpu_cfg."group_base", group_base);
         SCR::Write (.etc.cpu_cfg."bind_dn", bind_dn);
         SCR::Write (.etc.cpu_cfg, "force");
+
+        if (user_base != "")
+        {
+            SCR::Write(.etc.openldap.ldap_conf.nss_base_passwd, user_base);
+            SCR::Write(.etc.openldap.ldap_conf.nss_base_shadow, user_base);
+        }
+        if (group_base != "")
+            SCR::Write(.etc.openldap.ldap_conf.nss_base_group, group_base);
+
     }
 
     /**

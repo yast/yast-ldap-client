@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Feb 20 18:07:29 CET 2003 - kukuk@suse.de
+
+- Write "pam_password crypt" if entry does not exists
+- Write nss_* variables in ldap.conf only if cpu is configured
+  (Patch by Jiri Suchomel)
+- Release 2.7.5
+
+-------------------------------------------------------------------
 Wed Feb 19 14:18:37 CET 2003 - jsuchome@suse.de
 
 - Enable only starting service if run during the installation (#23831)
