@@ -9,7 +9,8 @@
  *   LDAP client configuration data, I/O functions.
  *
  * Authors:
- 
+ *   Thorsten Kukuk <kukuk@suse.de>
+ *   Anas Nashif <nashif@suse.de> 
  *
  * $Id$
  *

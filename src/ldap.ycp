@@ -9,13 +9,10 @@
  *   Main file
  *
  * Authors:
- *   Dan Vesely <dan@suse.cz>
- *   Martin Vidner <mvidner@suse.cz>
+ *   Thorsten Kukuk <kukuk@suse.de>
+ *   Anas Nashif <nashif@suse.de>
  *
  * $Id$
- *
- * Configure ypclient via running SuSEconfig
- * Modify: /etc/rc.config
  *
  */
 
