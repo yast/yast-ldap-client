@@ -25,6 +25,12 @@
 
     import "PamSettings";
 
+
+    /**
+     * show popups with error messages?
+     */
+    global boolean use_gui	= true;
+
     /**
      * DN of base configuration object
      */
@@ -409,6 +415,13 @@ Value of DN is missing or invalid."),
 	    "schema": _("Problem with reading schema from the LDAP server."),
 	];
 
+	if (!use_gui)
+	{
+	    y2error (error_type[type]:"Unknown LDAP error");
+	    y2error (ldap_error[error]:error);
+	    return;
+	}
+
 	if (error == nil) error = "YaST error?";
 
 	UI::OpenDialog (`HBox(`HSpacing (0.5),
@@ -702,9 +715,9 @@ Value of DN is missing or invalid."),
     /**
      * Prepare agent for later schema queries
      * (agent reads schema to its internal structures)
-     * @return success
+     * @return error message
      */
-    global define boolean InitSchema () ``{
+    global define string InitSchema () ``{
 
 	list schemas = (list)SCR::Read (.ldap.search, $[
 	    "base_dn":  "",
@@ -713,16 +726,11 @@ Value of DN is missing or invalid."),
 	]);
 	string schema_dn = schemas[0,"subschemaSubentry",0]:"";
 	if (schemas == nil || schema_dn == "")
-	{
-	    LDAPErrorMessage ("schema", LDAPError());
-	    return false;
-	}
-	boolean ok = (boolean)SCR::Execute
-	    (.ldap.schema, $[ "schema_dn": schema_dn ]);
+	    return LDAPError();
 
-	if (!ok)
-	    LDAPErrorMessage ("schema", LDAPError());
-	return ok;
+	if (!(boolean)SCR::Execute (.ldap.schema, $[ "schema_dn": schema_dn ]))
+	    return LDAPError();
+	return "";
     }
 
     /**
@@ -745,9 +753,9 @@ Value of DN is missing or invalid."),
 
     /**
      * Read object templates from LDAP server
-     * @return map of templates in the form $[ DN: $[ map_of_one_template ] ]
+     * @return string error message
      */
-    global define map ReadTemplates () ``{
+    global define string ReadTemplates () ``{
 
 	templates = $[];
 	map all = (map)SCR::Read (.ldap.search, $[
@@ -760,8 +768,7 @@ Value of DN is missing or invalid."),
 	]);
 	if (all == nil)
 	{
-	    LDAPErrorMessage ("read", LDAPError());
-	    all = $[];
+	    return LDAPError();
 	}
 	// create a helper map of default values inside ...
 	templates = mapmap (string dn, map templ, all, ``{
@@ -769,14 +776,14 @@ Value of DN is missing or invalid."),
 	    template = AddMissingAttributes (template);
 	    return $[dn : template];
 	});
-	return templates;
+	return "";
     }
 
     /**
      * Read configuration moduels from LDAP server
-     * @return map of config modules in the form $[ DN: $[ map_of_one_module] ]
+     * @return string error message
      */
-    global define map ReadConfigModules () ``{
+    global define string ReadConfigModules () ``{
 
 	config_modules = $[];
 	map modules = (map)SCR::Read (.ldap.search, $[
@@ -790,14 +797,12 @@ Value of DN is missing or invalid."),
 	]);
 	if (modules == nil)
 	{
-	    LDAPErrorMessage ("read", LDAPError());
-	    modules = $[];
+	    return LDAPError ();
 	}
 	config_modules = mapmap (string dn, map mod, modules, ``{
 	    return $[dn : AddMissingAttributes (mod)];
 	});
-
-	return config_modules;
+	return "";
     }
 
     /**
@@ -853,6 +858,7 @@ The object with the selected DN cannot be created.
 
     /**
      * Return the map of configuration modules (new copy)
+     * (in the form $[ DN: $[ map_of_one_module] ])
      */
     global define map GetConfigModules () ``{
 
@@ -1448,5 +1454,13 @@ exists on the LDAP server. Create it now?
      */
     global define void SetAnonymous (boolean anon) ``{
 	anonymous = anon;
+    }
+
+    /**
+     * Set the value of 'use_gui' variable (= show error popups)
+     * @param gui new value
+     */
+    global define void SetGUI (boolean gui) ``{
+	use_gui	= gui;
     }
 }

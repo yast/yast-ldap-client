@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Feb 10 18:17:14 CET 2004 - jsuchome@suse.cz
+
+- change some return values: error messages, not boolean
+
+-------------------------------------------------------------------
 Mon Feb  9 15:35:36 CET 2004 - jsuchome@suse.cz
 
 - API for setting global variables (e.g. password)

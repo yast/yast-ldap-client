@@ -369,15 +369,21 @@ directories.</p>
  */
 global define symbol LDAPReadDialog () ``{
 
+    string msg = "";
+
     if (!Ldap::binded || Modified())
     {
 	if (!Ldap::binded || Ldap::modified)
 	{
-	    Ldap::LDAPInit ();
+	    msg = Ldap::LDAPInit ();
+	    if (msg != "") Ldap::LDAPErrorMessage ("init", msg);
+
 	    Ldap::bind_pass = Ldap::LDAPAskAndBind (true);
 	    if (Ldap::bind_pass == nil)
 		return `back;
-	    Ldap::InitSchema ();
+
+	    msg = Ldap::InitSchema ();
+	    if (msg != "") Ldap::LDAPErrorMessage ("schema", msg);
 	}
 	if (!Ldap::CheckBaseConfig (Ldap::base_config_dn))
 	    return `back;
@@ -389,8 +395,12 @@ All changes will be lost.
 "), Label::YesButton(), Label::NoButton(), `focus_no))
 	)
 	{
-	    Ldap::ReadConfigModules ();
-	    Ldap::ReadTemplates ();
+	    msg = Ldap::ReadConfigModules ();
+	    if (msg != "") Ldap::LDAPErrorMessage ("read", msg);
+
+	    msg = Ldap::ReadTemplates ();
+	    if (msg != "") Ldap::LDAPErrorMessage ("read", msg);
+
 	    Ldap::ldap_modified = false;
 	}
 	Ldap::binded = true;
