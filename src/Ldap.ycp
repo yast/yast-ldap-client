@@ -348,6 +348,8 @@
 	old_domain		= domain;
 	old_server		= server;
 	old_member_attribute	= member_attribute;
+	modified		= true;
+	openldap_modified	= true;
 	return;
     }
 
@@ -644,8 +646,6 @@
 		old_server	= old_s;
 		old_domain	= old_d;
 		old_member_attribute	= old_m;
-		modified	= true;
-		openldap_modified	= true;
 	    }
 	}
 

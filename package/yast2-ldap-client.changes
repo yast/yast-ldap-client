@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Mon Feb  7 13:58:36 CET 2005 - jsuchome@suse.cz
+
+- fixed saving during autoinstallation (#50535)
+- merged texts from proofreading
+- 2.11.8
+
+-------------------------------------------------------------------
 Mon Jan 31 11:34:45 CET 2005 - jsuchome@suse.cz
 
 - install also architecture-specific packages (#49808)

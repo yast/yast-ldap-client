@@ -100,7 +100,7 @@
 	    `ReplacePoint (`id (`rp),
 		`MultiSelectionBox (`id(`sel),
 		// multiselection box label
-		_("LDAP &Servers provided by SLP:"), [])
+		_("LDAP &Servers Provided by SLP:"), [])
 	    ),
 	    `HBox (
 		`PushButton (`id(`ok), Label::OKButton()),
@@ -116,7 +116,7 @@
 	});
 	UI::ReplaceWidget (`id(`rp),`MultiSelectionBox (`id(`sel),
 	    // selection box label
-	     _("LDAP &Servers provided by SLP:"),items)
+	     _("LDAP &Servers Provided by SLP:"),items)
 	);
 
 	UI::NormalCursor ();
@@ -154,14 +154,14 @@ removed.</p>") +
 
 
 	// help text 4/9
-	_("<p>Enter the <b>LDAP server's address</b> (e.g., ldap.example.com or 10.20.0.2) in the first entry and <b>Distinguished Name</b> of the search base (\"base DN\", such as dc=example,dc=com) in the second. Specify multiple servers
+	_("<p>Enter the LDAP server's <b>address</b> (e.g., ldap.example.com or 10.20.0.2) in the first entry and <b>Distinguished Name</b> of the search base (\"base DN\", such as dc=example,dc=com) in the second. Specify multiple servers
 by separating their addresses with spaces. It must be possible to resolve the
 addresses without using LDAP. You can also specify the port on which the server is running using the syntax \"server:port\", for example, ldap.example.com:379.
 </p>
 ") +
 
 	// help text 5/9
-	_("<p>With <b>Find</b> button, select the LDAP server from the list provided by Service Location Protocol (SLP). Using <b>Fetch DN</b>, read the base DN from server.</p>") +
+	_("<p>With <b>Find</b>, select the LDAP server from the list provided by the service location protocol (SLP). Using <b>Fetch DN</b>, read the base DN from server.</p>") +
 
 	// help text 6/9
 	_("<p>Some LDAP servers support StartTLS [RFC2830].
@@ -334,7 +334,8 @@ automatically.</p>
 		    // popup question: user enabled LDAP now, but probably has
 		    // enabled NIS client before
 		    if (!Popup::YesNo (_("When you configure your machine as an LDAP client,
-you cannot retrieve the data from NIS. Are you sure?")))
+you cannot retrieve data with NIS. Are you sure?
+")))
 		    {
 			result = `not_next;
 			continue;
@@ -346,9 +347,10 @@ you cannot retrieve the data from NIS. Are you sure?")))
 		    any ret = Popup::AnyQuestion3 (
 			Popup::NoHeadline(),
 			// popup question
-_("An active configurtion of Kerberos client is present.
-What do you want to use as a primary authentication service?"),
-			_("&Ldap"),
+_("An active configuration of the Kerberos client is present.
+Which should be used as the primary authentication service?
+"),
+			_("&LDAP"),
 			_("&Kerberos"),
 			Label::CancelButton (),
 			`focus_yes
@@ -409,17 +411,19 @@ What do you want to use as a primary authentication service?"),
 			{
 			    string message	=
 			    // message popup, part 1/2
-_("This change will only affect newly created processes and not already
-running services.  Restart your services manually or reboot the machine
-for an automatic enablement.");
+_("This change only affects newly created processes and not already
+running services. Restart your services manually or reboot 
+the machine to enable it for all services.
+");
 
 			    if (Service::Status ("sshd") == 0)
 			    {
 				Ldap::RestartSSHD (true);
 				// message popup, part 1/2
 				message = message + _("
-To enable remote login for LDAP users, service 'sshd' will be
-restarted automaticaly by YaST.");
+To enable remote login for LDAP users, 'sshd' will be
+restarted automatically by YaST.
+");
 			    }
 			    Popup::Message (message);
 			}
