@@ -20,7 +20,7 @@ X-SuSE-YaST-AutoInstClonable=true
 Icon=ldap_client
 Exec=/sbin/yast2 ldap 
 
-Name=LDAP client
+Name=LDAP Client
 GenericName=Configure LDAP client
 Name[cs]=Klient LDAP
 GenericName[cs]=Nastavit klienta LDAP
