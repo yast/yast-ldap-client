@@ -36,8 +36,8 @@ Summary:	Configuration of LDAP client
 @desktopdir@/ldap.desktop
 %dir @yncludedir@/ldap
 @yncludedir@/ldap/*
-@moduledir@/Ldap.ycp
-@moduledir@/LdapPopup.ycp
+@moduledir@/Ldap.y*
+@moduledir@/LdapPopup.y*
 @clientdir@/ldap*.ycp
 @scrconfdir@/*.scr
 %doc @docdir@
