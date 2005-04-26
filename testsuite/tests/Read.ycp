@@ -65,6 +65,9 @@
 	"product" : $[ "features" :
 	    $[ "EVMS_CONFIG" : "nazdar" ],
 	],
+	"target"	: $[
+	    "size"	: -1
+	],
     ];
 
     map EX = $[

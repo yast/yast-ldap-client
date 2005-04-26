@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Apr 26 15:05:15 CEST 2005 - jsuchome@suse.cz
+
+- adapt testsuite for changes in Autologin.ycp
+- 2.12.1 
+
+-------------------------------------------------------------------
 Fri Apr  1 14:07:21 CEST 2005 - jsuchome@suse.cz
 
 - unified server searching popup (#66591)
