@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Apr 28 12:39:08 CEST 2005 - jsuchome@suse.cz
+
+- show admin's DN when asking for password (#76394)
+- 2.12.2
+
+-------------------------------------------------------------------
 Tue Apr 26 15:05:15 CEST 2005 - jsuchome@suse.cz
 
 - adapt testsuite for changes in Autologin.ycp

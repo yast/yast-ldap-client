@@ -773,6 +773,24 @@ Value of DN is missing or invalid."),
 	return error;
     }
 
+
+    /**
+     * return administrator's DN
+     * if it was not read yet, read it now
+     */
+    global define string GetBindDN () {
+
+	if (bind_pass == nil && size (bind_dn) == 0)
+	{
+	    y2milestone ("--- bind dn not read yet or empty, reading now");
+	    bind_dn = (string)SCR::Read (.sysconfig.ldap.BIND_DN);
+	    if (bind_dn == nil || bind_dn == "")
+		bind_dn = ReadLdapConfEntry ("binddn", "");
+	}
+	return bind_dn;
+    }
+
+
     // this is a hack
     global define string GetFirstServer (string servers) ``{
 
@@ -862,7 +880,10 @@ Value of DN is missing or invalid."),
             `HSpacing(40),
             // password entering label
             `Password(`id(`pw), _("&Enter the Password for LDAP Server:")),
-	    `Label (GetFirstServer (server)),
+	    // label
+	    `Label (sformat (_("Server: %1"), GetFirstServer (server))),
+	    // label (%1 is admin DN - string)
+	    `Label (sformat (_("Administrator: %1"), GetBindDN ())),
             `HBox(
               `PushButton (`id(`ok),`opt(`key_F10, `default),
 		Label::OKButton()),
