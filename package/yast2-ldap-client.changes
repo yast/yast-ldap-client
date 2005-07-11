@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Fri Jul  1 14:58:09 CEST 2005 - jsuchome@suse.cz
+
+- UI restructuralization:
+    use tabs in Advanced dialog, add expert settings for client
+    move "disable login" checkbox out to the first dialog
+- 2.12.3
+
+-------------------------------------------------------------------
 Thu Apr 28 12:39:08 CEST 2005 - jsuchome@suse.cz
 
 - show admin's DN when asking for password (#76394)

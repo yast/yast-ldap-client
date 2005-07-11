@@ -104,6 +104,10 @@
 	list items	= [];
 	foreach (map service, SLP::FindSrvs ("service:ldap", ""), {
 	    string s	= service["pcHost"]:service["srvurl"]:"";
+	    /* TODO take address+port from url
+	    if (service["pcHost"]:"" == "")
+		s	= service["srvurl"]:"";
+	    */
 	    items	= add (items, s);
 	});
 	UI::CloseDialog ();
@@ -152,6 +156,8 @@ If you deactivate LDAP, the current LDAP entry for passwd in /etc/nsswitch.conf
 will be removed. The PAM configuration will be modified and the LDAP entry
 removed.</p>") +
 
+	// help text 3.5/9
+	_("<p>To activate LDAP, but dissalow users to log in to this machine, select <b>Enable LDAP Users but disable Logins</b>.</p>") +
 
 	// help text 4/9
 	_("<p>Enter the LDAP server's <b>address</b> (e.g., ldap.example.com or 10.20.0.2) in the first entry and <b>Distinguished Name</b> of the search base (\"base DN\", such as dc=example,dc=com) in the second. Specify multiple servers
@@ -197,6 +203,7 @@ automatically.</p>
 	string server		= Ldap::server;
 	boolean ldap_tls	= Ldap::ldap_tls;
 	boolean ldap_v2		= Ldap::ldap_v2;
+	boolean login_enabled	= Ldap::login_enabled;
 
 	boolean autofs		= Ldap::_start_autofs;
 	term autofs_con		= `Empty ();
@@ -210,7 +217,7 @@ automatically.</p>
 	    help_text	= help_text + autofs_help_text;
 	}
 
-	term con = `HBox (`HSpacing (3), `VBox (
+	term con = `VCenter (`HBox (`HSpacing (3), `VBox (
 	    `VSpacing (0.5),
 	    `Frame (_("User Authentication"), `HBox (`HSpacing (0.5), `VBox (
 		`VSpacing (0.5),
@@ -221,11 +228,16 @@ automatically.</p>
 			    _("Do N&ot Use LDAP"), !start)),
 			`Left(`RadioButton(`id(`ldapyes), `opt (`notify),
 			    // radio button label
-			    _("&Use LDAP"), start)))))
+			    _("&Use LDAP"), start)),
+			`Left(`RadioButton(`id(`ldapnologin), `opt (`notify),
+			    // radio button label
+			    _("Use LDAP but disable &Logins"),
+				start && !login_enabled))
+		    )))
 		),
 		`VSpacing (0.5)
 	    ))),
-	    `VSpacing (0.5),
+	    `VSpacing (0.4),
 	    // frame label
 	    `Frame (_("LDAP client"), `HBox (`HSpacing (0.5), `VBox(
 		`VSpacing (0.5),
@@ -254,13 +266,13 @@ automatically.</p>
 		`VSpacing (0.2),
 		// check box label
 		`Left (`CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2)),
-		`VSpacing (0.5)
+		`VSpacing (0.4)
 	    ), `HSpacing (0.5))),
 	    autofs_con,
-	    `VSpacing(0.5),
+	    `VSpacing(0.4),
 	    // pushbutton label
 	    `PushButton (`id(`advanced), _("&Advanced Configuration..."))
-        ), `HSpacing (3));
+        ), `HSpacing (3)));
 
 	Wizard::SetContentsButtons (
 	    // dialog title
@@ -280,7 +292,9 @@ automatically.</p>
 	do {
 	    result = (symbol) UI::UserInput ();
 
-	    start = (UI::QueryWidget(`id(`rd), `CurrentButton) == `ldapyes);
+	    any rb	= UI::QueryWidget(`id(`rd), `CurrentButton);
+	    start	= (rb != `ldapno);
+	    login_enabled = (rb != `ldapnologin);
 
 	    server	= (string) UI::QueryWidget(`id(`ldapa), `Value);
 	    ldap_v2	= (boolean) UI::QueryWidget(`id(`ldapv), `Value);
@@ -403,7 +417,8 @@ Which should be used as the primary authentication service?
 	{
 	    if (Ldap::start != start || Ldap::GetDomain() != domain ||
 		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||
-		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs)
+		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs ||
+		Ldap::login_enabled != login_enabled)
 	    {
 		if (result == `next)
 		{
@@ -438,40 +453,41 @@ restarted automatically by YaST.
 		Ldap::ldap_v2	= ldap_v2;
 		Ldap::ldap_tls	= ldap_tls;
 		Ldap::_start_autofs = autofs;
+		Ldap::login_enabled = login_enabled;
 		Ldap::modified = true;
 	    }
 	}
 	return result;
     }
 
+
+
 /**
  * Configuration of advanced settings (how to get to config data on server)
  */
 define symbol AdvancedConfigurationDialog () {
 
-    string help_text =
-
+    map help_text	= $[
+	`client		:
     // help text caption 1
-     _("<p><b>Users and Groups</b></p>") +
+    _("<p><b>Advanced LDAP CLient Settings</b></p>") +
 
     // help text 1/3
-    _("<p><b>File Server</b> indicates that home directories of users are
-stored on this machine. Changing this value does not cause any direct action.
-It is only information for the YaST Users module, which can manage user home
-directories.</p>
-")	+
+    _("<p>Specify the <b>search bases</b> to be used for specific maps (users, passwords and groups) if they are different from the base DN. These values are
+set to the nss_base_passwd, nss_base_shadow and nss_base_group attributes
+in /etc/ldap.conf file.</p>")	+
 
     // help text 2/3
-    _("<p>Set whether LDAP users are allowed to log in to this machine.
-with <b>Enable LDAP Users to Log In</b>.</p>") +
+    _("<p><b>Password Change Protocol</b> refers to the pam_password attribute of /etc/ldap.conf file. See <tt>man pam_ldap</tt> for the meaning of its values.</p>")	+
 
     // help text 3/3, %1 is attribute name
     sformat (_("<p>Set the type of LDAP groups you are using.
 The default value for <b>Group Member Attribute</b> is <i>%1</i>.</p>"),
-    "member") +
+    "member"),
 
+	`admin		:
     // help text caption 2
-     _("<p><b>Access to Server</b></p>") +
+    _("<p><b>Access to Server</b></p>") +
 
     // help text 1/4
     _("<p>First, set <b>Configuration Base DN</b>.
@@ -493,16 +509,29 @@ check <b>Create Default Configuration Objects</b>. The objects are only created 
     _("<p>Press <b>Configure</b> to configure settings stored on the
 LDAP server. You will be asked for the password if you are not connected yet or
 have changed your configuration.</p>
-");
+") +
 
+    // help text caption 3
+    _("<p><b>Home Directories</b></p>") +
 
+    // help text 1/1
+    _("<p>If home directories of users should be stored on this machine,
+check appropriate checkbox. Changing this value does not cause any direct
+action.  It is only information for the YaST Users module, which can manage
+user home directories.</p>
+")
+    ];
 
     string bind_dn		= Ldap::bind_dn;
     boolean file_server		= Ldap::file_server;
-    boolean login_enabled	= Ldap::login_enabled;
     string member_attribute	= Ldap::member_attribute;
     string base_config_dn	= Ldap::GetMainConfigDN();
     boolean create_ldap		= Ldap::create_ldap;
+
+    string nss_base_passwd	= Ldap::nss_base_passwd;
+    string nss_base_shadow	= Ldap::nss_base_shadow;
+    string nss_base_group	= Ldap::nss_base_group;
+    string pam_password		= Ldap::pam_password;
 
     list<term>member_attributes	= [
 	`item (`id("member"), "member", member_attribute == "member"),
@@ -518,33 +547,89 @@ have changed your configuration.</p>
     if (base_config_dn == "")
 	base_config_dn = sformat ("ou=ldapconfig,%1", Ldap::GetDomain ());
 
-    term contents = `HBox(`HSpacing (5), `VBox(
-	// frame label
-	`Frame (_("User and Group Settings"), `HBox(
+    list pam_password_items	= [
+	"ad",
+	"crypt",
+	"clear",
+	"clear_remove_old",
+	"exop",
+	"exop_send_old",
+	"md5",
+	"nds",
+	"racf"
+    ];
+    pam_password_items	= sort (maplist (
+	string it, (list<string>) union (pam_password_items, [pam_password]),``(
+	    `item (`id (it), it, it == pam_password)
+	))
+    );
+
+    list<term> tabs	= [
+	// tab label
+	`item(`id(`client), _("&Client Settings"), true),
+	// tab label
+	`item(`id(`admin), _("&Administration Settings")),
+    ];
+
+    term contents = `VBox (
+	`DumbTab (`id(`tabs), tabs,
+	    `ReplacePoint(`id(`tabContents ), `VBox (`HVStretch())))
+    );
+    boolean has_tabs	= true;
+    if (!UI::HasSpecialWidget (`DumbTab))
+    {
+	has_tabs	= false;
+	term tabbar	= `HBox ();
+	foreach (term it, tabs, {
+	    string label = it[1]:"";
+	    tabbar = add (tabbar,`PushButton (it[0]:`id(label), label));
+	});
+	contents = `VBox (`Left(tabbar),
+	    `Frame ("", `ReplacePoint(`id(`tabContents), `HVStretch()))
+	);
+    }
+
+    define void set_client_term () {
+
+	term cont = `Top (`HBox(`HSpacing (5), `VBox(
+	    `VSpacing(3),
+	    // frame label
+	    `Frame (_("Naming contexts"), `HBox(
 	    `HSpacing (1), `VBox(
 		`VSpacing(0.5),
-		`Left(`CheckBox (`id(`file_server),
-		    // checkbox label
-		    _("F&ile Server (home directories are stored here)"),
-			file_server)),
-		`VSpacing(0.5),
-		`Left(`CheckBox (`id(`login_enabled),
-		    // checkbox label
-		    _("&Enable LDAP Users to Log In"), login_enabled)),
-		`VSpacing(0.5),
-		`ComboBox (`id (`group_style), `opt (`notify, `hstretch),
-		    // combobox label
-		    _("&Group Member Attribute"), member_attributes),
+		`TextEntry (`id (`nss_base_passwd),
+		    // textentry label
+		    _("&Users Map"), nss_base_passwd),
+		`TextEntry (`id (`nss_base_shadow),
+		    // textentry label
+		    _("&Passwords Map"), nss_base_shadow),
+		`TextEntry (`id (`nss_base_group),
+		    // textentry label
+		    _("&Groups Map"), nss_base_group),
 		`VSpacing(0.5)
 	    ),
 	    `HSpacing (1)
-	)),
-        `VSpacing(),
-	// frame label
-	`Frame (_("Access to LDAP Server"), `HBox(
-	    `HSpacing (1), `VBox(
-		`VSpacing(0.5),
-		`HBox (
+	    )),
+	    `VSpacing (0.5),
+	    `ComboBox (`id (`pam_password), `opt(`notify,`hstretch,`editable),
+		// combobox label
+		_("Passwod Change Protocol"), pam_password_items),
+	    `VSpacing(0.5),
+	    `ComboBox (`id (`group_style), `opt (`notify, `hstretch),
+		// combobox label
+		_("&Group Member Attribute"), member_attributes)
+	), `HSpacing (5)));
+
+	UI::ReplaceWidget (`tabContents, cont);
+	if (has_tabs)
+	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `client);
+    }
+
+    define void set_admin_term () {
+
+	term cont = `Top (`HBox(`HSpacing (5), `VBox(
+	    `VSpacing(3),
+	    `HBox (
 		    `TextEntry (`id (`base_config_dn),
 			// textentry label
 			_("Configuration &Base DN"), base_config_dn),
@@ -553,48 +638,88 @@ have changed your configuration.</p>
 			// button label
 			`PushButton (`id(`br), `opt(`key_F6), _("Bro&wse"))
 		    )
-		),
-		`VSpacing(0.5),
-		`TextEntry (`id (`bind_dn),
+	    ),
+	    `VSpacing(0.5),
+	    `TextEntry (`id (`bind_dn),
 		    // textentry label
 		    _("Administrator &DN"), bind_dn),
-		`VSpacing(0.5),
-		`Left (`CheckBox (`id(`create_ldap),
+	    `VSpacing(0.5),
+	    `Left (`CheckBox (`id(`create_ldap),
 		    // checkbox label
 		    _("Crea&te Default Configuration Objects"), create_ldap)),
-		`VSpacing(0.5),
-		`Right (`PushButton (`id(`configure),
+	    `VSpacing(0.5),
+	    `Right (`PushButton (`id(`configure),
 		    // pushbutton label
 		    _("Configure User Management &Settings..."))),
-		`VSpacing(0.5)
+	    `VSpacing (2),
+	    `Left (`CheckBox (`id(`file_server),
+		// checkbox label
+		_("&Home directories on this machine"),
+		file_server)
 	    ),
-	    `HSpacing (1)
-	))
-	),
-	`HSpacing (5));
+	    `VSpacing(0.5)
+	), `HSpacing (5)));
+
+	UI::ReplaceWidget (`tabContents, cont);
+	if (has_tabs)
+	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `admin);
+
+	// in autoyast-config mode, don't attach to server...
+	if (Mode::config ())
+	    UI::ChangeWidget (`id(`configure), `Enabled, false);
+    }
+
 
     // dialog label
-    Wizard::SetContentsButtons(_("Advanced Configuration"),
-            contents, help_text, Label::CancelButton(), Label::AcceptButton());
+    Wizard::SetContentsButtons (_("Advanced Configuration"), contents,
+	help_text[`client]:"", Label::CancelButton(), Label::AcceptButton());
     Wizard::HideAbortButton ();
 
-    symbol result = `notnext;
+    symbol result	= `notnext;
+    symbol current	= `client;
 
-    // in autoyast-config mode, don't attach to server...
-    if (Mode::config ())
-	UI::ChangeWidget (`id(`configure), `Enabled, false);
-
-    if (!Ldap::start)
-	UI::ChangeWidget (`id(`login_enabled), `Enabled, false);
+    set_client_term ();
 
     while (true)
     {
 	result = (symbol) UI::UserInput ();
 	if (result == `cancel && ReallyAbort () != `abort)
 	    result = `not_next;
+
 	if (result == `back || result == `cancel)
 	    break;
 
+	// 1. get the data from dialogs
+	if (current == `client)
+	{
+	    member_attribute =(string)UI::QueryWidget(`id(`group_style),`Value);
+	    nss_base_passwd	= (string)
+		UI::QueryWidget(`id(`nss_base_passwd),`Value);
+	    nss_base_shadow	= (string)
+		UI::QueryWidget(`id(`nss_base_shadow),`Value);
+	    nss_base_group	= (string)
+		UI::QueryWidget(`id(`nss_base_group),`Value);
+	}
+	if (current == `admin)
+	{
+	    bind_dn = (string) UI::QueryWidget(`id(`bind_dn), `Value);
+	    base_config_dn=(string)UI::QueryWidget(`id(`base_config_dn),`Value);
+	    file_server = (boolean)UI::QueryWidget(`id(`file_server), `Value);
+	    create_ldap = (boolean) UI::QueryWidget(`id(`create_ldap),`Value);
+	}
+
+	// 2. switch the tabs
+	if (result == `client || result == `admin)
+	{
+	    current = result;
+	    Wizard::SetHelpText (help_text[current]:"");
+	    if (result == `client)
+		set_client_term ();
+	    else
+		set_admin_term ();
+	}
+
+	// 3. other events
 	if (result == `br)
 	{
 	    string dn = LdapPopup::InitAndBrowseTree (Ldap::GetDomain (), $[
@@ -610,13 +735,6 @@ have changed your configuration.</p>
 	}
 	if (result == `next || result == `configure)
 	{
-	    bind_dn = (string) UI::QueryWidget(`id(`bind_dn), `Value);
-	    base_config_dn=(string)UI::QueryWidget(`id(`base_config_dn),`Value);
-	    file_server = (boolean)UI::QueryWidget(`id(`file_server), `Value);
-	    login_enabled =(boolean)UI::QueryWidget(`id(`login_enabled),`Value);
-	    member_attribute =(string)UI::QueryWidget(`id(`group_style),`Value);
-	    create_ldap = (boolean) UI::QueryWidget(`id(`create_ldap),`Value);
-
 	    if (result == `configure && bind_dn == "")
 	    {
 		// error popup label
@@ -632,18 +750,26 @@ have changed your configuration.</p>
 		UI::SetFocus (`id (`base_config_dn));
 		continue;
 	    }
-	    if (Ldap::GetMainConfigDN() != base_config_dn ||
-		Ldap::bind_dn != bind_dn || Ldap::file_server != file_server ||
-		Ldap::login_enabled != login_enabled ||
-		Ldap::member_attribute != member_attribute ||
-		Ldap::create_ldap != create_ldap)
+	    if (Ldap::GetMainConfigDN() != base_config_dn	||
+		Ldap::bind_dn != bind_dn			||
+		Ldap::file_server != file_server		||
+		Ldap::member_attribute != member_attribute	||
+		Ldap::create_ldap != create_ldap		||
+		Ldap::pam_password != pam_password		||
+		Ldap::nss_base_passwd != nss_base_passwd	||
+		Ldap::nss_base_group != nss_base_group		||
+		Ldap::nss_base_shadow != nss_base_shadow
+	    )
 	    {
 		Ldap::bind_dn		= bind_dn;
 		Ldap::base_config_dn	= base_config_dn;
 		Ldap::file_server	= file_server;
-		Ldap::login_enabled	= login_enabled;
 		Ldap::member_attribute	= member_attribute;
 		Ldap::create_ldap	= create_ldap;
+		Ldap::pam_password	= pam_password;
+		Ldap::nss_base_passwd	= nss_base_passwd;
+		Ldap::nss_base_group	= nss_base_group;
+		Ldap::nss_base_shadow	= nss_base_shadow;
 		Ldap::modified		= true;
 	    }
 	    break;

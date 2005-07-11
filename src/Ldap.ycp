@@ -1927,14 +1927,6 @@ Select another one.
 	    user_base = domain;
 	    group_base = domain;
 
-	    // if nss_base_* were equal to base DN, update them
-	    if (nss_base_passwd != "" && nss_base_passwd == old_domain)
-		nss_base_passwd	= domain;
-	    if (nss_base_shadow != "" && nss_base_shadow == old_domain)
-		nss_base_shadow	= domain;
-	    if (nss_base_group != "" && nss_base_group == old_domain)
-		nss_base_group	= domain;
-
 	    WriteLdapConfEntry ("nss_base_passwd",
 		(nss_base_passwd != "")? nss_base_passwd : user_base);
 	    WriteLdapConfEntry ("nss_base_shadow",
