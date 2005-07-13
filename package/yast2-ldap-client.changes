@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Jul 12 14:47:40 CEST 2005 - jsuchome@suse.cz
+
+- install autofs by default (not autofs4) - bug #95970
+- 2.12.4
+
+-------------------------------------------------------------------
 Fri Jul  1 14:58:09 CEST 2005 - jsuchome@suse.cz
 
 - UI restructuralization:

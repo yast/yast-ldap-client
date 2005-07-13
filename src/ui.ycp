@@ -393,10 +393,10 @@ Which should be used as the primary authentication service?
 			Ldap::required_packages, needed_packages);
 		}
 
-		if (autofs && !Package::InstalledAny(["autofs", "autofs4"]))
+		if (autofs && !Package::Installed("autofs"))
 		{
 		    Ldap::required_packages = (list<string>) union (
-			Ldap::required_packages, ["autofs4"]);
+			Ldap::required_packages, ["autofs"]);
 		}
 		if (!Package::InstallAll(Ldap::required_packages))
 		{

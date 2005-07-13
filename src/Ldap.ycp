@@ -346,7 +346,7 @@
 	_start_autofs	= settings["start_autofs"]:false;
 	if (_start_autofs)
 	    required_packages = (list<string>)
-		union (required_packages, ["autofs4"]);
+		union (required_packages, ["autofs"]);
 
 	old_domain		= domain;
 	old_server		= server;
