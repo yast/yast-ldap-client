@@ -21,7 +21,7 @@ Icon=yast-ldap
 Exec=/sbin/yast2 ldap 
 
 Name=LDAP Client
-GenericName=Configure LDAP client
+GenericName=Configure the LDAP client
 Name[cs]=Klient LDAP
 GenericName[cs]=Nastavit klienta LDAP
 Name[de]=LDAP-Client
