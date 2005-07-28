@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Jul 28 10:49:03 CEST 2005 - jsuchome@suse.cz
+
+- updated desktop file
+- merged texts from proofreading
+- 2.12.5 
+
+-------------------------------------------------------------------
 Tue Jul 12 14:47:40 CEST 2005 - jsuchome@suse.cz
 
 - install autofs by default (not autofs4) - bug #95970

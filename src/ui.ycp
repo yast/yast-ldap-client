@@ -157,7 +157,7 @@ will be removed. The PAM configuration will be modified and the LDAP entry
 removed.</p>") +
 
 	// help text 3.5/9
-	_("<p>To activate LDAP, but dissalow users to log in to this machine, select <b>Enable LDAP Users but disable Logins</b>.</p>") +
+	_("<p>To activate LDAP, but forbid users from logging in to this machine, select <b>Enable LDAP Users but Disable Logins</b>.</p>") +
 
 	// help text 4/9
 	_("<p>Enter the LDAP server's <b>address</b> (e.g., ldap.example.com or 10.20.0.2) in the first entry and <b>Distinguished Name</b> of the search base (\"base DN\", such as dc=example,dc=com) in the second. Specify multiple servers
@@ -231,7 +231,7 @@ automatically.</p>
 			    _("&Use LDAP"), start)),
 			`Left(`RadioButton(`id(`ldapnologin), `opt (`notify),
 			    // radio button label
-			    _("Use LDAP but disable &Logins"),
+			    _("Use LDAP but Disable &Logins"),
 				start && !login_enabled))
 		    )))
 		),
@@ -470,12 +470,13 @@ define symbol AdvancedConfigurationDialog () {
     map help_text	= $[
 	`client		:
     // help text caption 1
-    _("<p><b>Advanced LDAP CLient Settings</b></p>") +
+    _("<p><b>Advanced LDAP Client Settings</b></p>") +
 
     // help text 1/3
-    _("<p>Specify the <b>search bases</b> to be used for specific maps (users, passwords and groups) if they are different from the base DN. These values are
-set to the nss_base_passwd, nss_base_shadow and nss_base_group attributes
-in /etc/ldap.conf file.</p>")	+
+    _("<p>Specify the <b>search bases</b> to use for specific maps (users, passwords and groups) if they are different from the base DN. These values are
+set to the nss_base_passwd, nss_base_shadow, and nss_base_group attributes
+in /etc/ldap.conf file.</p>
+")	+
 
     // help text 2/3
     _("<p><b>Password Change Protocol</b> refers to the pam_password attribute of /etc/ldap.conf file. See <tt>man pam_ldap</tt> for the meaning of its values.</p>")	+
@@ -516,8 +517,8 @@ have changed your configuration.</p>
 
     // help text 1/1
     _("<p>If home directories of users should be stored on this machine,
-check appropriate checkbox. Changing this value does not cause any direct
-action.  It is only information for the YaST Users module, which can manage
+check appropriate option. Changing this value does not cause any direct
+action.  It is only information for the YaST users module, which can manage
 user home directories.</p>
 ")
     ];
@@ -594,18 +595,18 @@ user home directories.</p>
 	term cont = `Top (`HBox(`HSpacing (5), `VBox(
 	    `VSpacing(3),
 	    // frame label
-	    `Frame (_("Naming contexts"), `HBox(
+	    `Frame (_("Naming Contexts"), `HBox(
 	    `HSpacing (1), `VBox(
 		`VSpacing(0.5),
 		`TextEntry (`id (`nss_base_passwd),
 		    // textentry label
-		    _("&Users Map"), nss_base_passwd),
+		    _("&User Map"), nss_base_passwd),
 		`TextEntry (`id (`nss_base_shadow),
 		    // textentry label
-		    _("&Passwords Map"), nss_base_shadow),
+		    _("&Password Map"), nss_base_shadow),
 		`TextEntry (`id (`nss_base_group),
 		    // textentry label
-		    _("&Groups Map"), nss_base_group),
+		    _("&Group Map"), nss_base_group),
 		`VSpacing(0.5)
 	    ),
 	    `HSpacing (1)
@@ -613,7 +614,7 @@ user home directories.</p>
 	    `VSpacing (0.5),
 	    `ComboBox (`id (`pam_password), `opt(`notify,`hstretch,`editable),
 		// combobox label
-		_("Passwod Change Protocol"), pam_password_items),
+		_("Password Change Protocol"), pam_password_items),
 	    `VSpacing(0.5),
 	    `ComboBox (`id (`group_style), `opt (`notify, `hstretch),
 		// combobox label
@@ -654,7 +655,7 @@ user home directories.</p>
 	    `VSpacing (2),
 	    `Left (`CheckBox (`id(`file_server),
 		// checkbox label
-		_("&Home directories on this machine"),
+		_("&Home Directories on This Machine"),
 		file_server)
 	    ),
 	    `VSpacing(0.5)
