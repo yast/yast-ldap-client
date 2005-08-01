@@ -598,15 +598,36 @@ user home directories.</p>
 	    `Frame (_("Naming Contexts"), `HBox(
 	    `HSpacing (1), `VBox(
 		`VSpacing(0.5),
-		`TextEntry (`id (`nss_base_passwd),
-		    // textentry label
-		    _("&User Map"), nss_base_passwd),
-		`TextEntry (`id (`nss_base_shadow),
-		    // textentry label
-		    _("&Password Map"), nss_base_shadow),
-		`TextEntry (`id (`nss_base_group),
-		    // textentry label
-		    _("&Group Map"), nss_base_group),
+		`HBox (
+		    `TextEntry (`id (`nss_base_passwd),
+			// textentry label
+			_("&User Map"), nss_base_passwd),
+		    `VBox (
+			`Label (""),
+			// button label
+			`PushButton (`id(`br_passwd), _("&Browse"))
+		    )
+		),
+		`HBox (
+		    `TextEntry (`id (`nss_base_shadow),
+			// textentry label
+			_("&Password Map"), nss_base_shadow),
+		    `VBox (
+			`Label (""),
+			// button label
+			`PushButton (`id(`br_shadow), _("Br&owse"))
+		    )
+		),
+		`HBox (
+		    `TextEntry (`id (`nss_base_group),
+			// textentry label
+			_("&Group Map"), nss_base_group),
+		    `VBox (
+			`Label (""),
+			// button label
+			`PushButton (`id(`br_group), _("Bro&wse"))
+		    )
+		),
 		`VSpacing(0.5)
 	    ),
 	    `HSpacing (1)
@@ -721,7 +742,7 @@ user home directories.</p>
 	}
 
 	// 3. other events
-	if (result == `br)
+	if (contains ([`br, `br_passwd, `br_shadow, `br_group ], result))
 	{
 	    string dn = LdapPopup::InitAndBrowseTree (Ldap::GetDomain (), $[
 		"hostname"	: Ldap::GetFirstServer (Ldap::server),
@@ -731,7 +752,13 @@ user home directories.</p>
 	    ]);
 	    if (dn != "")
 	    {
-		UI::ChangeWidget (`id(`base_config_dn), `Value, dn);
+		map br2entry	= $[
+		    `br		: `base_config_dn,
+		    `br_passwd	: `nss_base_passwd,
+		    `br_shadow	: `nss_base_shadow,
+		    `br_group	: `nss_base_group
+		];
+		UI::ChangeWidget (`id(br2entry[result]:nil), `Value, dn);
 	    }
 	}
 	if (result == `next || result == `configure)

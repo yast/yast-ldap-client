@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Aug  1 10:39:32 CEST 2005 - jsuchome@suse.cz
+
+- added Browse buttons for nss_map_* entries
+- 2.12.6
+
+-------------------------------------------------------------------
 Thu Jul 28 10:49:03 CEST 2005 - jsuchome@suse.cz
 
 - updated desktop file
