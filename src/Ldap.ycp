@@ -1963,6 +1963,11 @@ Select another one.
 		Nsswitch::WriteDb (new_db, nsswitch[new_db]:["ldap"]);
 	    });
 
+	    foreach (string db, [ "services" ,"netgroup", "aliases" ], {
+		list db_l	= Nsswitch::ReadDb (db);
+		Nsswitch::WriteDb (db, (list<string>) union (db_l, ["ldap"]));
+	    });
+
 	    Nsswitch::Write ();
 	    Autologin::Write (write_only);
 	}
@@ -1979,6 +1984,14 @@ Select another one.
 		    string v, nsswitch[new_db]:[], ``(v != "ldap"));
 		Nsswitch::WriteDb (db, nsswitch[db]:["compat"]);
 		Nsswitch::WriteDb (new_db, nsswitch[new_db]:[]);
+	    });
+
+	    foreach (string db, [ "services" ,"netgroup", "aliases" ], {
+		list<string> db_l	= (list<string>) filter (
+		    string v, Nsswitch::ReadDb (db), ``(v != "ldap"));
+		if (db_l == [])
+		    db_l	= ["files"];
+		Nsswitch::WriteDb (db, db_l);
 	    });
 
 	    Nsswitch::Write ();
