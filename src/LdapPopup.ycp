@@ -190,7 +190,7 @@ import "Wizard";
 	boolean init = (boolean) SCR::Execute (.ldap, args);
 	if (init == nil || !init)
 	{
-	    y2error ("init failed");
+	    Ldap::LDAPErrorMessage ("init", Ldap::LDAPError ());
 	    return root_dn;
 	}
 	return BrowseTree (root_dn);

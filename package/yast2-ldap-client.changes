@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Aug 10 10:03:14 CEST 2005 - jsuchome@suse.cz
+
+- show error message when fetching DN fails (#102311)
+- remove "nis" values from new services (#100205) 
+- 2.12.8
+
+-------------------------------------------------------------------
 Thu Aug  4 15:38:40 CEST 2005 - jsuchome@suse.cz
 
 - update also "services", "netgroup" and "aliases" entries (#100205)

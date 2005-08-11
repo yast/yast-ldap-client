@@ -1964,8 +1964,7 @@ Select another one.
 	    });
 
 	    foreach (string db, [ "services" ,"netgroup", "aliases" ], {
-		list db_l	= Nsswitch::ReadDb (db);
-		Nsswitch::WriteDb (db, (list<string>) union (db_l, ["ldap"]));
+		Nsswitch::WriteDb (db, ["files", "ldap"]);
 	    });
 
 	    Nsswitch::Write ();
