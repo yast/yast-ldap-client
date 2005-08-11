@@ -567,9 +567,9 @@ user home directories.</p>
 
     list<term> tabs	= [
 	// tab label
-	`item(`id(`client), _("&Client Settings"), true),
+	`item(`id(`client), _("C&lient Settings"), true),
 	// tab label
-	`item(`id(`admin), _("&Administration Settings")),
+	`item(`id(`admin), _("Ad&ministration Settings")),
     ];
 
     term contents = `VBox (
@@ -635,11 +635,11 @@ user home directories.</p>
 	    `VSpacing (0.5),
 	    `ComboBox (`id (`pam_password), `opt(`notify,`hstretch,`editable),
 		// combobox label
-		_("Password Change Protocol"), pam_password_items),
+		_("Pa&ssword Change Protocol"), pam_password_items),
 	    `VSpacing(0.5),
 	    `ComboBox (`id (`group_style), `opt (`notify, `hstretch),
 		// combobox label
-		_("&Group Member Attribute"), member_attributes)
+		_("G&roup Member Attribute"), member_attributes)
 	), `HSpacing (5)));
 
 	UI::ReplaceWidget (`tabContents, cont);
