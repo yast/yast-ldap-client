@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Mon Aug 15 14:57:33 CEST 2005 - jsuchome@suse.cz
+
+- fixed shortcuts in texts
+- merged texts from proofreading
+- 2.12.9 
+
+-------------------------------------------------------------------
 Wed Aug 10 10:03:14 CEST 2005 - jsuchome@suse.cz
 
 - show error message when fetching DN fails (#102311)
