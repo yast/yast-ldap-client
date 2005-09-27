@@ -219,6 +219,7 @@ automatically.</p>
 
 	term con = `VCenter (`HBox (`HSpacing (3), `VBox (
 	    `VSpacing (0.5),
+	    // frame label
 	    `Frame (_("User Authentication"), `HBox (`HSpacing (0.5), `VBox (
 		`VSpacing (0.5),
 		`RadioButtonGroup (`id(`rd),
@@ -367,7 +368,9 @@ you cannot retrieve data with NIS. Are you sure?
 _("An active configuration of the Kerberos client is present.
 Which should be used as the primary authentication service?
 "),
+			// button label (authentication service)
 			_("&LDAP"),
+			// button label (authentication service)
 			_("&Kerberos"),
 			Label::CancelButton (),
 			`focus_yes

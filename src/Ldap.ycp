@@ -402,16 +402,24 @@
     global define string Summary ()
 	``{
 	string summary = "";
+	// summary item
 	summary = Summary::AddHeader(summary, _("LDAP Client enabled"));
-	summary = Summary::AddLine(summary, (start) ? "Yes" : Summary::NotConfigured());
+	// summary (is LDAP enabled?)
+	summary = Summary::AddLine(summary, (start) ? _("Yes") : Summary::NotConfigured());
+	// summary item
 	summary = Summary::AddHeader(summary, _("LDAP Domain"));
 	summary = Summary::AddLine(summary, (domain != "") ? domain : Summary::NotConfigured());
+	// summary item
 	summary = Summary::AddHeader(summary, _("LDAP Server"));
 	summary = Summary::AddLine(summary,( server!="") ? server : Summary::NotConfigured());
+	// summary item
 	summary = Summary::AddHeader(summary, _("LDAP Version 2"));
-	summary = Summary::AddLine(summary, (ldap_v2) ? "Yes" : Summary::NotConfigured());
+	// summary (LDAP version 2?)
+	summary = Summary::AddLine(summary, (ldap_v2) ? _("Yes") : Summary::NotConfigured());
+	// summary item
 	summary = Summary::AddHeader(summary, _("LDAP TLS/SSL"));
-	summary = Summary::AddLine(summary, (ldap_tls) ? "Yes" : Summary::NotConfigured());
+	// summary (use TLS?)
+	summary = Summary::AddLine(summary, (ldap_tls) ? _("Yes") : Summary::NotConfigured());
 
 	return summary;
     }
@@ -428,7 +436,11 @@
 	// summary text
 	sformat (_("<b>Base DN</b>:%1<br>"), domain != "" ? domain : nc) +
 	// summary text (yes/no follows)
-	sformat (_("<b>Client Enabled</b>:%1<br>"), start ? _("Yes") : _("No"));
+	sformat (_("<b>Client Enabled</b>:%1<br>"), start ?
+	    // summary (client enabled?)
+	    _("Yes") :
+	    // summary (client enabled?)
+	    _("No"));
 	return summary;
     }
 
@@ -1920,8 +1932,11 @@ Select another one.
 
 	    WriteLdapConfEntry ("pam_password", pam_password);
 
-	    // see bug #37665
-	    AddLdapConfEntry ("pam_filter", "objectclass=posixAccount");
+	    // see bugs #suse37665 (pam_filter necessary), #118779 (not always)
+	    if (ReadLdapConfEntry ("pam_filter", "") == "")
+	    {
+		AddLdapConfEntry ("pam_filter", "objectclass=posixAccount");
+	    }
 
 	    // save the user and group bases
 	    user_base = domain;
