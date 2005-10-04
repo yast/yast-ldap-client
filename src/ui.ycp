@@ -501,7 +501,9 @@ server.</p>
 
     // help text 2/4
     _("<p>To access the data stored on the server, enter the
-<b>Administrator DN</b> (e.g., cn=Administrator,dc=mydomain,dc=com).</p>
+<b>Administrator DN</b>.
+You can enter full DN (e.g., cn=Administrator,dc=mydomain,dc=com) or just
+Relative DN (e.g., cn=Administrator), while the LDAP Base DN will be appended automatically if the appropriate option is checked.</p>
 ") +
 
     // help text 3/4
@@ -527,10 +529,12 @@ user home directories.</p>
     ];
 
     string bind_dn		= Ldap::bind_dn;
+    string base_dn		= Ldap::GetDomain ();
     boolean file_server		= Ldap::file_server;
     string member_attribute	= Ldap::member_attribute;
     string base_config_dn	= Ldap::GetMainConfigDN();
     boolean create_ldap		= Ldap::create_ldap;
+    boolean append_base		= (bind_dn != "" && find (bind_dn, base_dn) > -1);
 
     string nss_base_passwd	= Ldap::nss_base_passwd;
     string nss_base_shadow	= Ldap::nss_base_shadow;
@@ -549,7 +553,7 @@ user home directories.</p>
 
     // propose some good default
     if (base_config_dn == "")
-	base_config_dn = sformat ("ou=ldapconfig,%1", Ldap::GetDomain ());
+	base_config_dn = sformat ("ou=ldapconfig,%1", base_dn);
 
     list pam_password_items	= [
 	"ad",
@@ -665,23 +669,28 @@ user home directories.</p>
 		    )
 	    ),
 	    `VSpacing(0.5),
-	    `TextEntry (`id (`bind_dn),
-		    // textentry label
-		    _("Administrator &DN"), bind_dn),
-	    `VSpacing(0.5),
+	    `HBox (
+		// textentry label
+		`TextEntry (`id (`bind_dn), _("Administrator &DN"), bind_dn),
+		`VBox (
+		    // checkbox label
+		    `Bottom (`CheckBox (`id(`append),_("A&ppend Base DN"), append_base))
+		)
+	    ),
+	    `VSpacing (2),
 	    `Left (`CheckBox (`id(`create_ldap),
 		    // checkbox label
 		    _("Crea&te Default Configuration Objects"), create_ldap)),
 	    `VSpacing(0.5),
-	    `Right (`PushButton (`id(`configure),
-		    // pushbutton label
-		    _("Configure User Management &Settings..."))),
-	    `VSpacing (2),
 	    `Left (`CheckBox (`id(`file_server),
 		// checkbox label
 		_("&Home Directories on This Machine"),
 		file_server)
 	    ),
+	    `VSpacing(0.5),
+	    `Right (`PushButton (`id(`configure),
+		    // pushbutton label
+		    _("Configure User Management &Settings..."))),
 	    `VSpacing(0.5)
 	), `HSpacing (5)));
 
@@ -731,6 +740,12 @@ user home directories.</p>
 	    base_config_dn=(string)UI::QueryWidget(`id(`base_config_dn),`Value);
 	    file_server = (boolean)UI::QueryWidget(`id(`file_server), `Value);
 	    create_ldap = (boolean) UI::QueryWidget(`id(`create_ldap),`Value);
+	    append_base = (boolean) UI::QueryWidget (`id(`append), `Value);
+	    if (append_base && ! issubstring (bind_dn, base_dn) && bind_dn != "")
+	    {
+		bind_dn = sformat ("%1,%2", bind_dn, base_dn);
+		UI::ChangeWidget (`id(`bind_dn), `Value, bind_dn);
+	    }
 	}
 
 	// 2. switch the tabs
@@ -747,7 +762,7 @@ user home directories.</p>
 	// 3. other events
 	if (contains ([`br, `br_passwd, `br_shadow, `br_group ], result))
 	{
-	    string dn = LdapPopup::InitAndBrowseTree (Ldap::GetDomain (), $[
+	    string dn = LdapPopup::InitAndBrowseTree (base_dn, $[
 		"hostname"	: Ldap::GetFirstServer (Ldap::server),
 		"port"		: Ldap::GetFirstPort (Ldap::server),
 		"version"	: Ldap::ldap_v2 ? 2 : 3,
