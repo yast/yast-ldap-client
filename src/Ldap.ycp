@@ -825,7 +825,7 @@ Value of DN is missing or invalid."),
 	if (!issubstring (srv, ":"))
 	    return default_port;
 	string s_port = substring (srv, find (srv, ":") + 1);
-	if (s_port == "")
+	if (s_port == "" || tointeger (s_port) == nil)
 	    return default_port;
 	else return tointeger (s_port);
     }

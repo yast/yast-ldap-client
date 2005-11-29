@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Nov 29 09:39:35 CET 2005 - jsuchome@suse.cz
+
+- added check for tointeger output (which is fixed: #115560)
+- 2.13.2
+
+-------------------------------------------------------------------
 Tue Oct  4 13:37:28 CEST 2005 - jsuchome@suse.cz
 
 - "Append Base DN" checkbox for admin DN entry (#93500)
