@@ -22,6 +22,7 @@
     import "Package";
     import "PamSettings";
     import "Popup";
+    import "ProductFeatures";
     import "Progress";
     import "Report";
     import "Service";
@@ -162,6 +163,17 @@
     // /etc/security/pam_unix2)
     list<string> auth_modules = [];
 
+    // if eDirectory is used as server
+    global boolean nds		= false;
+
+    boolean nds_checked		= false;
+
+    // if OES is used as a client
+    boolean oes			= false;
+
+    // expert ui means "server product"
+    boolean expert_ui		= false;
+
     /**
      * defaults for adding new config objects and templates
      */
@@ -253,6 +265,12 @@
     global boolean ldap_initialized	= false;
 
     /**
+     * If false, do not read settings already set from outside
+     * used e.g. for Users YaPI. see bug #60898
+     */
+    global boolean read_settings	= true;
+
+    /**
      * if sshd should be restarted during write phase
      */
     global boolean restart_sshd		= false;
@@ -318,6 +336,16 @@
 
 	initial_defaults = eval (settings);
 	return true;
+    }
+
+    /**
+     * set the value of read_settings variable
+     * which means, do not read some settings from system
+     */
+    global define boolean SetReadSettings (boolean read) {
+
+	read_settings	= read;
+	return read_settings;
     }
 
     /* ------------- auto_yast functions -------------------------------- */
@@ -539,18 +567,32 @@
     }
 
     /**
+     * Check if current machine runs OES
+     */
+    global define boolean CheckOES () {
+	oes = Package::Installed ("NOVLam");
+	return oes;
+    }
+
+    /**
      * Reads LDAP settings from the SCR
      * @return success
      */
     global define boolean Read () {
 
+	expert_ui	=
+	    ProductFeatures::GetFeature ("globals", "ui_mode") == "expert";
+
+	CheckOES ();
+
 	foreach (string db,["passwd","group","passwd_compat","group_compat"],``{
 	    nsswitch[db]	= Nsswitch::ReadDb (db);
 	});
 
-	start = contains (nsswitch["passwd"]:[], "ldap") ||
+	start = contains (nsswitch["passwd"]:[], "ldap")		||
 		(contains (nsswitch["passwd"]:[], "compat") &&
-		 contains (nsswitch["passwd_compat"]:[], "ldap"));
+		 contains (nsswitch["passwd_compat"]:[], "ldap"))	||
+		(oes && contains (nsswitch["passwd"]:[], "nam"));
 
 	old_start	= start;
 
@@ -581,23 +623,29 @@
 
 	file_server = ((string)SCR::Read (.sysconfig.ldap.FILE_SERVER)== "yes");
 
-	bind_dn = (string)SCR::Read (.sysconfig.ldap.BIND_DN);
+	if (read_settings || bind_dn == "")
+	{
+	    bind_dn = (string)SCR::Read (.sysconfig.ldap.BIND_DN);
+	}
 	if (bind_dn == nil || bind_dn == "")
 	    bind_dn = ReadLdapConfEntry ("binddn", "");
 
-	list<string> map_attrs = ReadLdapConfEntries ("nss_map_attribute");
-	foreach (string map_attr, map_attrs, ``{
-	    map_attr		= tolower (map_attr);
-	    if (issubstring (map_attr, "uniquemember"))
-	    {
-		list<string> attr	= splitstring (map_attr, " \t");
-		if (attr[0]:"" == "uniquemember")
+	if (read_settings || member_attribute == "")
+	{
+	    list<string> map_attrs = ReadLdapConfEntries ("nss_map_attribute");
+	    foreach (string map_attr, map_attrs, {
+		map_attr		= tolower (map_attr);
+		if (issubstring (map_attr, "uniquemember"))
 		{
-		    member_attribute		= attr[1]:member_attribute;
-		    old_member_attribute	= member_attribute;
+		    list<string> attr	= splitstring (map_attr, " \t");
+		    if (attr[0]:"" == "uniquemember")
+		    {
+			member_attribute	= attr[1]:member_attribute;
+			old_member_attribute	= member_attribute;
+		    }
 		}
-	    }
-	});
+	    });
+	}
 
 	// install on demand
 	_autofs_allowed = true;
@@ -1345,6 +1393,12 @@ The object with the selected DN cannot be created.
 	    if (templs == [])
 		templ_cn = "usertemplate";
 	    default_base = sformat ("ou=people,%1", domain);
+
+	    // for eDirectory, we have to use cleartext passwords!
+	    if (nds && tolower (obj["susepasswordhash",0]:"") != "clear")
+	    {
+		obj["susepasswordhash"]	= [ "clear" ];
+	    }
 	}
 	if (class == "susegroupconfiguration")
 	{
@@ -1718,6 +1772,99 @@ Select another one.
     }
 
     /**
+     * Check if references to other objects are correct;
+     * create these objects if possible
+     */
+    global define boolean CheckOrderOfCreation () {
+
+
+	foreach (string dn, map m, (map<string,map>) config_modules, {
+
+	    // 1. create suseDefaultBase object if not present
+
+	    string base_dn	= m["susedefaultbase",0]:"";
+	    if (base_dn != "")
+	    {
+		map object = GetLDAPEntry (base_dn);
+		if (object == nil)
+		{
+		    y2warning ("reference to nothing? (%1)", base_dn);
+		    config_modules[dn]	= remove (m, "susedefaultbase");
+		}
+		else if (object == $[])
+		{
+		    map default_base	= $[
+			"objectclass"	: [ "top", "organizationalunit"],
+			"modified"	: "added",
+			"ou"		: get_cn (base_dn)
+		    ];
+		    if (nds)
+		    {
+			default_base["acl"]	= [
+			    "3#subtree#[Public]#[All Attributes Rights]",
+			    "1#subtree#[Public]#[Entry Rights]"
+			];
+		    }
+		    if (!ParentExists (base_dn) ||
+			!WriteLDAP ($[ base_dn : default_base ]))
+		    {
+			y2error ("%1 cannot be created", base_dn);
+			config_modules[dn]	= remove (m, "susedefaultbase");
+		    }
+		}
+	    }
+
+	    // 2. empty template must be created when there is a reference
+	    string template_dn	=  m["susedefaulttemplate",0]:"";
+	    if (template_dn != "" && ! haskey (templates, template_dn))
+	    {
+		map object = GetLDAPEntry (template_dn);
+		if (size (object) == 0)
+		{
+		    y2milestone("template does not exist, creating default...");
+		    string t_class =
+			contains (m["objectclass"]:[],"susegroupconfiguration")?
+			"susegrouptemplate" : "suseusertemplate";
+		    map template = $[
+			"modified"	: "added",
+			"cn"		: get_cn (template_dn)
+		    ];
+		    template = union (template, new_objects [t_class]:$[]);
+		    if (!ParentExists (template_dn) ||
+			!WriteLDAP ($[ template_dn: template ]))
+		    {
+			y2error ("%1 cannot be created", template_dn);
+			config_modules[dn] = remove (m, "susedefaulttemplate");
+		    }
+		}
+	    }
+	});
+
+	// 3. check references to secondary groups in templates
+	foreach (string dn, map m, (map<string,map>) templates, ``{
+
+	    list groups		= m["susesecondarygroup"]:[];
+	    if (size (groups) > 0)
+	    {
+		list new_groups	= [];
+		foreach (string group, (list<string>) groups, ``{
+		    map object = GetLDAPEntry (group);
+		    if (object == nil || object == $[])
+		    {
+			y2warning ("no such group %1;removing reference",group);
+		    }
+		    else
+		    {
+			new_groups	= add (new_groups, group);
+		    }
+		});
+		m["susesecondarygroup"]	= new_groups;
+	    }
+	});
+	return true;
+    }
+
+    /**
      * create the default objects for users and groups
      */
     define boolean CreateDefaultLDAPConfiguration () ``{
@@ -1757,12 +1904,21 @@ Select another one.
 	{
 	    if (ParentExists (base_config_dn))
 	    {
-	        if (!WriteLDAP ( $[ base_config_dn : $[
+		map config_object	= $[
 		    "objectclass"	: [ "top", "organizationalunit"],
 		    "modified"		: "added",
-		    "ou"		: get_cn (base_config_dn)]]))
+		    "ou"		: get_cn (base_config_dn)
+		];
+		if (nds)
+		{
+		    config_object["acl"]	= [
+			"3#subtree#[Public]#[All Attributes Rights]",
+			"1#subtree#[Public]#[Entry Rights]"
+		    ];
+		}
+	        if (!WriteLDAP ($[ base_config_dn : config_object ]))
 	        {
-		   y2error ("problem");
+		   y2error ("%1 cannot be created", base_config_dn);
 	        }
 	    }
 	    //TODO fail?
@@ -1790,14 +1946,14 @@ Select another one.
 	// create user configuration object
 	if (GetLDAPEntry (user_dn) == $[])
 	{
-	    modules [user_dn] = Ldap::CreateModule (
+	    modules [user_dn] = CreateModule (
 	        get_cn (user_dn), "suseuserconfiguration");
 	}
 
 	// create group configuration object
 	if (GetLDAPEntry (group_dn) == $[])
 	{
-	    modules [group_dn] = Ldap::CreateModule (
+	    modules [group_dn] = CreateModule (
 	        get_cn (group_dn), "susegroupconfiguration");
 	}
 
@@ -1817,7 +1973,7 @@ Select another one.
 
 	if (GetLDAPEntry (template_dn) == $[])
 	{
-	    templs [template_dn]	= Ldap::CreateTemplate (
+	    templs [template_dn]	= CreateTemplate (
 	        get_cn (template_dn), ["suseuserconfiguration"]);
 	}
 
@@ -1833,7 +1989,7 @@ Select another one.
 
 	if (GetLDAPEntry (template_dn) == $[])
 	{
-	    templs [template_dn]	= Ldap::CreateTemplate (
+	    templs [template_dn]	= CreateTemplate (
 	        get_cn (template_dn), ["susegroupconfiguration"]);
 	}
 
@@ -1841,6 +1997,41 @@ Select another one.
 	    CommitConfigModules (modules);
 	CommitTemplates (templs);
 	return true;
+    }
+
+    /**
+     * Check the server if it is NDS (novell directory service)
+     */
+    global define boolean CheckNDS () {
+
+	if (!ldap_initialized)
+	{
+	    string msg = LDAPInit ();
+	    if (msg != "")
+	    {
+		// no popup: see bug #132909
+		return false;
+	    }
+	}
+
+	list vendor = (list) SCR::Read (.ldap.search, $[
+	    "base_dn"       : "",
+	    "scope"         : 0,
+	    "attrs"         : [ "vendorVersion", "vendorName" ]
+	]);
+
+	y2debug ("vendor: %1", vendor);
+	map<string,list> output	= vendor[0]:$[];
+	foreach (string attr, list value, output, {
+	    if (issubstring (value[0]:"", "Novell"))
+	    {
+		y2debug ("value: %1", value[0]:"");
+		nds	= true;
+	    }
+	});
+
+	nds_checked	= true;
+	return nds;
     }
 
     /**
@@ -1929,6 +2120,18 @@ Select another one.
 	}
 	if (start) // ldap used for authentocation
 	{
+	    // ---------- correct pam_password value for Novell eDirectory
+	    if (pam_password != "nds" && expert_ui)
+	    {
+		if (!nds_checked && !Mode::autoinst ())
+		{
+		    CheckNDS ();
+		}
+		if (nds)
+		{
+		    pam_password	= "nds";
+		}
+	    }
 
 	    WriteLdapConfEntry ("pam_password", pam_password);
 
@@ -1949,43 +2152,46 @@ Select another one.
 	    WriteLdapConfEntry ("nss_base_group",
 		(nss_base_group != "")? nss_base_group : user_base);
 
-	    // pam settigs
-	    foreach (string type, [ "account", "auth", "password" ], {
-		PamSettings::AddValue ("pam_unix2", type, "use_ldap");
+	    if (!oes)
+	    {
+		// pam settigs
+		foreach (string type, [ "account", "auth", "password" ], {
+		    PamSettings::AddValue ("pam_unix2", type, "use_ldap");
 
-		// prefer kerberos authentication (see #49894)
-		if (krb_authentication == true)
-		{
-		    PamSettings::RemoveValue ("unix2", type, "use_krb5");
-		    if (contains (auth_modules, "krb5afs"))
+		    // prefer kerberos authentication (see #49894)
+		    if (krb_authentication == true)
 		    {
-			PamSettings::RemoveValue ("unix2", type,"call_modules");
-			PamSettings::AddValue ("unix2", type, "call_modules=" +
-			    mergestring (auth_modules,","));
+			PamSettings::RemoveValue ("unix2", type, "use_krb5");
+			if (contains (auth_modules, "krb5afs"))
+			{
+			    PamSettings::RemoveValue ("unix2", type,"call_modules");
+			    PamSettings::AddValue ("unix2", type,
+				"call_modules="+mergestring (auth_modules,","));
+			}
+			else
+			{
+			    PamSettings::AddValue ("unix2", type, "use_krb5");
+			}
 		    }
-		    else
-		    {
-			PamSettings::AddValue ("unix2", type, "use_krb5");
-		    }
-		}
-	    });
+		});
 
-	    // modify sources in /etc/nsswitch.conf
-	    foreach (string db, [ "passwd", "group" ], ``{
-		string new_db		= db+"_compat";
-		nsswitch [new_db]	= union (nsswitch[new_db]:[], ["ldap"]);
-		Nsswitch::WriteDb (db, ["compat"]);
-		Nsswitch::WriteDb (new_db, nsswitch[new_db]:["ldap"]);
-	    });
+		// modify sources in /etc/nsswitch.conf
+		foreach (string db, [ "passwd", "group" ], {
+		    string new_db	= db+"_compat";
+		    nsswitch [new_db]	= union (nsswitch[new_db]:[], ["ldap"]);
+		    Nsswitch::WriteDb (db, ["compat"]);
+		    Nsswitch::WriteDb (new_db, nsswitch[new_db]:["ldap"]);
+		});
 
-	    foreach (string db, [ "services" ,"netgroup", "aliases" ], {
-		Nsswitch::WriteDb (db, ["files", "ldap"]);
-	    });
+		foreach (string db, [ "services" ,"netgroup", "aliases" ], {
+		    Nsswitch::WriteDb (db, ["files", "ldap"]);
+		});
 
-	    Nsswitch::Write ();
+		Nsswitch::Write ();
+	    }
 	    Autologin::Write (write_only);
 	}
-	else // ldap is not used
+	else if (!oes) // ldap is not used
 	{
 	    //TODO: first check, if nss needs to be updated...
 	    foreach (string db, [ "passwd", "group" ], ``{
@@ -2026,7 +2232,10 @@ Select another one.
 	}
 
 	// write changes to /etc/security/pam_unix2.conf now
-	PamSettings::Write (false);
+	if (!oes)
+	{
+	    PamSettings::Write (false);
+	}
 
 	// write sysconfig values
 	SCR::Write (.sysconfig.ldap.FILE_SERVER, file_server? "yes": "no");
@@ -2105,7 +2314,9 @@ Select another one.
 
 	if (ldap_modified && ldap_ok)
 	{
-	    if (WriteLDAP (config_modules) && WriteLDAP (templates)) {
+	    CheckOrderOfCreation ();
+
+	    if (WriteLDAP (templates) && WriteLDAP (config_modules)) {
 		ldap_modified	= false;
 	    }
 	}
@@ -2166,11 +2377,19 @@ exists on the LDAP server. Create it now?
 	    {
 		if (!ParentExists (dn))
 		    return false;
-		return WriteLDAP ( $[ dn : $[
+		map config_object	= $[
 		    "objectclass"	: [ "top", "organizationalunit"],
 		    "modified"		: "added",
-		    "ou"		: get_cn (dn)]]
-		);
+		    "ou"		: get_cn (dn)
+		];
+		if (nds)
+		{
+		    config_object["acl"]	= [
+			"3#subtree#[Public]#[All Attributes Rights]",
+			"1#subtree#[Public]#[Entry Rights]"
+		    ];
+		}
+		return WriteLDAP ( $[ dn : config_object ]);
 	    }
 	    return false;
 	}

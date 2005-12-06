@@ -1,4 +1,16 @@
 -------------------------------------------------------------------
+Tue Dec  6 15:16:06 CET 2005 - jsuchome@suse.cz
+
+- backport the functionality from SLES9 to support SLES10:
+  - do not alter pam and nss settings on OES (#suse46396)
+  - set permissions for new objects in eDirectory (#suse47579)
+  - create LDAP object in correct order (#suse46398)
+  - save "nds" as value for pam_password when eDirectory (#suse46396)
+  - do not reininitialize settings set from outside (#suse45898)
+- do not show the error popup if asking for NDS fails (#132909)
+- 2.13.4
+
+-------------------------------------------------------------------
 Tue Dec  6 08:08:54 CET 2005 - jsuchome@suse.cz
 
 - 'search' is builtin now (do not use it as identificator)
