@@ -62,15 +62,15 @@ import "Wizard";
 	UI::OpenDialog (`opt (`decorated), contents);
 
 	list<term> items	= [];
-	list<string> search	= (list<string>) SCR::Read (.ldap.search, $[
+	list<string> out	= (list<string>) SCR::Read (.ldap.search, $[
 		"base_dn"	: root_dn,
 		"scope"		: 1,
 		"dn_only"	: true,
 		"not_found_ok"	: true ]
 	);
-	if (size (search) > 0)
+	if (size (out) > 0)
 	{
-	    items = maplist (string dn, search, {
+	    items = maplist (string dn, out, {
 		dns [dn]	= false;
 		return `item (dn, false, []);
 	    });

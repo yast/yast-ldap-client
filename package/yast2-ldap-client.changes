@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Dec  6 08:08:54 CET 2005 - jsuchome@suse.cz
+
+- 'search' is builtin now (do not use it as identificator)
+- 2.13.3 
+
+-------------------------------------------------------------------
 Tue Nov 29 09:39:35 CET 2005 - jsuchome@suse.cz
 
 - added check for tointeger output (which is fixed: #115560)
