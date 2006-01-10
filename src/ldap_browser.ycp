@@ -1,0 +1,494 @@
+/**
+ * File:	clients/ldap/ldap_browser.ycp
+ * Package:	Configuration of LDAP
+ * Summary:	Simple browser and editor of LDAP tree
+ * Author:	Jiri Suchomel <jsuchome@suse.cz>
+ *
+ * $Id: ui.ycp 26603 2005-12-19 11:53:48Z jsuchome $
+ *
+ */
+{
+    import "Label";
+    import "Ldap";
+    import "LdapPopup";
+    import "Popup";
+    import "Wizard";
+
+    include "ldap/routines.ycp";
+
+    textdomain "ldap-client";
+
+
+    string root_dn		= "";
+    string current_dn		= "";
+    map data			= $[];
+    map<string, any> tmp_data	= $[];
+    // map of already read subtrees
+    map<string,boolean> dns	= $[];
+    list<string> subdns		= [];
+    list<term> tree_items	= [];
+    map topdns			= $[];
+    map open_items		= $[];
+
+    map help_text	= $[
+	`general	:
+	// general help text for LDAP browser
+	_("<p>Browse LDAP tree in <b>LDAP Tree</b> tab.</p>"),
+	`ldaptree	:
+	// help text for Edit Entry tab
+	_("<p>Edit attributes of selected LDAP object in <b>Entry Data</b> tab.</p>"),
+	`entry		:
+	_("<p>Use <b>Edit</b> for changing the value of selected attribute. Use <b>Save</b> to save you changes to LDAP.</p>"),
+    ];
+
+    // popup question (Continue/Cancel follows)
+    string unsaved	= _("There are unsaved changes in current entry.
+Do you want to throw them away?");
+
+    string glyph		= "";//UI::Glyph (`BulletArrowRight) + " ";
+
+    list<term> tabs	= [
+	// tab label
+	`item(`id(`ldaptree), _("LDAP &Tree"), true),
+	// tab label
+	`item(`id(`entry), _("Entry &Data")),
+    ];
+
+    term contents = `VBox (
+	`DumbTab (`id(`tabs), tabs,
+	    `ReplacePoint(`id(`tabContents ), `VBox (`HVStretch())))
+    );
+    boolean has_tabs	= true;
+    if (!UI::HasSpecialWidget (`DumbTab))
+    {
+	has_tabs	= false;
+	term tabbar	= `HBox ();
+	foreach (term it, tabs, {
+	    string label = it[1]:"";
+	    tabbar = add (tabbar,`PushButton (it[0]:`id(label), label));
+	});
+	contents = `VBox (`Left(tabbar),
+	    `Frame ("", `ReplacePoint(`id(`tabContents), `HVStretch()))
+	);
+    }
+    boolean textmode	= !has_tabs;
+
+    // helper: data modifued?
+    define boolean Modified () {
+	return size (tmp_data) > 0;
+    }
+
+    // helper: create the value that should be shown instead of whole DN in tree
+    define string show_dn (string dn) {
+	if (topdns[dn]:false)
+	    return dn;
+	return get_rdn (dn);
+    }
+
+    // helper for set_tree_term function: create new items for subtrees
+    define list<term> update_items (list<term> its) {
+
+	return maplist (term it, its, {
+	    string dn	= it[0,0]:"";
+	    if (dn == current_dn)
+	    {
+		return `item (`id(dn), show_dn (dn), true,
+		    maplist(string k, subdns, ``(
+			`item (`id(k), glyph + show_dn (k), false, []))));
+	    }
+	    integer last = size (it) - 1;
+	    if (size (it[last]:[]) == 0)
+		return it;
+	    // `OpenItems doesn't work in ncurses...
+	    boolean open = haskey (open_items, dn) && !textmode;
+	    return `item (
+		`id(dn), show_dn (dn), open, update_items (it[last]:[]));
+	});
+    }
+
+    // -----------------------------
+    // create the term with LDAP tree
+    define void set_tree_term () {
+
+	term cont = `HBox (`VSpacing (20), `VBox (`HSpacing(70),
+	    `VSpacing (0.2),
+	    `HBox (
+		`HSpacing (),
+		`ReplacePoint (`id (`reptree), `Tree (`id(`tree), root_dn, [])),
+		`ReplacePoint (`id (`repbuttons), `Empty ()),
+		`HSpacing ()
+	    ),
+	    `HBox (
+		`HSpacing (1.5),
+		textmode ?
+		  // button label
+		  `Right (`PushButton (`id (`open), `opt (`key_F6),_("&Open"))):
+		  `Empty (),
+		// button label
+		`Right (`PushButton (`id(`reload),`opt(`key_F5), _("&Reload"))),
+		`HSpacing (1.5)
+	    ),
+	    `VSpacing (0.6)
+	));
+
+	UI::ReplaceWidget (`tabContents, cont);
+	if (has_tabs)
+	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `ldaptree);
+
+	if (size (tree_items) == 0)
+	{
+	    list<string> out	= (list<string>) SCR::Read (.ldap.search, $[
+		"base_dn"	: root_dn,
+		"scope"		: 1,
+		"dn_only"	: true,
+		"not_found_ok"	: true ]
+	);
+	    if (size (out) > 0)
+	    {
+		tree_items = maplist (string dn, out, {
+		    dns [dn]	= false;
+		    topdns[dn]	= true;
+		    return `item (`id(dn), dn, false, []);
+		});
+	    }
+	}
+
+	if (size (tree_items) > 0)
+	{
+	    UI::ReplaceWidget (`id (`reptree), textmode ?
+		`Tree (`id(`tree), root_dn, tree_items) :
+		`Tree (`id(`tree), `opt(`notify), root_dn, tree_items));
+	}
+	else if (root_dn == "")
+	{
+	    list bases = (list) SCR::Read (.ldap.search, $[
+		"base_dn"	: "",
+	        "scope"		: 0,
+		"attrs"		: [ "namingcontexts" ]
+	    ]);
+	    if (size (bases) > 0)
+		tree_items = maplist (string dn, bases[0,"namingcontexts"]:[], {
+		    topdns[dn]	= true;
+		    return `item(`id(dn), glyph + dn, false, []);
+		});
+	    if (size (tree_items) > 0)
+		UI::ReplaceWidget (`id (`reptree), textmode ?
+		    `Tree (`id(`tree), root_dn, tree_items) :
+		    `Tree (`id(`tree), `opt(`notify), root_dn, tree_items));
+	    if (size (topdns) == 1)
+		root_dn	= bases[0,"namingcontexts",0]:"";
+	}
+
+	if (textmode)
+	    UI::SetFocus (`id(`tree));
+
+	if (current_dn != "")
+	    UI::ChangeWidget (`id(`tree), `CurrentItem, current_dn);
+    }
+
+    // -----------------------------
+    // create the term with LDAP entry data table
+    define void set_entry_term () {
+
+        list items			= [];
+
+	// generate table items from already existing values
+        foreach (string attr, any val, (map<string,any>) data, {
+	    string at = tolower (attr);
+	    if (is (val, map) || val == nil)
+		return;
+	    list<string> value = [];
+	    if (is (val, list))
+	    {
+		value = (list<string>)val;
+	    }
+	    if (is (val, byteblock) ||
+		(is (val, list) && is (value[0]:nil, byteblock)))
+	    {
+		y2warning ("binary value (%1) cannot be edited", at);
+		return;
+	    }
+	    else if (is (val, integer))
+	    {
+		value = [ sformat ("%1", val) ];
+		data [at] = value;
+	    }
+	    else if (is (val, string))
+	    {
+		value = [ (string)val ];
+		data [at] = value;
+	    }
+	    items = add (items,`item (`id(at), at, mergestring(value,",")));
+	});
+
+	// generate table items with empty values
+	// (not set for this user/group yet)
+	// we need to read available attributes from Ldap
+	foreach (string class, (list<string>) sort (data["objectclass"]:[]), {
+	    foreach (string at,(list<string>)Ldap::GetAllAttributes (class), {
+		if (!haskey (data, at))
+		{
+		    data[at] = [];
+		    items = add (items, `item (`id(at), at, ""));
+		}
+	    });
+	});
+
+	term cont = `HBox(`HSpacing (1.5), `VBox(
+	    `Left (`Label (current_dn)),
+	    `Table(`id(`table), `opt(`notify), `header(
+		// table header 1/2
+		_("Attribute") + "  ",
+		// table header 2/2
+		_("Value")),
+		items),
+	    `HBox (
+		`PushButton(`id(`edit), `opt(`key_F4), Label::EditButton()),
+		`HStretch(),
+		`PushButton(`id(`save), `opt(`key_F2), Label::SaveButton())
+	    ),
+	    `VSpacing (0.5)
+	    ),
+	    `HSpacing (1.5)
+	);
+
+	UI::ReplaceWidget (`tabContents, cont);
+	if (has_tabs)
+	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `entry);
+
+	if (size (items) == 0)
+	    UI::ChangeWidget (`id(`edit), `Enabled, false);
+
+	UI::ChangeWidget (`id(`save), `Enabled, false);
+        UI::SetFocus (`id(`table));
+    }
+
+    Wizard::CreateDialog ();
+
+    Wizard::SetContentsButtons(_("LDAP Browser"),
+	contents, help_text[`general]:"" + help_text[`ldaptree]:"",
+	"", Label::CloseButton());
+
+    Wizard::HideBackButton ();
+    Wizard::HideAbortButton ();
+
+    // initialize LDAP
+    Ldap::Read ();
+
+    // -------------
+
+    UI::OpenDialog (`opt(`decorated), `VBox(
+        `HSpacing(40),
+	// textentry label
+	`TextEntry (`id(`server), _("LDAP Server"),
+	    Ldap::GetFirstServer(Ldap::server)),
+	// textentry label
+	`TextEntry (`id(`admin_dn), _("Administrator DN"), Ldap::GetBindDN ()),
+        // password entering label
+        `Password(`id(`pw), _("&Enter the Password for LDAP Server:")),
+        `HBox(
+            `PushButton (`id(`ok),`opt(`key_F10, `default), Label::OKButton()),
+            // button label
+	    `PushButton (`id(`anon), `opt(`key_F6), _("&Anonymous Access")),
+            `PushButton (`id(`cancel),`opt(`key_F9), Label::CancelButton())
+	)
+    ));
+
+    any ret = nil;
+    while (true)
+    {
+	ret	= UI::UserInput();
+	if (ret == `ok || ret == `anon)
+	{
+	    Ldap::server = (string) UI::QueryWidget (`id(`server), `Value);
+	    Ldap::bind_dn = (string) UI::QueryWidget (`id(`admin_dn), `Value);
+	    Ldap::bind_pass	= (string) UI::QueryWidget(`id(`pw), `Value);
+	    Ldap::SetAnonymous (ret == `anon);
+
+	    string error	= Ldap::LDAPInit ();
+	    if (error != "")
+	    {
+		Ldap::LDAPErrorMessage ("init", error);
+		continue;
+	    }
+
+	    error		= Ldap::LDAPBind (Ldap::bind_pass);
+	    if (error != "")
+	    {
+		Ldap::LDAPErrorMessage ("bind", error);
+		continue;
+	    }
+	    error		= Ldap::InitSchema ();
+	    if (error != "")
+	    {
+		Ldap::LDAPErrorMessage ("schema", error);
+		continue;
+	    }
+	    break;
+	}
+	if (ret == `cancel)
+	    break;
+    }
+    UI::CloseDialog();
+    if (ret == `cancel)
+    {
+	Wizard::CloseDialog ();
+	return;
+    }
+
+    set_tree_term ();
+
+    symbol result	= `notnext;
+    symbol current	= `ldaptree;
+
+    while (true) {
+
+	result = (symbol) UI::UserInput ();
+
+	if (result == `cancel && !Popup::ReallyAbort (false))
+	    result = `not_next;
+
+	if (result == `back || result == `cancel)
+	    break;
+
+	// 1. get the data from dialogs
+	if (current == `ldaptree)
+	{
+	    current_dn = (string) UI::QueryWidget (`id(`tree),`CurrentItem);
+	    if (current_dn == nil)
+		current_dn	= "";
+	}
+
+	// 2. switch the tabs
+	if ((result == `ldaptree && Modified ()) &&
+	    !Popup::ContinueCancel (unsaved))
+	{
+	    result	= `not_next;
+	    if (has_tabs)
+		UI::ChangeWidget (`id (`tabs), `CurrentItem, `entry);
+	    continue;
+	}
+	if (result == `ldaptree || result == `entry)
+	{
+	    current = result;
+	    Wizard::SetHelpText(help_text[`general]:"" + help_text[current]:"");
+	    if (result == `ldaptree)
+	    {
+		set_tree_term ();
+		tmp_data	= $[];
+	    }
+	    else
+	    {
+		data		= Ldap::GetLDAPEntry (current_dn);
+		set_entry_term ();
+	    }
+	}
+
+	// events in tree tab
+	if (result == `tree || result == `open)
+	{
+	    if (! dns[current_dn]:false)
+	    {
+		subdns = (list<string>) SCR::Read (.ldap.search, $[
+		    "base_dn"		: current_dn,
+		    "scope"		: 1,
+		    "dn_only"		: true,
+		    "not_found_ok"	: true,
+		]);
+		dns [current_dn]	= true;
+		if (size (subdns) > 0)
+		// TODO if size (subdns) > 0) || dn has glyph
+		{
+		    open_items = (map) UI::QueryWidget (`tree, `OpenItems);
+		    tree_items	= update_items (tree_items);
+		    UI::ReplaceWidget (`id (`reptree), textmode ?
+			`Tree (`id(`tree), root_dn, tree_items) :
+			`Tree (`id(`tree), `opt(`notify), root_dn, tree_items));
+		    UI::ChangeWidget (`id(`tree), `CurrentItem, current_dn);
+		    open_items = $[];
+		}
+		else
+		{
+		    UI::ChangeWidget (`id(`tree), `Item(current_dn,1), current_dn);
+		}
+	    }
+	    if (textmode)
+		UI::SetFocus (`id(`tree));
+	}
+
+	if (result == `reload)
+	{
+	    tree_items	= [];
+	    open_items	= $[];
+	    dns		= $[];
+	    topdns	= $[];
+	    subdns	= [];
+	    root_dn	= "";
+	    set_tree_term ();
+	}
+
+	// events in Edit Entry tab
+	if (result == `edit || result == `table)
+	{
+	    string attr	= (string) UI::QueryWidget (`id(`table), `CurrentItem);
+	    list<string> value	= tmp_data [attr]:data[attr]:[];
+	    value		= LdapPopup::EditAttribute ($[
+		"attr"          : attr,
+		"value"         : value,
+		"single"        : Ldap::SingleValued (attr)
+	    ]);
+	    if (value == tmp_data [attr]:data[attr]:[])
+	    {
+		result = `notnext;
+		continue;
+	    }
+	    UI::ChangeWidget(`id(`table),`Item(attr,1), mergestring(value,","));
+	    UI::ChangeWidget (`id(`save), `Enabled, true);
+	    tmp_data [attr] = value;
+	}
+	if (result == `save)
+	{
+	    if (Modified ())
+	    {
+		boolean cont	= false;
+		foreach (string oc, data["objectclass"]:[], {
+		    if (cont) return;
+		    foreach (string attr, Ldap::GetRequiredAttributes (oc), {
+			any val = tmp_data[attr]:nil;
+			if (!cont && (val == [] || val == "")) {
+			    //error popup, %1 is attribute name
+			    Popup::Error (sformat (_("The \"%1\" attribute is mandatory.
+Enter a value."), attr));
+			    UI::SetFocus (`id(`table));
+			    cont = true;
+			}
+		    });
+		});
+		if (cont)
+		{
+		    result	= `not_next;
+		    continue;
+		}
+		if (tmp_data["modified"]:"" == "")
+		    tmp_data["modified"]	= "edited";
+		if (Ldap::WriteLDAP ($[ current_dn : tmp_data ]))
+		{
+		    tmp_data		= $[];
+		    UI::ChangeWidget (`id(`save), `Enabled, false);
+		}
+	    }
+	}
+
+	// general events
+	if (result == `next)
+	{
+	    if (Modified () && !Popup::ContinueCancel (unsaved))
+	    {
+		result	= `not_next;
+		continue;
+	    }
+	    break;
+	}
+     }
+    Wizard::CloseDialog ();
+}

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Jan 10 15:21:01 CET 2006 - jsuchome@suse.cz
+
+- added simple LDAP browser and editor (F110039)
+- 2.13.6
+
+-------------------------------------------------------------------
 Mon Dec 19 12:51:18 CET 2005 - jsuchome@suse.cz
 
 - merged proofread texts

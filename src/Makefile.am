@@ -12,7 +12,8 @@ client_DATA =		\
 	ldap.ycp	\
 	ldap_auto.ycp	\
 	ldap-client.ycp	\
-	ldap_config.ycp
+	ldap_config.ycp	\
+	ldap_browser.ycp
 
 ynclude_DATA =		\
 	ui.ycp		\
