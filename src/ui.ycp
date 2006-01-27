@@ -503,7 +503,7 @@ server.</p>
     _("<p>To access the data stored on the server, enter the
 <b>Administrator DN</b>.
 You can enter full DN (for example, cn=Administrator,dc=mydomain,dc=com) or just
-the relative DN (for example, cn=Administrator). The LDAP Base DN will be appended automatically if the appropriate option is checked.</p>") +
+the relative DN (for example, cn=Administrator). The LDAP Base DN is appended automatically if the appropriate option is checked.</p>") +
 
     // help text 3/4
     _("<p>To create the default configuration objects for LDAP users and groups,

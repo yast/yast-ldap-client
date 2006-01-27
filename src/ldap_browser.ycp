@@ -33,17 +33,18 @@
     map help_text	= $[
 	`general	:
 	// general help text for LDAP browser
-	_("<p>Browse LDAP tree in <b>LDAP Tree</b> tab.</p>"),
+	_("<p>Browse the LDAP tree in the <b>LDAP Tree</b> tab.</p>"),
 	`ldaptree	:
 	// help text for Edit Entry tab
-	_("<p>Edit attributes of selected LDAP object in <b>Entry Data</b> tab.</p>"),
+	_("<p>Edit attributes of the selected LDAP object in the <b>Entry Data</b> tab.</p>"),
 	`entry		:
-	_("<p>Use <b>Edit</b> for changing the value of selected attribute. Use <b>Save</b> to save you changes to LDAP.</p>"),
+	_("<p>Use <b>Edit</b> to change the value of the selected attribute. Use <b>Save</b> to save your changes to LDAP.</p>"),
     ];
 
     // popup question (Continue/Cancel follows)
-    string unsaved	= _("There are unsaved changes in current entry.
-Do you want to throw them away?");
+    string unsaved	= _("There are unsaved changes in the current entry.
+Discard these changes?
+");
 
     string glyph		= "";//UI::Glyph (`BulletArrowRight) + " ";
 
@@ -406,10 +407,6 @@ Do you want to throw them away?");
 			`Tree (`id(`tree), `opt(`notify), root_dn, tree_items));
 		    UI::ChangeWidget (`id(`tree), `CurrentItem, current_dn);
 		    open_items = $[];
-		}
-		else
-		{
-		    UI::ChangeWidget (`id(`tree), `Item(current_dn,1), current_dn);
 		}
 	    }
 	    if (textmode)
