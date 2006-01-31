@@ -732,6 +732,7 @@ user home directories.</p>
 		UI::QueryWidget(`id(`nss_base_shadow),`Value);
 	    nss_base_group	= (string)
 		UI::QueryWidget(`id(`nss_base_group),`Value);
+	    pam_password = (string) UI::QueryWidget(`id(`pam_password), `Value);
 	}
 	if (current == `admin)
 	{

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Jan 31 15:35:07 CET 2006 - jsuchome@suse.cz
+
+- save changes of pam_password value (#146942)
+- 2.13.8 
+
+-------------------------------------------------------------------
 Fri Jan 27 08:36:30 CET 2006 - jsuchome@suse.cz
 
 - merged proofread texts
