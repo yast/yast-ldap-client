@@ -4,7 +4,7 @@
  * Summary:	Simple browser and editor of LDAP tree
  * Author:	Jiri Suchomel <jsuchome@suse.cz>
  *
- * $Id: ui.ycp 26603 2005-12-19 11:53:48Z jsuchome $
+ * $Id$
  *
  */
 {
