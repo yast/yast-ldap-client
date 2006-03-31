@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Mar 31 15:09:40 CEST 2006 - jsuchome@suse.cz
+
+- restrict the set of characters allowed for host names (#159741)
+- 2.13.11 
+
+-------------------------------------------------------------------
 Thu Mar  9 12:41:52 CET 2006 - jsuchome@suse.cz
 
 - merged proofread texts

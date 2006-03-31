@@ -25,6 +25,7 @@
     import "Service";
     import "SLP";
     import "Stage";
+    import "String";
     import "Wizard";
 
     include "ldap/routines.ycp";
@@ -103,12 +104,13 @@
 
 	list items	= [];
 	foreach (map service, SLP::FindSrvs ("service:ldap", ""), {
-	    string s	= service["pcHost"]:service["srvurl"]:"";
+	    string s	= service["pcHost"]:"";
 	    /* TODO take address+port from url
 	    if (service["pcHost"]:"" == "")
 		s	= service["srvurl"]:"";
 	    */
-	    items	= add (items, s);
+	    if (s != "")
+		items	= add (items, s);
 	});
 	UI::CloseDialog ();
 	UI::OpenDialog (`VBox(
@@ -288,6 +290,7 @@ automatically.</p>
 	{
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
 	}
+	UI::ChangeWidget (`id(`ldapa), `ValidChars, String::CAlnum() + ": .");
 
 	symbol result = `not_next;
 	do {
@@ -534,7 +537,6 @@ user home directories.</p>
     string base_config_dn	= Ldap::GetMainConfigDN();
     boolean create_ldap		= Ldap::create_ldap;
     boolean append_base		= (bind_dn != "" && find (bind_dn, base_dn) > -1);
-
     string nss_base_passwd	= Ldap::nss_base_passwd;
     string nss_base_shadow	= Ldap::nss_base_shadow;
     string nss_base_group	= Ldap::nss_base_group;
