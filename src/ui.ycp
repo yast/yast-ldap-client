@@ -14,6 +14,7 @@
     textdomain "ldap-client";
 
     import "Autologin";
+    import "Hostname";
     import "Label";
     import "Ldap";
     import "LdapPopup";
@@ -25,7 +26,6 @@
     import "Service";
     import "SLP";
     import "Stage";
-    import "String";
     import "Wizard";
 
     include "ldap/routines.ycp";
@@ -290,7 +290,7 @@ automatically.</p>
 	{
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
 	}
-	UI::ChangeWidget (`id(`ldapa), `ValidChars, String::CAlnum() + ": .");
+	UI::ChangeWidget (`id(`ldapa),`ValidChars,Hostname::ValidChars + ": .");
 
 	symbol result = `not_next;
 	do {

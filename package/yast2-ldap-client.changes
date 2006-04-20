@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Apr 20 15:39:51 CEST 2006 - jsuchome@suse.cz
+
+- allow more characters (this time "-") for host name (#167991)
+- 2.13.13 
+
+-------------------------------------------------------------------
 Wed Apr 12 12:48:46 CEST 2006 - jsuchome@suse.cz
 
 - fixed installing architecture-specific packages (#164313)
