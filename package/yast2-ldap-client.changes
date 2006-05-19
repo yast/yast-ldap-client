@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri May 19 11:33:13 CEST 2006 - ug@suse.de
+
+- fixed desktop file for cloning process
+- 2.13.14
+
+-------------------------------------------------------------------
 Thu Apr 20 15:39:51 CEST 2006 - jsuchome@suse.cz
 
 - allow more characters (this time "-") for host name (#167991)
