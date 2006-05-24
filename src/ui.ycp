@@ -312,12 +312,14 @@ automatically.</p>
 	    }
 	    if (result == `fetch)
 	    {
-		string dn = LdapPopup::InitAndBrowseTree ("", $[
-		    "hostname"	: Ldap::GetFirstServer (server),
-		    "port"	: Ldap::GetFirstPort (server),
-		    "version"	: ldap_v2 ? 2 : 3,
-		    "use_tls"	: ldap_tls ? "yes" : "no"
-		]);
+		string dn = Ldap::ldap_initialized ?
+		    LdapPopup::BrowseTree ("") :
+		    LdapPopup::InitAndBrowseTree ("", $[
+			"hostname"	: Ldap::GetFirstServer (server),
+			"port"		: Ldap::GetFirstPort (server),
+			"version"	: ldap_v2 ? 2 : 3,
+			"use_tls"	: ldap_tls ? "yes" : "no"
+		    ]);
 		if (dn != "")
 		    UI::ChangeWidget (`id(`ldapd), `Value, dn);
 	    }
@@ -764,12 +766,14 @@ user home directories.</p>
 	// 3. other events
 	if (contains ([`br, `br_passwd, `br_shadow, `br_group ], result))
 	{
-	    string dn = LdapPopup::InitAndBrowseTree (base_dn, $[
-		"hostname"	: Ldap::GetFirstServer (Ldap::server),
-		"port"		: Ldap::GetFirstPort (Ldap::server),
-		"version"	: Ldap::ldap_v2 ? 2 : 3,
-		"use_tls"	: Ldap::ldap_tls ? "yes" : "no"
-	    ]);
+	    string dn = Ldap::ldap_initialized ?
+		LdapPopup::BrowseTree (base_dn) :
+		LdapPopup::InitAndBrowseTree (base_dn, $[
+		    "hostname"	: Ldap::GetFirstServer (Ldap::server),
+		    "port"	: Ldap::GetFirstPort (Ldap::server),
+		    "version"	: Ldap::ldap_v2 ? 2 : 3,
+		    "use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+		]);
 	    if (dn != "")
 	    {
 		map br2entry	= $[

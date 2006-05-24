@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed May 24 12:41:53 CEST 2006 - jsuchome@suse.cz
+
+- do not reinitialize existing connection for browsing LDAP (#178309)
+- 2.13.15
+
+-------------------------------------------------------------------
 Fri May 19 11:33:13 CEST 2006 - ug@suse.de
 
 - fixed desktop file for cloning process (#177082)
