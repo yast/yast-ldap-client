@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Jun 20 11:30:16 CEST 2006 - jsuchome@suse.cz
+
+- restart D-BUS after nscd (#174589)
+- 2.13.16 
+
+-------------------------------------------------------------------
 Wed May 24 12:41:53 CEST 2006 - jsuchome@suse.cz
 
 - do not reinitialize existing connection for browsing LDAP (#178309)
