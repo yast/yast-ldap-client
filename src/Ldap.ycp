@@ -2277,6 +2277,12 @@ Select another one.
 		Service::Restart ("nscd");
 	    }
 
+	    // fix for 174589
+	    if (Service::Status ("dbus") == 0)
+	    {
+		Service::Restart ("dbus");
+	    }
+
 	    if (ypbind_running)
 	    {
 		Service::Restart ("ypbind");
