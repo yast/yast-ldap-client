@@ -2283,6 +2283,11 @@ Select another one.
 		Service::Restart ("dbus");
 	    }
 
+	    if (Service::Status ("novell-zmd") == 0)
+	    {
+		Service::RunInitScript ("novell-zmd", "try-restart");
+	    }
+
 	    if (ypbind_running)
 	    {
 		Service::Restart ("ypbind");
