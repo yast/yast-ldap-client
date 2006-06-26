@@ -24,7 +24,7 @@ module_DATA =		\
 	Ldap.ycp	\
 	LdapPopup.ycp
 
-desktop_DATA = ldap.desktop
+desktop_DATA = ldap.desktop ldap_browser.desktop
 
 EXTRA_DIST = $(client_DATA) $(ynclude_DATA) $(module_DATA) $(desktop_DATA)
 

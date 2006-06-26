@@ -13,8 +13,8 @@
 {
     textdomain "ldap-client";
 
+    import "Address";
     import "Autologin";
-    import "Hostname";
     import "Label";
     import "Ldap";
     import "LdapPopup";
@@ -88,6 +88,29 @@
 	return `next;
     }
 
+    /**
+     * Check syntax of entry with servers:
+     * multiple adresses are allowed (separated by spaces), address may contain
+     * port number
+     */
+    define boolean check_address (string servers) {
+
+	boolean ret	= true;
+	foreach (string server, splitstring (servers, " \t"), {
+	    if (issubstring (server, ":"))
+	    {
+		integer pos	= search (server, ":");
+		string port	= substring (server, pos + 1);
+		if (port == "" || tointeger (port) == nil)
+		    ret = false;
+		else
+		    ret = ret && Address::Check (substring (server, 0, pos));
+	    }
+	    else
+		ret = ret && Address::Check (server);
+	});
+	return ret;
+    }
 
     /**
      * Select from LDAP servers provided by SLP
@@ -246,7 +269,7 @@ automatically.</p>
 		`VSpacing (0.5),
 		`HBox (
 		    // text entry label
-		    `TextEntry (`id (`ldapa), _("Addresses of LDAP &Servers"),
+		    `TextEntry (`id (`server), _("Addresses of LDAP &Servers"),
 			server),
 		    `VBox (
 			`Label (""),
@@ -290,7 +313,7 @@ automatically.</p>
 	{
 	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
 	}
-	UI::ChangeWidget (`id(`ldapa),`ValidChars,Hostname::ValidChars + ": .");
+	UI::ChangeWidget (`id(`server),`ValidChars, Address::ValidChars + " ");
 
 	symbol result = `not_next;
 	do {
@@ -300,7 +323,7 @@ automatically.</p>
 	    start	= (rb != `ldapno);
 	    login_enabled = (rb != `ldapnologin);
 
-	    server	= (string) UI::QueryWidget(`id(`ldapa), `Value);
+	    server	= (string) UI::QueryWidget(`id(`server), `Value);
 	    ldap_v2	= (boolean) UI::QueryWidget(`id(`ldapv), `Value);
 	    ldap_tls	= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
 
@@ -308,7 +331,7 @@ automatically.</p>
 	    {
 		string srv = BrowseServers ();
 		if (srv != "")
-		    UI::ChangeWidget (`id(`ldapa), `Value, srv);
+		    UI::ChangeWidget (`id(`server), `Value, srv);
 	    }
 	    if (result == `fetch)
 	    {
@@ -342,6 +365,14 @@ automatically.</p>
 		    // error popup label
 		    Report::Error(_("Enter at least one address of an LDAP server."));
 		    result = `not_next;
+		    continue;
+		}
+		if (!check_address (server))
+		{
+		    // error popup label
+		    Report::Error (_("The LDAP server address is invalid.") + "\n\n" + Address::Valid4 ());
+		    UI::SetFocus (`id(`server));
+		    result	= `not_next;
 		    continue;
 		}
 	    }
@@ -538,7 +569,7 @@ user home directories.</p>
     string member_attribute	= Ldap::member_attribute;
     string base_config_dn	= Ldap::GetMainConfigDN();
     boolean create_ldap		= Ldap::create_ldap;
-    boolean append_base		= (bind_dn != "" && find (bind_dn, base_dn) > -1);
+    boolean append_base	= (bind_dn != "" && issubstring (bind_dn, base_dn));
     string nss_base_passwd	= Ldap::nss_base_passwd;
     string nss_base_shadow	= Ldap::nss_base_shadow;
     string nss_base_group	= Ldap::nss_base_group;
@@ -1025,7 +1056,8 @@ removing current ones.</p>
 	    }
 	    if (attr == "cn")
 	    {
-		string base = substring (template_dn, find (template_dn,",")+1);
+		string base = issubstring (template_dn, ",") ?
+		    substring (template_dn, search (template_dn,",")+1) : "";
 		foreach (string dn, Ldap::ReadDN (base, ""), ``{
 		    if (substring (dn,0,3) == "cn=")
 			conflicts = add (conflicts, get_cn (dn));

@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Jun 23 15:51:01 CEST 2006 - jsuchome@suse.cz
+
+- added desktop file for LDAP Browser (F110039)
+- code10 cleanup: removed find, validation for server address, testsuite
+- 2.13.18 
+
+-------------------------------------------------------------------
 Thu Jun 22 08:50:59 CEST 2006 - jsuchome@suse.cz
 
 - restart also zmd if running (#174589)

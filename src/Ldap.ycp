@@ -197,7 +197,7 @@
 	"suseusertemplate"	: $[
 	    "objectclass"	: [ "top", "suseobjecttemplate", "suseusertemplate"],
 	    "susenamingattribute"	: [ "uid" ],
-	    "susedefaultvalue"	: [
+	    "susedefaultvalue"  : [
 		"homedirectory=/home/%uid",
 		"loginshell=/bin/bash"
 	    ],
@@ -860,7 +860,7 @@ Value of DN is missing or invalid."),
 
 	list l_servers = splitstring (servers, " \t");
 	string srv = l_servers[0]:"";
-	return substring (srv, 0, find (srv, ":"));
+	return splitstring(srv, ":")[0]:"";
     }
 
     // this is a hack
@@ -870,7 +870,7 @@ Value of DN is missing or invalid."),
 	string srv = l_servers[0]:"";
 	if (!issubstring (srv, ":"))
 	    return default_port;
-	string s_port = substring (srv, find (srv, ":") + 1);
+	string s_port = substring (srv, search (srv, ":") + 1);
 	if (s_port == "" || tointeger (s_port) == nil)
 	    return default_port;
 	else return tointeger (s_port);
@@ -1154,7 +1154,9 @@ Value of DN is missing or invalid."),
 	foreach (string value, templ["susedefaultvalue"]:[], {
 	    list<string> lvalue	= splitstring (value, "=");
 	    string at = tolower (lvalue[0]:"");
-	    string v = substring (value, find (value, "=") + 1);
+	    string v = size (lvalue) > 1 ?
+		// '=' could be part of value, so we cannot use lvalue[1]
+		substring (value, search (value, "=") + 1) : "";
 	    template ["default_values", at] = v;
 	});
 	return template;
@@ -1265,7 +1267,10 @@ Value of DN is missing or invalid."),
      */
     global define boolean ParentExists (string dn) ``{
 
-	string parent = substring (dn, find (dn,",")+1);
+	if (! issubstring (dn, ","))
+	    return false;
+
+	string parent = substring (dn, search (dn,",")+1);
 	map object = GetLDAPEntry (parent);
 	if (object == nil)
 	    return false;

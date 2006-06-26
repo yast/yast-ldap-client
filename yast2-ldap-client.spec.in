@@ -34,6 +34,7 @@ Summary:	Configuration of LDAP client
 %files
 %defattr(-,root,root)
 @desktopdir@/ldap.desktop
+@desktopdir@/ldap_browser.desktop
 %dir @yncludedir@/ldap
 @yncludedir@/ldap/*
 @moduledir@/Ldap.y*

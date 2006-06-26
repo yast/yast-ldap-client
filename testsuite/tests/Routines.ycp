@@ -1,0 +1,30 @@
+/**
+ *  File:	Routines.ycp
+ *  Summary:	Test of routines.ycp functions
+ *  Author:	Jiri Suchomel <jsuchome@suse.cz>
+ *  $Id$
+ */
+{
+    // testedfiles: Ldap.ycp
+    import "Testsuite";
+
+    import "Ldap";
+
+    string dn	= "uid=root,dc=suse,dc=cz";
+
+    Testsuite::Test (``(Ldap::get_rdn (dn)), [], 0);
+    Testsuite::Test (``(Ldap::get_cn (dn)), [], 0);
+    Testsuite::Test (``(Ldap::get_new_dn ("admin", dn)), [], 0);
+
+    dn	= "uid=root";
+
+    Testsuite::Test (``(Ldap::get_rdn (dn)), [], 0);
+    Testsuite::Test (``(Ldap::get_cn (dn)), [], 0);
+    Testsuite::Test (``(Ldap::get_new_dn ("admin", dn)), [], 0);
+
+    dn	= "root";
+
+    Testsuite::Test (``(Ldap::get_rdn (dn)), [], 0);
+    Testsuite::Test (``(Ldap::get_cn (dn)), [], 0);
+    Testsuite::Test (``(Ldap::get_new_dn ("admin", dn)), [], 0);
+}
