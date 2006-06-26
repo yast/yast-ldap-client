@@ -1,0 +1,23 @@
+/**
+ *  ConvertDefaultValues.ycp
+ *  Summary:	Test of Ldap::ConvertDefaultValues
+ *  Author:	Jiri Suchomel <jsuchome@suse.cz>
+ *  $Id$
+ */
+
+{
+    // testedfiles: Ldap.ycp
+    import "Testsuite";
+    import "Ldap";
+
+    map template	= $[
+	"susedefaultvalue"	: [
+	    "homedirectory=/home/%uid",
+	    "loginshell=/bin/bash",
+	    "testvalue=first=second",
+	    "novalue"
+	]
+    ];
+    Testsuite::Test (``(Ldap::ConvertDefaultValues (template)), [], 0);
+}
+

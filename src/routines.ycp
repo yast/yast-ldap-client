@@ -29,7 +29,7 @@ define string get_rdn (string dn) ``{
 define string get_cn (string dn) ``{
 
     string rdn	= get_rdn (dn);
-    return substring (rdn, find (rdn, "=") + 1);
+    return issubstring (rdn, "=") ? substring (rdn, search (rdn,"=") + 1) : rdn;
 }
 
 /**
@@ -47,7 +47,8 @@ define string get_dn (string cn) ``{
  */
 define string get_new_dn (string cn, string dn) ``{
 
-    return tolower (sformat ("cn=%1%2", cn, substring (dn, find (dn, ","))));
+    return tolower (sformat ("cn=%1%2", cn,
+	issubstring (dn, ",") ? substring (dn, search (dn, ",")) : ""));
 }
 
 /**
