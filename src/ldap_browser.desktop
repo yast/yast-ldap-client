@@ -15,7 +15,7 @@ X-SuSE-YaST-AutoInst=all
 X-SuSE-YaST-Geometry=
 X-SuSE-YaST-SortKey=
 
-Icon=yast-ldap
+Icon=yast-ldap-browser
 Exec=/sbin/yast2 ldap_browser 
 
 Name=LDAP Browser
