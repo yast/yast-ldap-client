@@ -467,7 +467,7 @@ Which should be used as the primary authentication service?
 			    // popup text
 			    _("Now you have enabled LDAP."));
 
-			string message	=
+			string message	= Stage::cont () ? "" :
 			// message popup, part 1/2
 _("This change only affects newly created processes and not already
 running services. Restart your services manually or reboot 
@@ -483,7 +483,8 @@ To enable remote login for LDAP users, 'sshd' will be
 restarted automatically by YaST.
 ");
 			}
-			Popup::Message (message);
+			if (message != "")
+			    Popup::Message (message);
 		    }
 		}
 		Ldap::SetDomain (domain);

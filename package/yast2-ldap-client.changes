@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Wed Jul 12 10:19:07 CEST 2006 - jsuchome@suse.cz
+
+- new icon for LDAP Browser (#188165)
+- do not show popup about reboot during installation (#167959)
+- use DNS::IsHostLocal to check for localhost (#189675)
+- 2.13.19 
+
+-------------------------------------------------------------------
 Fri Jun 23 15:51:01 CEST 2006 - jsuchome@suse.cz
 
 - added desktop file for LDAP Browser (F110039)

@@ -15,6 +15,7 @@
 
     import "Arch";
     import "Autologin";
+    import "DNS";
     import "Label";
     import "Message";
     import "Mode";
@@ -2361,7 +2362,7 @@ Select another one.
 	    if (start && ldap_ok &&
 		domain == initial_defaults["ldap_domain"]:"" &&
 		(server == initial_defaults["ldap_server"]:"" ||
-		 server == "localhost" || server == "127.0.0.1"))
+		 DNS::IsHostLocal (server)))
 	    {
 		initial_defaults_used	= true;
 	    }
