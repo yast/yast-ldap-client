@@ -21,6 +21,7 @@
     import "Message";
     import "Mode";
     import "Package";
+    import "Pam";
     import "Popup";
     import "Report";
     import "Service";
@@ -235,12 +236,21 @@ automatically.</p>
 	if (Ldap::_autofs_allowed)
 	{
 	    autofs_con		= `VBox (
-		    `VSpacing (0.5),
-		    // check box label
-		    `CheckBox (`id(`autofs), _("Start Auto&mounter"), autofs)
+		`VSpacing (0.5),
+		// check box label
+		`Left(`CheckBox (`id(`autofs), _("Start Auto&mounter"), autofs))
 	    );
 	    help_text	= help_text + autofs_help_text;
 	}
+
+	boolean mkhomedir	= Pam::MkHomeDir ();
+	term mkhomedir_term	= `VBox (
+	    Ldap::_autofs_allowed ? `VSpacing (0) : `VSpacing (0.5),
+	    `Left(`CheckBox(`id(`mkhomedir),
+		// checkbox label
+		_("Create Home Directory on Login"), mkhomedir
+	    ))
+	);
 
 	term con = `VCenter (`HBox (`HSpacing (3), `VBox (
 	    `VSpacing (0.5),
@@ -295,6 +305,7 @@ automatically.</p>
 		`VSpacing (0.4)
 	    ), `HSpacing (0.5))),
 	    autofs_con,
+	    mkhomedir_term,
 	    `VSpacing(0.4),
 	    // pushbutton label
 	    `PushButton (`id(`advanced), _("&Advanced Configuration..."))
@@ -454,6 +465,7 @@ Which should be used as the primary authentication service?
 
 	if (result == `next || result == `advanced)
 	{
+	    Pam::SetMkHomeDir((boolean)UI::QueryWidget(`id(`mkhomedir),`Value));
 	    if (Ldap::start != start || Ldap::GetDomain() != domain ||
 		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||
 		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs ||

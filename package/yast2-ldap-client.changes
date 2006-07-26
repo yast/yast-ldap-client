@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Jul 26 14:33:04 CEST 2006 - jsuchome@suse.cz
+
+- allow setting of pam_mkhomedir in /etc/pam.d/commond-session (#190330)
+- 2.13.20
+
+-------------------------------------------------------------------
 Wed Jul 12 10:19:07 CEST 2006 - jsuchome@suse.cz
 
 - new icon for LDAP Browser (#188165)
