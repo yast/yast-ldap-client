@@ -21,6 +21,7 @@
     import "Mode";
     import "Nsswitch";
     import "Package";
+    import "Pam";
     import "PamSettings";
     import "Popup";
     import "ProductFeatures";
@@ -695,6 +696,8 @@
 	}
 
 	Autologin::Read ();
+
+	Pam::Read ();
 
 	// Now check if previous configuration of LDAP server didn't proposed
 	// some better values:
@@ -2224,6 +2227,8 @@ Select another one.
 		PamSettings::RemoveValue ("pam_unix2", type, "use_ldap");
 	    });
 	}
+
+	Pam::Write (false);
 
 	// write the changes in /etc/ldap.conf and /etc/openldap/ldap.conf now
 	if (!SCR::Write(.etc.ldap_conf, nil))
