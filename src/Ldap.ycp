@@ -22,7 +22,6 @@
     import "Nsswitch";
     import "Package";
     import "Pam";
-    import "PamSettings";
     import "Popup";
     import "ProductFeatures";
     import "Progress";
@@ -154,16 +153,6 @@
 
     // if LDAP configuration objects should be created automaticaly
     global boolean create_ldap	= false;
-
-    // if authentication is currently done via Kerberos
-    global boolean krb_first		= false;
-
-    // if kerberos authentication should remain primary one
-    global boolean krb_authentication	= nil;
-
-    // current pam modules called by pam_unix (value of call_modules=... in
-    // /etc/security/pam_unix2)
-    list<string> auth_modules = [];
 
     // if eDirectory is used as server
     global boolean nds		= false;
@@ -297,6 +286,10 @@
 	]
     ];
 
+    /**
+     * if pam_mkhomedir is set in /etc/pam.d/commond-session
+     */
+    global boolean mkhomedir        = false;
 
     //----------------------------------------------------------------
 
@@ -669,35 +662,9 @@
 	    });
 	}
 
-	list<string> auth = PamSettings::GetValues ("pam_unix2", "auth");
-	integer	ldap_pos = -1;
-	integer	krb_pos = -1;
-	integer pos	= -1;
-	boolean comment	= false;
-	foreach (string val, auth, {
-	    pos	= pos + 1;
-	    if (substring (val, 0, 1) == "#")
-		comment = true;
-	    if (comment)
-		return;
-	    if (issubstring (val, "krb5"))
-		krb_pos	= pos;
-	    if (val == "use_ldap")
-		ldap_pos = pos;
-	    if (issubstring (val, "call_modules="))
-	    {
-		list line_split	= splitstring (val, "=");
-		auth_modules	= splitstring (line_split[1]:"",",");
-	    }
-	});
-	if (krb_pos != -1 && (ldap_pos == -1 || krb_pos < ldap_pos))
-	{
-	    krb_first	= true;
-	}
+	mkhomedir	= Pam::Enabled ("mkhomedir");
 
 	Autologin::Read ();
-
-	Pam::Read ();
 
 	// Now check if previous configuration of LDAP server didn't proposed
 	// some better values:
@@ -2124,6 +2091,7 @@ Select another one.
 	    else
 		WriteLdapConfEntry ("ssl", "no");
 
+	    Pam::Set ("mkhomedir", mkhomedir);
 	}
 	if (start) // ldap used for authentocation
 	{
@@ -2162,25 +2130,7 @@ Select another one.
 	    if (!oes)
 	    {
 		// pam settigs
-		foreach (string type, [ "account", "auth", "password" ], {
-		    PamSettings::AddValue ("pam_unix2", type, "use_ldap");
-
-		    // prefer kerberos authentication (see #49894)
-		    if (krb_authentication == true)
-		    {
-			PamSettings::RemoveValue ("unix2", type, "use_krb5");
-			if (contains (auth_modules, "krb5afs"))
-			{
-			    PamSettings::RemoveValue ("unix2", type,"call_modules");
-			    PamSettings::AddValue ("unix2", type,
-				"call_modules="+mergestring (auth_modules,","));
-			}
-			else
-			{
-			    PamSettings::AddValue ("unix2", type, "use_krb5");
-			}
-		    }
-		});
+		Pam::Add ("ldap");
 
 		// modify sources in /etc/nsswitch.conf
 		foreach (string db, [ "passwd", "group" ], {
@@ -2223,12 +2173,9 @@ Select another one.
 
 	    Nsswitch::Write ();
 
-	    foreach (string type, [ "account", "auth", "password" ], ``{
-		PamSettings::RemoveValue ("pam_unix2", type, "use_ldap");
-	    });
+	    Pam::Remove ("ldap");
 	}
 
-	Pam::Write (false);
 
 	// write the changes in /etc/ldap.conf and /etc/openldap/ldap.conf now
 	if (!SCR::Write(.etc.ldap_conf, nil))
@@ -2238,12 +2185,6 @@ Select another one.
 	if (Stage::cont ())
 	{
 	    SCR::UnmountAgent (.etc.ldap_conf);
-	}
-
-	// write changes to /etc/security/pam_unix2.conf now
-	if (!oes)
-	{
-	    PamSettings::Write (false);
 	}
 
 	// write sysconfig values

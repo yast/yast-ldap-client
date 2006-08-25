@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Aug 25 12:50:31 CEST 2006 - jsuchome@suse.cz
+
+- adapted for pam-config usage (F300956)
+- API of PamSettings module is obsolete
+- 2.14.0
+
+-------------------------------------------------------------------
 Wed Jul 26 14:33:04 CEST 2006 - jsuchome@suse.cz
 
 - allow setting of pam_mkhomedir in /etc/pam.d/commond-session (#190330)

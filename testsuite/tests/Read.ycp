@@ -74,6 +74,9 @@
     map EX = $[
 	"target": $[
 	    "bash": 0,
+	    "bash_output": $[
+		"stdout"	: "",
+	    ]
 	],
 	"passwd": $[
 	    "init": true

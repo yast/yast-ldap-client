@@ -243,7 +243,7 @@ automatically.</p>
 	    help_text	= help_text + autofs_help_text;
 	}
 
-	boolean mkhomedir	= Pam::MkHomeDir ();
+	boolean mkhomedir	= Ldap::mkhomedir;
 	term mkhomedir_term	= `VBox (
 	    Ldap::_autofs_allowed ? `VSpacing (0) : `VSpacing (0.5),
 	    `Left(`CheckBox(`id(`mkhomedir),
@@ -337,6 +337,7 @@ automatically.</p>
 	    server	= (string) UI::QueryWidget(`id(`server), `Value);
 	    ldap_v2	= (boolean) UI::QueryWidget(`id(`ldapv), `Value);
 	    ldap_tls	= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
+	    mkhomedir	= (boolean) UI::QueryWidget (`id(`mkhomedir),`Value);
 
 	    if (result == `slp)
 	    {
@@ -407,33 +408,6 @@ you cannot retrieve data with NIS. Are you sure?
 		    }
 		}
 
-		if (start && Ldap::krb_first && Ldap::krb_authentication == nil)
-		{
-		    any ret = Popup::AnyQuestion3 (
-			Popup::NoHeadline(),
-			// popup question
-_("An active configuration of the Kerberos client is present.
-Which should be used as the primary authentication service?
-"),
-			// button label (authentication service)
-			_("&LDAP"),
-			// button label (authentication service)
-			_("&Kerberos"),
-			Label::CancelButton (),
-			`focus_yes
-		    );
-		    if (ret == `retry)
-		    {
-			result = `not_next;
-			continue;
-		    }
-		    else
-		    {
-			Ldap::modified	= true;
-			Ldap::krb_authentication = (ret == `no);
-		    }
-		}
-
 		list<string> needed_packages =
 		    Ldap::UpdatedArchPackages (["pam_ldap", "nss_ldap"]);
 
@@ -465,11 +439,11 @@ Which should be used as the primary authentication service?
 
 	if (result == `next || result == `advanced)
 	{
-	    Pam::SetMkHomeDir((boolean)UI::QueryWidget(`id(`mkhomedir),`Value));
 	    if (Ldap::start != start || Ldap::GetDomain() != domain ||
 		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||
 		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs ||
-		Ldap::login_enabled != login_enabled)
+		Ldap::login_enabled != login_enabled ||
+		Ldap::mkhomedir != mkhomedir)
 	    {
 		if (result == `next)
 		{
@@ -506,6 +480,7 @@ restarted automatically by YaST.
 		Ldap::ldap_tls	= ldap_tls;
 		Ldap::_start_autofs = autofs;
 		Ldap::login_enabled = login_enabled;
+		Ldap::mkhomedir = mkhomedir;
 		Ldap::modified = true;
 	    }
 	}
