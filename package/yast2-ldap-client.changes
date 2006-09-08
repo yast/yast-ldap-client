@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Sep  8 13:57:22 CEST 2006 - jsuchome@suse.cz
+
+- write +/- lines also to /etc/shadow (#204362)
+- 2.13.21
+
+-------------------------------------------------------------------
 Wed Jul 26 14:33:04 CEST 2006 - jsuchome@suse.cz
 
 - allow setting of pam_mkhomedir in /etc/pam.d/commond-session (#190330)

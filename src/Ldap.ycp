@@ -1747,7 +1747,7 @@ Select another one.
 	    {
 		SCR::Execute (.target.bash,
 		    sformat("/bin/cp %1 %1.YaST2save",file));
-		// empty map map as a parameter means "use data you have read"
+		// empty map as a parameter means "use data you have read"
 		if (!SCR::Write (.passwd.users, $[]))
 		{
 		    Report::Error (Message::ErrorWritingFile (file));
@@ -1768,8 +1768,28 @@ Select another one.
 	    {
 		SCR::Execute (.target.bash,
 		    sformat("/bin/cp %1 %1.YaST2save",file));
-		// empty map map as a parameter means "use data you have read"
+		// empty map as a parameter means "use data you have read"
 		if (!SCR::Write (.passwd.groups, $[]))
+		{
+		    Report::Error (Message::ErrorWritingFile (file));
+		    return false;
+		}
+	    }
+	}
+	file	= "/etc/shadow";
+	what	= "+";
+	plus_lines	= (list<string>) SCR::Read (.passwd.shadow.pluslines);
+
+	if (!contains (plus_lines, what) && !contains (plus_lines, "+::::::::"))
+	{
+	    plus_lines	= add (plus_lines, what);
+
+	    if ((boolean) SCR::Write (.passwd.shadow.pluslines, plus_lines))
+	    {
+		SCR::Execute (.target.bash,
+		    sformat("/bin/cp %1 %1.YaST2save",file));
+		// empty map as a parameter means "use data you have read"
+		if (!SCR::Write (.passwd.shadow, $[]))
 		{
 		    Report::Error (Message::ErrorWritingFile (file));
 		    return false;
@@ -2274,7 +2294,8 @@ Select another one.
 	    }
 	}
 
-	WritePlusLine (login_enabled);
+	if (start)
+	    WritePlusLine (login_enabled);
 
 	// -------------------- start services
 	Progress::NextStage ();

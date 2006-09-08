@@ -469,7 +469,7 @@ Which should be used as the primary authentication service?
 	    if (Ldap::start != start || Ldap::GetDomain() != domain ||
 		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||
 		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs ||
-		Ldap::login_enabled != login_enabled)
+		Ldap::login_enabled != login_enabled || Pam::Modified ())
 	    {
 		if (result == `next)
 		{
