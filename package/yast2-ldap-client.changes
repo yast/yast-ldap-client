@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Sep  8 16:16:27 CEST 2006 - jsuchome@suse.cz
+
+- write +/- lines also to /etc/shadow (#204362)
+- 2.14.1 
+
+-------------------------------------------------------------------
 Fri Aug 25 12:50:31 CEST 2006 - jsuchome@suse.cz
 
 - adapted for pam-config usage (F300956)
