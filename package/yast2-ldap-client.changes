@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Oct 26 15:02:09 CEST 2006 - jsuchome@suse.cz
+
+- schema file moved from autoyast package (#215249)
+- 2.13.22 
+
+-------------------------------------------------------------------
 Fri Sep  8 13:57:22 CEST 2006 - jsuchome@suse.cz
 
 - write +/- lines also to /etc/shadow (#204362)
