@@ -6,6 +6,8 @@
 
 yncludedir = @yncludedir@/ldap
 
+rncdir =  $(schemadir)/autoyast/rnc
+
 YCPCFLAGS = -I .
 
 client_DATA =		\
@@ -24,9 +26,12 @@ module_DATA =		\
 	Ldap.ycp	\
 	LdapPopup.ycp
 
+rnc_DATA =              \
+	ldap_client.rnc
+
 desktop_DATA = ldap.desktop ldap_browser.desktop
 
-EXTRA_DIST = $(client_DATA) $(ynclude_DATA) $(module_DATA) $(desktop_DATA)
+EXTRA_DIST = $(client_DATA) $(ynclude_DATA) $(module_DATA) $(desktop_DATA) $(rnc_DATA)
 
 ldap:
 	ln -sf . ldap
