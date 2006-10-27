@@ -10,8 +10,8 @@ X-SuSE-YaST-Call=ldap_browser
 
 X-SuSE-YaST-Group=Net_advanced
 X-SuSE-YaST-Argument=
-X-SuSE-YaST-RootOnly=true
-X-SuSE-YaST-AutoInst=all
+X-SuSE-YaST-RootOnly=
+X-SuSE-YaST-AutoInst=
 X-SuSE-YaST-Geometry=
 X-SuSE-YaST-SortKey=
 
