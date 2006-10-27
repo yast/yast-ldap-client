@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Oct 27 15:05:31 CEST 2006 - jsuchome@suse.cz
+
+- LDAP Browser: enable running as non-root,
+  disable autoYaST support (#215671)
+- 2.13.24
+
+-------------------------------------------------------------------
 Thu Oct 26 16:20:44 CEST 2006 - jsuchome@suse.cz
 
 - added schema name to desktop file (#215249)
