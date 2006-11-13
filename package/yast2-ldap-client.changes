@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Nov 13 12:38:10 CET 2006 - jsuchome@suse.cz
+
+- save tls_checkpeer value to /etc/ldap.conf (#217701)
+- 2.14.5
+
+-------------------------------------------------------------------
 Fri Oct 27 15:02:06 CEST 2006 - jsuchome@suse.cz
 
 - LDAP Browser: enable running as non-root,
