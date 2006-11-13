@@ -518,11 +518,13 @@
     /**
      * Write (single valued) entry to /etc/ldap.conf
      * @param entry name
-     * @param value
+     * @param value; if value is nil, entry will be removed
      */
     define void WriteLdapConfEntry (string entry, string value) ``{
 
-	SCR::Write (add (.etc.ldap_conf.v."/etc/ldap.conf",entry), [value]);
+	SCR::Write (add (.etc.ldap_conf.v."/etc/ldap.conf",entry),
+	    value == nil ? nil : [value]
+	);
     }
 
     /**
@@ -2179,6 +2181,9 @@ Select another one.
 	    WriteLdapConfEntry ("nss_base_group",
 		(nss_base_group != "")? nss_base_group : user_base);
 
+	    // override LDAPNOINIT (#217701)
+	    WriteLdapConfEntry ("tls_checkpeer", "no");
+
 	    if (!oes)
 	    {
 		// pam settigs
@@ -2246,6 +2251,8 @@ Select another one.
 	    foreach (string type, [ "account", "auth", "password" ], ``{
 		PamSettings::RemoveValue ("pam_unix2", type, "use_ldap");
 	    });
+
+	    WriteLdapConfEntry ("tls_checkpeer", nil);
 	}
 
 	Pam::Write (false);
