@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Dec  5 15:54:13 CET 2006 - jsuchome@suse.cz
+
+- install necessary packages during autoainstallation (#226040)
+- 2.15.0 
+
+-------------------------------------------------------------------
 Mon Nov 13 12:38:10 CET 2006 - jsuchome@suse.cz
 
 - save tls_checkpeer value to /etc/ldap.conf (#217701)

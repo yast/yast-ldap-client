@@ -2406,6 +2406,10 @@ exists on the LDAP server. Create it now?
      * @return map of lists.
      */
     global  define map AutoPackages() ``{
+
+      if (start)
+	required_packages = (list<string>)
+	    union (required_packages, ["pam_ldap", "nss_ldap"]);
       list<string> install_pkgs = UpdatedArchPackages (required_packages);
       list remove_pkgs = [];
       return ($["install": install_pkgs, "remove": remove_pkgs]);
