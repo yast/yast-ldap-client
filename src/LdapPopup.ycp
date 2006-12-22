@@ -535,4 +535,232 @@ as a value of \"homeDirectory\").</p>
     return $[ "attr": attr, "value": new_value ];
 }
 
+/**
+ * test dialog for ppolicy
+ */
+global define map<string,any> PasswordPolicyDialog (map<string,any> ppolicy) {
+
+    string help_text = "";
+
+    list table_items = [];
+
+    list get_attr_items	() {
+	return maplist (string a, ppolicy["pwdattribute"]:[], ``(
+	    `item (`id (a), a, "here should be the name"))
+	);
+    }
+
+    // helper function converting list value to string
+    define string to_table (string attr, list<string> val) ``{
+
+	if (Ldap::SingleValued (attr) || attr == "cn")
+	    return val[0]:"";
+	else
+	    return mergestring (val, ",");
+    }
+
+    list get_table_items () {
+	table_items	= [];
+	foreach (string attr, any value, ppolicy, {
+	    any val = value;
+	    if (contains (["objectclass", "cn", "dn", "pwdattribute"], tolower (attr)))
+		return;
+	    if (is (value, list))
+		val = to_table (attr, (list<string>) val);
+	    table_items = add (table_items, `item (`id(attr), attr, val));
+	});
+	return table_items;
+    }
+
+    string dn	= ppolicy["dn"]:"";
+    string cn	= ppolicy["cn",0]:"";
+
+    list<string> possible_attributes	= filter (
+	string attr, Ldap::GetOptionalAttributes ("pwdpolicy"), ``(!haskey (ppolicy, attr)));
+
+    list get_possible_items () {
+	return maplist (string attr, possible_attributes, ``(`item (`id (attr), attr)));
+    }
+
+    term contents = `HBox(`HSpacing (1.5), `VBox(
+        `VSpacing(0.5),
+//	`TextEntry (`id (`cn), _("Name of Password Policy object"), cn),
+	`Label (dn),
+        `VSpacing(0.5),
+	// label
+	`Left (`Label (_("Policy Attributes"))),
+	`Table(`id(`pwdattributes), `opt(`notify), `header(
+	    // table header
+	    _("OID"),
+	    // table header
+	    _("Name")),
+	    get_attr_items ()),
+        `HBox (
+	    // button label
+            `PushButton (`id(`add_attr), `opt(`key_F6), Label::AddButton ()),
+            `PushButton(`id(`delete_attr), `opt(`key_F8), Label::DeleteButton()),
+            `HStretch()
+	),
+	`Table(`id(`table), `opt(`notify), `header(
+	    // table header 1/2
+	    _("Attribute"),
+	    // table header 2/2
+	    _("Value")),
+	    get_table_items ()),
+        `HBox (
+	    `ReplacePoint (`id (`rpadd),
+		// button label (with non-default shortcut)
+		`MenuButton (`id(`add), `opt(`key_F3), _("A&dd"), get_possible_items ())
+	    ),
+	    // button label
+            `PushButton (`id(`edit), `opt(`key_F4), Label::EditButton ()),
+            `PushButton(`id(`delete), `opt(`key_F5), Label::DeleteButton()),
+            `HStretch()
+	),
+	`VSpacing (0.5)
+	),
+	`HSpacing (1.5));
+
+    Wizard::OpenNextBackDialog ();
+    // dialog label
+    Wizard::SetContentsButtons(_("Password Policy Configuration"),
+            contents, help_text, Label::CancelButton(), Label::AcceptButton());
+    Wizard::HideAbortButton();
+
+    if (size (table_items) > 0)
+    {
+	UI::SetFocus (`id(`table));
+    }
+    any result = nil;
+    while (true)
+    {
+	UI::ChangeWidget (`id(`edit), `Enabled, table_items != []);
+        UI::ChangeWidget (`id(`delete), `Enabled, table_items != []);
+
+	result		= UI::UserInput ();
+	string attr	= (string)UI::QueryWidget (`id(`pwdattributes), `CurrentItem);
+	string selected = (string)UI::QueryWidget (`id(`table), `CurrentItem);
+
+	if (is(result,symbol) && contains ([`back, `cancel, `abort], (symbol)result))
+	    break;
+
+	if (result == `add_attr)
+	{
+	    UI::OpenDialog (`opt(`decorated), `VBox (
+		`HSpacing (50),
+		`VSpacing(0.5),
+		`HBox (
+		    // textentry label
+		    `TextEntry (`id (`newattr), _("Attribute &OID"), ""),
+		    `VBox (
+			`Label (""),
+			`PushButton (`id (`br), Label::BrowseButton ())
+		    )
+		),
+		`VSpacing (0.5),
+		`HBox(
+		    `PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
+		    `PushButton(`id(`cancel), `opt(`key_F9), Label::CancelButton()),
+		    `PushButton(`id(`help),`opt (`key_F2), Label::HelpButton())
+		),
+		`VSpacing (0.5)
+	    ));
+	    any ret	= nil;
+	    while (true)
+	    {
+		ret	= UI::UserInput ();
+		if (ret == `cancel || ret == `ok)
+		    break;
+	    }
+	    string new	= (string) UI::QueryWidget (`id (`newattr), `Value);
+	    UI::CloseDialog ();
+	    if (ret == `ok)
+	    {
+		ppolicy ["pwdattribute"] = union (ppolicy ["pwdattribute"]:[], [new]);
+		UI::ChangeWidget (`id(`pwdattributes), `Items, get_attr_items ());
+	    }
+	}
+	else if (result == `delete_attr)
+	{
+	    if (attr == nil)
+		continue;
+	    ppolicy ["pwdattribute"] = filter (string a, ppolicy ["pwdattribute"]:[],``(a != attr));
+	    UI::ChangeWidget (`id(`pwdattributes), `Items, get_attr_items ());
+	}
+	// edit attribute
+	if (result == `edit || result == `table)
+	{
+	    if (selected == nil)
+		continue;
+	    list<string> value	= ppolicy [selected]:[];
+	    value = EditAttribute ($[
+		"selected"		: selected,
+		"value"		: value,
+		"single"	: Ldap::SingleValued (selected) || selected == "cn",
+	    ]);
+
+	    if (value == ppolicy[selected]:[])
+		continue;
+	    UI::ChangeWidget (`id(`table),`Item(selected,1), to_table(selected, value));
+	    ppolicy [selected] = value;
+	}
+	if (result == `delete)
+	{
+	    if (selected == nil)
+		continue;
+	    ppolicy	= remove (ppolicy, selected);
+	    possible_attributes	= add (possible_attributes, selected);
+	    UI::ChangeWidget (`id(`table), `Items, get_table_items ());
+	    UI::ReplaceWidget (`id (`rpadd),
+		// button label (with non-default shortcut)
+		`MenuButton (`id(`add), `opt(`key_F3), _("A&dd"), get_possible_items ())
+	    );
+	}
+
+	if (is (result, string) && contains (possible_attributes, (string)result))
+	{
+	    string attr	= (string)result;
+	    list<string> value	= EditAttribute ($[
+		"attr"		: attr,
+		"value"		: [],
+		"single"	: Ldap::SingleValued (attr) || attr == "cn",
+	    ]);
+	    if (value == [])
+		continue;
+	    ppolicy [attr]	= value;
+	    UI::ChangeWidget (`id(`table), `Items, get_table_items ());
+	    possible_attributes	= filter (string a, possible_attributes, ``(a != attr));
+//	    UI::ChangeWidget (`id(`add), `Items, get_possible_items ()); FIXME use this, see 230496
+	    UI::ReplaceWidget (`id (`rpadd),
+		// button label (with non-default shortcut)
+		`MenuButton (`id(`add), `opt(`key_F3), _("A&dd"), get_possible_items ())
+	    );
+	}
+
+	if (result == `next)
+	{
+	    boolean cont = false;
+
+	    // check the template required attributes...
+	    foreach (string oc, ppolicy["objectclass"]:[], ``{
+		if (cont) return;
+		foreach (string attr, Ldap::GetRequiredAttributes (oc), ``{
+		    any val = ppolicy[attr]:nil;
+		    if (!cont && val == nil || val == [] || val == "") {
+			//error popup, %1 is attribute name
+			Popup::Error (sformat (_("The \"%1\" attribute is mandatory.
+Enter a value."), attr));
+			UI::SetFocus (`id(`table));
+			cont = true;
+		    }
+		});
+	    });
+	    if (cont) continue;
+	    break;
+	}
+    }
+    Wizard::CloseDialog ();
+    return ppolicy;
+}
+
 }//EOF

@@ -1059,6 +1059,16 @@ Value of DN is missing or invalid."),
 	return object_classes [class, "must"]:[];
     }
 
+    global define list<string> GetOptionalAttributes (string class) {
+
+	class = tolower (class);
+	if (!haskey (object_classes, class))
+	{
+	    GetAllAttributes (class);
+	}
+	return object_classes [class, "may"]:[];
+    }
+
     /**
      * Returns the list of all allowed and required attributes for each
      * object class, given in the list of object classes
