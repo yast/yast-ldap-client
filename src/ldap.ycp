@@ -88,7 +88,7 @@ define boolean LdapWrite () ``{
 map cmdline = $[
     "id"		: "ldap",
     // translators: command line help text for Ldap client module
-    "help"		: _("LDAP client configuration module."),
+    "help"		: _("LDAP client configuration module"),
     "guihandler"	: LdapSequence,
     "initialize"	: Ldap::Read,
     "finish"		: LdapWrite,
@@ -101,12 +101,12 @@ map cmdline = $[
 	"summary" :$[
 	    "handler"	: LdapSummaryHandler,
 	    // translators: command line help text for summary action
-	    "help"	: _("Configuration summary of LDAP client")
+	    "help"	: _("Configuration summary of the LDAP client")
 	],
 	"configure"	: $[
 	    "handler"	: LdapChangeConfiguration,
 	    // translators: command line help text for configure action
-	    "help"	: _("Change the global settings of LDAP client")
+	    "help"	: _("Change the global settings of the LDAP client")
 	]
     ],
     "options"		: $[
@@ -125,7 +125,7 @@ map cmdline = $[
 	],
 	"base"	:$[
 	    // translators: command line help text for the base option
-	    "help"	: _("Distinguished Name (DN) of the search base"),
+	    "help"	: _("Distinguished name (DN) of the search base"),
 	    "type"	: "string"
 	],
     ],

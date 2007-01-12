@@ -298,6 +298,9 @@
     ];
 
 
+    // map with modifications of Password Policies objects
+    global map<string,map> ppolicies	= $[];
+
     //----------------------------------------------------------------
 
     /**
@@ -431,7 +434,7 @@
 	``{
 	string summary = "";
 	// summary item
-	summary = Summary::AddHeader(summary, _("LDAP Client enabled"));
+	summary = Summary::AddHeader(summary, _("LDAP Client Enabled"));
 	// summary (is LDAP enabled?)
 	summary = Summary::AddLine(summary, (start) ? _("Yes") : Summary::NotConfigured());
 	// summary item
@@ -606,6 +609,7 @@
 
 	server = ReadLdapConfEntry ("host", "");
 	domain  = ReadLdapConfEntry ("base", "");
+
 	old_domain = domain;
 	old_server = server;
 
@@ -737,12 +741,12 @@
 
         map ldap_error = $[
 	// error message:
-	"initialize": _("
-Server could be down or unreachable."),
+	"initialize": _("\nThe server could be down or unreachable.
+"),
 
 	// error message:
-	"missing_dn": _("
-Value of DN is missing or invalid."),
+	"missing_dn": _("\nThe value of DN is missing or invalid.
+"),
 
 	// error message:
 	"at_not_found": _("\nAttribute type not found.
@@ -755,19 +759,19 @@ Value of DN is missing or invalid."),
 
         map error_type = $[
 	    // error message, more specific description follows
-	    "init": _("Connection to LDAP server cannot be established."),
+	    "init": _("Connection to the LDAP server cannot be established."),
 	    // error message, more specific description follows
-	    "bind": _("Problem with connecting to the LDAP server."),
+	    "bind": _("A problem occurred while connecting to the LDAP server."),
 	    // error message, more specific description follows
-	    "read": _("Problem with reading data from the LDAP server."),
+	    "read": _("A problem occurred while reading data from the LDAP server."),
 	    // error message, more specific description follows
 	    "users": _("There was a problem with writing LDAP users."),
 	    // error message, more specific description follows
 	    "groups": _("There was a problem with writing LDAP groups."),
 	    // error message, more specific description follows
-	    "write": _("There was a problem with writing data to LDAP server."),
+	    "write": _("There was a problem with writing data to the LDAP server."),
 	    // error message, more specific description follows
-	    "schema": _("Problem with reading schema from the LDAP server."),
+	    "schema": _("A problem occurred while reading schema from the LDAP server."),
 	];
 
 	if (!use_gui)
@@ -785,7 +789,7 @@ Value of DN is missing or invalid."),
 		// label
 		`Left(`Heading (Label::ErrorMsg())),
 		// default error message
-		`Label (error_type[type]:_("Unknown LDAP error")),
+		`Label (error_type[type]:_("An unknown LDAP error occurred.")),
 		`ReplacePoint (`id(`rp), `Empty()),
 		`VSpacing (0.5),
 		`Left(`CheckBox (`id(`details), `opt (`notify),
@@ -943,7 +947,7 @@ Value of DN is missing or invalid."),
         `VBox(
             `HSpacing(40),
             // password entering label
-            `Password(`id(`pw), _("&Enter the Password for LDAP Server:")),
+            `Password(`id(`pw), _("&LDAP Server Password")),
 	    // label
 	    `Label (sformat (_("Server: %1"), GetFirstServer (server))),
 	    // label (%1 is admin DN - string)
@@ -1090,6 +1094,16 @@ Value of DN is missing or invalid."),
 	    GetAllAttributes (class);
 	}
 	return object_classes [class, "must"]:[];
+    }
+
+    global define list<string> GetOptionalAttributes (string class) {
+
+	class = tolower (class);
+	if (!haskey (object_classes, class))
+	{
+	    GetAllAttributes (class);
+	}
+	return object_classes [class, "may"]:[];
     }
 
     /**
@@ -1500,7 +1514,7 @@ The object with the selected DN cannot be created.
 	else
 	{
 	    // error message
-	    Popup::Error (_("Object with selected DN exists, but it is not a template object.
+	    Popup::Error (_("An object with the selected DN exists, but it is not a template object.
 Select another one.
 "));
 	    return nil;
@@ -2367,6 +2381,12 @@ Select another one.
 	    if (WriteLDAP (templates) && WriteLDAP (config_modules)) {
 		ldap_modified	= false;
 	    }
+	}
+	if (ppolicies != $[])
+	{
+	    WriteLDAP (ppolicies);
+	    modified	= true; // so data get reset in next step
+	    ppolicies	= $[];
 	}
 
 	// final stage

@@ -287,7 +287,7 @@ Discard these changes?
 	// textentry label
 	`TextEntry (`id(`admin_dn), _("Administrator DN"), Ldap::GetBindDN ()),
         // password entering label
-        `Password(`id(`pw), _("&Enter the Password for LDAP Server:")),
+        `Password(`id(`pw), _("&LDAP Server Password")),
         `HBox(
             `PushButton (`id(`ok),`opt(`key_F10, `default), Label::OKButton()),
             // button label
