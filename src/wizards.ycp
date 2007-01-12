@@ -72,7 +72,7 @@ define symbol LdapAutoSequence() ``{
     // dialog label
     string caption = _("LDAP Client Configuration");
     // label (init dialog)
-    term contents = `Label(_("Initializing ..."));
+    term contents = `Label(_("Initializing..."));
 
     Wizard::CreateDialog();
     Wizard::SetDesktopIcon("ldap");

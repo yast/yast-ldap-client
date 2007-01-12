@@ -227,7 +227,7 @@ global define list<string> EditAttribute (map settings)
 with <b>Add Value</b>. Sometimes the button contains the list of
 possible values to use for the current attribute.
 If the value of the edited attribute should be a distinguished name (DN),
-it is possible to choose it from LDAP tree using <b>Browse</b>.
+it is possible to choose it from the LDAP tree using <b>Browse</b>.
 </p>
 ");
 
@@ -410,7 +410,7 @@ global define map NewModule (list available, list conflicts) ``{
 	    `HSpacing (50),
 	    `RadioButtonGroup (`id(`rb), r_buttons),
 	    // textentry label, do not translate "cn"
-	    `TextEntry (`id (`cn), _("&Name of New Module (\"cn\" value)")),
+	    `TextEntry (`id (`cn), _("&Name of New Module (\"cn\" Value)")),
 	    `HBox(
 		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
 		`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton())
@@ -538,67 +538,67 @@ as a value of \"homeDirectory\").</p>
 /**
  * dialog for Password Policy configuration object
  * @param ppolicy data with Password Policy object to be edited (as obtained from LDAP search)
- * @return map with modifications of ppolicy object
+ * @return map with modifications of ppolicy object, nil in case of `cancel
  */
-global define map<string,any> PasswordPolicyDialog (map<string,any> ppolicy) {
+global define map PasswordPolicyDialog (map ppolicy) {
 
     // reduce the list values to single ones
-    ppolicy	= mapmap (string a, any val, ppolicy, {
-	if (is (val, list) && Ldap::SingleValued (a))
+    ppolicy	= mapmap (string a, any val, (map<string,any>)ppolicy, {
+	if (is (val, list) && (Ldap::SingleValued (a) || size ((list)val) == 1))
 	    val	= ((list)val)[0]:nil;
 	if (val == "TRUE" || val == "FALSE")
 	    val	= (val == "TRUE");
 	return $[ a: val ];
     });
-    map<string,any> ppolicy_orig	= ppolicy;
+    map ppolicy_orig	= ppolicy;
 
     // help text for Password Policy Dialog
-    string help_text = _("<p>Select from <b>Password Change Policies</b>, <b>Password Aging Policies</b> and <b>Lockout Policies</b> tabs to choose LDAP Password Policy groups of attributes to configure.</p>");
+    string help_text = _("<p>Select the <b>Password Change Policies</b>, <b>Password Aging Policies</b>, and <b>Lockout Policies</b> tabs to choose LDAP password policy groups of attributes to configure.</p>");
 
 
     // tab-specific help texts
     map tabs_help_text	= $[
 	// help text for pwdInHistory attribute
-	`pwchange	: _("<p>Specify the maximum number of used passwords stored in history by adjusting <b>Maximum number of passwords stored<b>.</p>") +
+	`pwchange	: _("<p>Specify the <b>Maximum Number of Passwords Stored in History</b> to set how many previously used passwords should be saved. Saved passwords may not be used.</p>") +
 
 	// help text for pwdMustChange attribute
-	_("<p>Check <b>User Must Change Password After Reset</b> to force users change password after the password is reset or changed by administrator.</p>") +
+	_("<p>Check <b>User Must Change Password after Reset</b> to force users to change their passwords after the the password is reset or changed by an administrator.</p>") +
 
 	// help text for pwdAllowUserChange attribute
-	_("<p>Check <b>User Can Change Password</b> to allow users changing their passwords.</p>") +
+	_("<p>Check <b>User Can Change Password</b> to allow users to change their passwords.</p>") +
 
 	// help text for pwdSafeModify attribute
-	_("<p>If existing password must be provided along with the new password when being changed, check <b>Old Password Required for Password Change</b>.</p>") +
+	_("<p>If the existing password must be provided along with the new password, check <b>Old Password Required for Password Change</b>.</p>") +
 
 	// help text for pwdCheckQuality attribute
-	_("<p>Select how the password quality should be verified while being modified or added. Quality checking might not be enforced at all. With second option, server checks the quality, but accepts the password if it is unable to check it. Last option means that server will check the password quality, and if the server is unable to verify it, it will refuse the password.<p>") +
+	_("<p>Select whether the password quality should be verified while passwords are modified or added. Select <b>No Checking</b> if passwords should not be checked at all. With <b>Accept Uncheckable Passwords</b>, passwords are accepted even if the check cannot be performed, for example, if the user has provided an encrypted password. With <b>Only Accept Checked Passwords</b> passwords are refused if the quality test fails or the password cannot be checked.<p>") +
 
 	// help text for pwdMinLength attribute
-	_("Set the minimum number of characters that must be used in a password in <b>Minimum Password Length</b> entry.</p>"),
+	_("Set the minimum number of characters that must be used in a password in <b>Minimum Password Length</b>.</p>"),
 
 	// help text for pwdMinAge attribute
-	`aging		: _("<p><b>Minimal Password Age</b> holds the number of seconds that must elapse between  modifications to the password.</p>") +
+	`aging		: _("<p><b>Minimum Password Age</b> sets how much time must pass between modifications to the password.</p>") +
 
 	// help text for pwdMaxAge attribute
-	_("<p><b>Maximal Password Age</b> holds the number of seconds after which a modified password will expire.</p>") +
+	_("<p><b>Maximum Password Age</b> sets how long after modification a password expires.</p>") +
 
 	// help text for pwdExpireWarning attribute
-	_("<p>In <b>Seconds before Password Expiration to Issue Warning</b> specify the maximum number of seconds before a password is due to expire that expiration warning messages will be returned to an authenticating user.</p>") +
+	_("<p>In <b>Time before Password Expiration to Issue Warning</b> set how long before a password is due to expire that an expiration warning messages should be given to an authenticating user.</p>") +
 
 	// help text for pwdGraceAuthNLimit attribute
-	_("<p>Set the number of times an expired password can be used to authenticate in <b>Possible Usages of Expired Password</b>.</p>"),
+	_("<p>Set the number of times an expired password can be used to authenticate in <b>Allowed Uses of an Expired Password</b>.</p>"),
 
 	// help text for pwdLockout attribute
-	`lockout	: _("<p>Check <b>Enable Password Locking</b> to disallow usage of password after a specified number of consecutive failed bind attempts.</p>") +
+	`lockout	: _("<p>Check <b>Enable Password Locking</b> to forbid use of a password after a specified number of consecutive failed bind attempts.</p>") +
 
 	// help text for pwdMaxFailure attribute
 	_("<p>Set the number of consecutive failed bind  attempts after which the password may not be used to authenticate in <b>Bind Failures to Lock the Password</b>.</p>") +
 
 	// help text for pwdLockoutDuration attribute
-	_("<p>Set the number of seconds that the password cannot be used in <b>Password Lock Duration</b>.</p>") +
+	_("<p>Set how long the password cannot be used in <b>Password Lock Duration</b>.</p>") +
 
 	// help text for pwdFailureCountInterval attribute
-	_("<p><b>Bind Failures Cache Duration</b> holds the number of seconds after which the password failures are purged from the failure counter, even though no successful authentication occurred.</p>"),
+	_("<p><b>Bind Failures Cache Duration</b> sets how long before password failures are purged from the failure counter even though no successful authentication has occurred.</p>"),
     ];
 
     // map of attribute names for each tab
@@ -609,6 +609,10 @@ global define map<string,any> PasswordPolicyDialog (map<string,any> ppolicy) {
 	`lockout	: [ "pwdlockout", "pwdlockoutduration", "pwdmaxfailure",
 	    "pwdfailurecountinterval"],
     ];
+
+    list time_attributes = [ "pwdminage", "pwdmaxage", "pwdexpirewarning", "pwdlockoutduration",
+	"pwdfailurecountinterval" ];
+
     map default_values	= $[
 	"pwdmustchange"		: false,
 	"pwdallowuserchange"	: true,
@@ -645,11 +649,7 @@ global define map<string,any> PasswordPolicyDialog (map<string,any> ppolicy) {
 	);
     }
 
-    term contents = `VBox(
-	`Label (ppolicy["dn"]:""),
-        `VSpacing (0.5),
-	tabs_term
-    );
+    term contents = tabs_term;
 
     // generate the term of password policy tab and update the help text
     void set_password_policies_term () {
@@ -657,11 +657,11 @@ global define map<string,any> PasswordPolicyDialog (map<string,any> ppolicy) {
 	term tab_cont	= `Top (`HBox (`HSpacing (0.5), `VBox (
 	    `VSpacing (0.8),
 	    // IntField label
-	    `IntField (`id ("pwdinhistory"), _("Ma&ximum Number of Passwords Stored"),
+	    `IntField (`id ("pwdinhistory"), _("Ma&ximum Number of Passwords Stored in History"),
 		0, max, tointeger (ppolicy["pwdinhistory"]:"0")),
-	    `VSpacing (0.5),
+	    `VSpacing (0.4),
 	    // checkbox label
-	    `Left (`CheckBox (`id ("pwdmustchange"), _("U&ser Must Change Password After Reset"),
+	    `Left (`CheckBox (`id ("pwdmustchange"), _("U&ser Must Change Password after Reset"),
 		ppolicy["pwdmustchange"]:false)),
 	    `VSpacing (0.2),
 	    // checkbox label
@@ -671,18 +671,18 @@ global define map<string,any> PasswordPolicyDialog (map<string,any> ppolicy) {
 	    // checkbox label
 	    `Left (`CheckBox (`id ("pwdsafemodify"), _("&Old Password Required for Password Change"),
 		ppolicy["pwdsafemodify"]:false)),
-	    `VSpacing (0.5),
+	    `VSpacing (0.4),
 	    `HBox (`HSpacing (2), `Frame (_("Password Quality Checking"), `VBox (
 		`VSpacing (0.5),
 		`RadioButtonGroup (`id("pwdcheckquality"), `VBox (
 		    `Left (`RadioButton (`id(0), `opt (`notify),
-			_("&No checking"), pwdcheckquality == 0)),
+			_("&No Checking"), pwdcheckquality == 0)),
 		    `Left (`RadioButton(`id(1), `opt (`notify),
-			_("Acc&ept passwords unable to check"), pwdcheckquality == 1)),
+			_("Acc&ept Uncheckable Passwords"), pwdcheckquality == 1)),
 		    `Left (`RadioButton(`id(2), `opt (`notify),
-			_("&Refuse passwords unable to check"), pwdcheckquality == 2))
+			_("&Only Accept Checked Passwords"), pwdcheckquality == 2))
 		)),
-		`VSpacing (0.5),
+		`VSpacing (0.4),
 		// IntField label
 		`IntField (`id ("pwdminlength"), _("&Minimum Password Length"), 0, max,
 		    tointeger (ppolicy["pwdminlength"]:"0"))
@@ -694,26 +694,51 @@ global define map<string,any> PasswordPolicyDialog (map<string,any> ppolicy) {
 	return;
     }
 
+    term time_dialog (string id, string label) {
+
+	integer value	= tointeger (ppolicy[id]:"0");
+	integer days	= value / (24*60*60);
+	if (days > 0) value	= value - (days * 24*60*60);
+	integer	hours	= value / (60*60);
+	if (hours > 0) value	= value - (hours * 60*60);
+	integer minutes	= value / 60;
+	if (minutes > 0) value	= value - (minutes * 60);
+	return `HBox (`HSpacing (0.3), `Frame (label, `HBox (
+	    `IntField (`id (id + "d"), _("Days"), 0, max, days),
+	    `IntField (`id (id + "h"), _("Hours"), 0, 23, hours),
+	    `IntField (`id (id + "m"), _("Minutes"), 0, 59, minutes),
+	    `IntField (`id (id + "s"), _("Seconds"), 0, 59, value)
+	)), `HSpacing (0.3));
+    }
+
+    integer get_seconds_value (string attr) {
+
+	integer days	= (integer) UI::QueryWidget (`id (attr + "d"), `Value);
+	integer hours	= (integer) UI::QueryWidget (`id (attr + "h"), `Value);
+	integer minutes	= (integer) UI::QueryWidget (`id (attr + "m"), `Value);
+	integer seconds	= (integer) UI::QueryWidget (`id (attr + "s"), `Value);
+	return (days * 24*60*60) + (hours * 60*60) + (minutes *60) + seconds;
+    }
+
     // generate the term of password aging tab
     void set_aging_policies_term () {
 
 	term tab_cont = `Top (`HBox (`HSpacing (0.5), `VBox (
-	    `VSpacing (0.8),
-	    // IntField label
-	    `IntField (`id ("pwdminage"), _("Minimal Password Age (seconds)"), 0, max, 0),
-	    // IntField label
-	    `IntField (`id ("pwdmaxage"), _("Maximal Password Age (seconds)"), 0, max, 0),
-	    // IntField label
-	    `IntField (`id ("pwdexpirewarning"),
-		_("Seconds before Password Expiration to Issue Warning"), 0, max, 0),
+	    `VSpacing (0.7),
+	    // frame label
+	    time_dialog ("pwdminage", _("Minimum Password Age")),
+	    `VSpacing (0.4),
+	    // frame label
+	    time_dialog ("pwdmaxage", _("Maximum Password Age")),
+	    `VSpacing (0.4),
+	    // frame label
+	    time_dialog ("pwdexpirewarning", _("Time before Password Expiration to Issue Warning")),
+	    `VSpacing (0.2),
 	    `IntField (`id ("pwdgraceauthnlimit"),
 		// IntField label
-		_("Possible Usages of Expired Password"), 0, max, 0)
+		_("Allowed Uses of an Expired Password"), 0, max, 0)
 	), `HSpacing (0.5)));
 	UI::ReplaceWidget (`tabContents, tab_cont);
-	foreach (string attr, attributes[`aging]:[], {
-	    UI::ChangeWidget (`id (attr), `Value, tointeger (ppolicy[attr]:"0"));
-	});
 	return;
     }
 
@@ -727,22 +752,22 @@ global define map<string,any> PasswordPolicyDialog (map<string,any> ppolicy) {
 	    // check box label
 	    `Left (`CheckBox (`id ("pwdlockout"), `opt (`notify), _("Enable Password Locking"),
 		pwdlockout)),
-	    `VSpacing (0.5),
+	    `VSpacing (0.4),
 	    // intField label
 	    `IntField (`id ("pwdmaxfailure"), _("Bind Failures to Lock the Password"),
-		0, max, 0),
-	    `IntField (`id ("pwdlockoutduration"),
-		// intField label
-		_("Password Lock Duration"), 0, max, 0),
-	    `IntField (`id ("pwdfailurecountinterval"),
-		// intField label
-		_("Bind Failures Cache Duration"), 0, max, 0)
+		0, max, tointeger (ppolicy["pwdmaxfailure"]:"0")),
+	    // frame label
+	    time_dialog ("pwdlockoutduration", _("Password Lock Duration")),
+	    `VSpacing (0.4),
+	    // frame label
+	    time_dialog ("pwdfailurecountinterval", _("Bind Failures Cache Duration"))
 	), `HSpacing (0.5)));
 
 	UI::ReplaceWidget (`tabContents, tab_cont);
-	foreach (string attr, [ "pwdlockoutduration", "pwdmaxfailure", "pwdfailurecountinterval"], {
-	    UI::ChangeWidget (`id (attr), `Value, tointeger (ppolicy[attr]:"0"));
-	    UI::ChangeWidget (`id (attr), `Enabled, pwdlockout);
+	UI::ChangeWidget (`id ("pwdmaxfailure"), `Enabled, pwdlockout);
+	foreach (string suffix, [ "d", "h", "m", "s" ], {
+	    UI::ChangeWidget (`id ("pwdlockoutduration" + suffix), `Enabled, pwdlockout);
+	    UI::ChangeWidget (`id ("pwdfailurecountinterval" + suffix), `Enabled, pwdlockout);
 	});
 	return;
     }
@@ -768,6 +793,11 @@ global define map<string,any> PasswordPolicyDialog (map<string,any> ppolicy) {
 
 	// save the values from UI
 	foreach (string attr, attributes[current_tab]:[], {
+	    if (contains (time_attributes, attr))
+	    {
+		ppolicy[attr]	= sformat ("%1", get_seconds_value (attr));
+		return;
+	    }
 	    any val	= UI::QueryWidget (`id (attr), `Value);
 	    if (is (val, integer))
 		val	= sformat ("%1", val);
@@ -817,9 +847,10 @@ Enter a value."), attr));
 	if (current_tab == `lockout && result == "pwdlockout")
 	{
 	    boolean pwdlockout = (boolean) UI::QueryWidget (`id ("pwdlockout"), `Value);
-	    foreach (string at, ["pwdlockoutduration", "pwdmaxfailure", "pwdfailurecountinterval"],
-	    {
-		UI::ChangeWidget (`id (at), `Enabled, pwdlockout);
+	    UI::ChangeWidget (`id ("pwdmaxfailure"), `Enabled, pwdlockout);
+	    foreach (string suffix, [ "d", "h", "m", "s" ], {
+		UI::ChangeWidget (`id ("pwdfailurecountinterval" + suffix), `Enabled, pwdlockout);
+		UI::ChangeWidget (`id ("pwdlockoutduration" + suffix), `Enabled, pwdlockout);
 	    });
 	}
     }
@@ -828,7 +859,7 @@ Enter a value."), attr));
     map<string,any> ret	= $[];
     if (result == `next)
     {
-	foreach (string key, any val, ppolicy, {
+	foreach (string key, any val, (map<string,any>) ppolicy, {
 	    if (!haskey (ppolicy_orig, key) &&
 		(val == default_values[key]:nil || val == "0"))
 		return;
@@ -840,7 +871,7 @@ Enter a value."), attr));
 	    }
 	});
     }
-    return ret;
+    return (result == `next) ? ret : nil;
 }
 
 }//EOF

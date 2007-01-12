@@ -33,7 +33,7 @@
 
     define boolean Modified () ``{
 
-	return (Ldap::modified || Ldap::ldap_modified);
+	return (Ldap::modified || Ldap::ldap_modified || Ldap::ppolicies != $[]);
     }
 
     /**
@@ -142,7 +142,7 @@
 	    `ReplacePoint (`id (`rp),
 		`MultiSelectionBox (`id(`sel),
 		// multiselection box label
-		_("LDAP &Servers Provided by SLP:"), items)
+		_("LDAP &Servers Provided by SLP"), items)
 	    ),
 	    `HBox (
 		`PushButton (`id(`ok), Label::OKButton()),
@@ -171,7 +171,8 @@
 
 	// help text 1/9
 	string help_text = _("<p>Here, your machine can be set up as an
-<b>LDAP client</b>.</p>") +
+LDAP client.</p>
+") +
 
 	// help text 2/9
 	_("<p>To authenticate your users with an OpenLDAP server, select <b>Use LDAP</b>. NSS and PAM will be configured accordingly.</p>") +
@@ -186,9 +187,9 @@ removed.</p>") +
 	_("<p>To activate LDAP but forbid users from logging in to this machine, select <b>Enable LDAP Users but Disable Logins</b>.</p>") +
 
 	// help text 4/9
-	_("<p>Enter the LDAP server's <b>address</b> (e.g., ldap.example.com or 10.20.0.2) in the first entry and <b>Distinguished Name</b> of the search base (\"base DN\", such as dc=example,dc=com) in the second. Specify multiple servers
+	_("<p>Enter the LDAP server's address (such as ldap.example.com or 10.20.0.2) in <b>Addresses</b> and the distinguished name of the search base (<b>Base DN</b>, such as dc=example,dc=com). Specify multiple servers
 by separating their addresses with spaces. It must be possible to resolve the
-addresses without using LDAP. You can also specify the port on which the server is running using the syntax \"server:port\", for example, ldap.example.com:379.
+addresses without using LDAP. You can also specify the port on which the server is running using the syntax \"server:port\", for example, <tt>ldap.example.com:379</tt>.
 </p>
 ") +
 
@@ -196,12 +197,13 @@ addresses without using LDAP. You can also specify the port on which the server 
 	_("<p>With <b>Find</b>, select the LDAP server from the list provided by the service location protocol (SLP). Using <b>Fetch DN</b>, read the base DN from server.</p>") +
 
 	// help text 6/9
-	_("<p>Some LDAP servers support StartTLS [RFC2830].
+	_("<p>Some LDAP servers support StartTLS (RFC2830).
 If your server supports it and it is configured, activate <b>LDAP TLS/SSL</b>
-to encrypt your communication with the LDAP server.</p>") +
+to encrypt your communication with the LDAP server.</p>
+") +
 
 	// help text 7/9
-	_("<p>Normally, the LDAP version 3 protocol will be used. If you have
+	_("<p>Normally, the LDAP version 3 protocol is used. If you have
 an LDAP server using protocol 2 (for example, OpenLDAP v1), activate
 <b>LDAP Version 2</b>.</p>
 ") +
@@ -275,7 +277,7 @@ automatically.</p>
 	    ))),
 	    `VSpacing (0.4),
 	    // frame label
-	    `Frame (_("LDAP client"), `HBox (`HSpacing (0.5), `VBox(
+	    `Frame (_("LDAP Client"), `HBox (`HSpacing (0.5), `VBox(
 		`VSpacing (0.5),
 		`HBox (
 		    // text entry label
@@ -289,7 +291,7 @@ automatically.</p>
 		),
 		`HBox (
 		    // text entry label
-		    `TextEntry (`id (`ldapd), _("LDAP base &DN"), domain),
+		    `TextEntry (`id (`ldapd), _("LDAP Base &DN"), domain),
 		    `VBox (
 			`Label (""),
 			// push button label
@@ -400,7 +402,7 @@ automatically.</p>
 		    // popup question: user enabled LDAP now, but probably has
 		    // enabled NIS client before
 		    if (!Popup::YesNo (_("When you configure your machine as an LDAP client,
-you cannot retrieve data with NIS. Are you sure?
+you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 ")))
 		    {
 			result = `not_next;
@@ -451,7 +453,7 @@ you cannot retrieve data with NIS. Are you sure?
 		    {
 			Autologin::AskForDisabling (
 			    // popup text
-			    _("Now you have enabled LDAP."));
+			    _("LDAP is now enabled."));
 
 			string message	= Stage::cont () ? "" :
 			// message popup, part 1/2
@@ -465,7 +467,7 @@ the machine to enable it for all services.
 			    Ldap::RestartSSHD (true);
 			    // message popup, part 1/2
 			    message = message + _("
-To enable remote login for LDAP users, 'sshd' will be
+To enable remote login for LDAP users, sshd is
 restarted automatically by YaST.
 ");
 			}
@@ -506,11 +508,12 @@ in /etc/ldap.conf file.</p>
 ")	+
 
     // help text 2/3
-    _("<p><b>Password Change Protocol</b> refers to the pam_password attribute of /etc/ldap.conf file. See <tt>man pam_ldap</tt> for the meaning of its values.</p>")	+
+    _("<p><b>Password Change Protocol</b> refers to the pam_password attribute of the <tt>/etc/ldap.conf</tt> file. See <tt>man pam_ldap</tt> for the meaning of its values.</p>")	+
 
     // help text 3/3, %1 is attribute name
-    sformat (_("<p>Set the type of LDAP groups you are using.
-The default value for <b>Group Member Attribute</b> is <i>%1</i>.</p>"),
+    sformat (_("<p>Set the type of LDAP groups to use.
+The default value for <b>Group Member Attribute</b> is <i>%1</i>.</p>
+"),
     "member"),
 
 	`admin		:
@@ -527,7 +530,8 @@ server.</p>
     _("<p>To access the data stored on the server, enter the
 <b>Administrator DN</b>.
 You can enter the full DN (for example, cn=Administrator,dc=mydomain,dc=com) or just
-the relative DN (for example, cn=Administrator). The LDAP Base DN is appended automatically if the appropriate option is checked.</p>") +
+the relative DN (for example, cn=Administrator). The LDAP base DN is appended automatically if the appropriate option is checked.</p>
+") +
 
     // help text 3/4
     _("<p>To create the default configuration objects for LDAP users and groups,
@@ -548,7 +552,13 @@ have changed your configuration.</p>
 check the appropriate option. Changing this value does not cause any direct
 action.  It is only information for the YaST users module, which can manage
 user home directories.</p>
-")
+") +
+
+    // password policy help text caption
+    _("<p><b>Password Policy</b></p>") +
+
+    // password policy help
+    _("<p>Configure selected Password Policy with <b>Edit</b>. Use <b>Add</b> to add new Password Policy.</p>")
     ];
 
     string bind_dn		= Ldap::bind_dn;
@@ -593,6 +603,53 @@ user home directories.</p>
 	    `item (`id (it), it, it == pam_password)
 	))
     );
+
+    list ppolicy_list	= [];
+
+    map<string,map> ppolicies	= $[];
+    map<string,map> ppolicies_orig= $[];
+    list<string> ppolicies_deleted	= []; // list of DN
+
+    // read the list of pwdpolicy objects under base_config_dn
+    void read_ppolicies () {
+
+	if (base_dn == "") return;
+
+	if ((boolean)SCR::Execute (.ldap, $[
+	"hostname"	: Ldap::GetFirstServer (Ldap::server),
+	"port"		: Ldap::GetFirstPort (Ldap::server),
+	"version"	: Ldap::ldap_v2 ? 2 : 3,
+	"use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+	]))
+	{
+	list schemas = (list)SCR::Read (.ldap.search, $[
+	    "base_dn":  "",
+	    "attrs":    [ "subschemasubentry" ],
+	    "scope":    0,
+	]);
+	string schema_dn = schemas[0,"subschemasubentry",0]:"";
+	if (schemas != nil && schema_dn != "" &&
+	    (boolean)SCR::Execute (.ldap.schema, $[ "schema_dn": schema_dn ]))
+	{
+	    ppolicies = (map<string,map>) SCR::Read (.ldap.search, $[
+		"base_dn"	: base_dn,
+		"filter"	: "objectclass=pwdpolicy",
+		"scope"		: 2,
+		"map"		: true,
+		"not_found_ok"	: true
+	    ]);
+	    ppolicies_orig	= ppolicies;
+	}
+	}
+	// TODO re-read is not supported, is it correct?
+	foreach (string dn, map ppolicy, Ldap::ppolicies, {
+	    if (ppolicy["modified"]:"" == "deleted" && haskey (ppolicies, dn))
+		ppolicies	= remove (ppolicies, dn);
+	    else if (ppolicy["modified"]:"" == "added")
+		ppolicies[dn]	= ppolicy;
+	    else ppolicies[dn]	= union (ppolicies[dn]:$[], ppolicy);
+	});
+    }
 
     list<term> tabs	= [
 	// tab label
@@ -678,8 +735,8 @@ user home directories.</p>
 
     define void set_admin_term () {
 
-	term cont = `Top (`HBox(`HSpacing (5), `VBox(
-	    `VSpacing(3),
+	term cont = `HBox (`HSpacing (5), `VBox(
+	    `VSpacing (),
 	    `HBox (
 		    `TextEntry (`id (`base_config_dn),
 			// textentry label
@@ -695,11 +752,12 @@ user home directories.</p>
 		// textentry label
 		`TextEntry (`id (`bind_dn), _("Administrator &DN"), bind_dn),
 		`VBox (
+		    `Label (""),
 		    // checkbox label
-		    `Bottom (`CheckBox (`id(`append),_("A&ppend Base DN"), append_base))
+		    `CheckBox (`id(`append),_("A&ppend Base DN"), append_base)
 		)
 	    ),
-	    `VSpacing (2),
+	    `VSpacing (),
 	    `Left (`CheckBox (`id(`create_ldap),
 		    // checkbox label
 		    _("Crea&te Default Configuration Objects"), create_ldap)),
@@ -713,8 +771,20 @@ user home directories.</p>
 	    `Right (`PushButton (`id(`configure),
 		    // pushbutton label
 		    _("Configure User Management &Settings..."))),
+	    `VSpacing (2),
+	    `Table (`id (`ppolicy_table), `opt(`notify), `header (
+		// table header
+		_("Password Policy")),
+		maplist (string dn, map pp, ppolicies, ``(`item (`id (dn), dn)))
+	    ),
+	    `HBox (
+		`PushButton (`id (`add), Label::AddButton ()),
+		`PushButton (`id (`edit), Label::EditButton ()),
+		`PushButton (`id (`delete), Label::DeleteButton ()),
+		`HStretch ()
+	    ),
 	    `VSpacing(0.5)
-	), `HSpacing (5)));
+	), `HSpacing (5));
 
 	UI::ReplaceWidget (`tabContents, cont);
 	if (has_tabs)
@@ -731,14 +801,15 @@ user home directories.</p>
 	help_text[`client]:"", Label::CancelButton(), Label::AcceptButton());
     Wizard::HideAbortButton ();
 
-    symbol result	= `notnext;
+    any result	= `notnext;
     symbol current	= `client;
 
     set_client_term ();
+    read_ppolicies ();
 
     while (true)
     {
-	result = (symbol) UI::UserInput ();
+	result = UI::UserInput ();
 	if (result == `cancel && ReallyAbort () != `abort)
 	    result = `not_next;
 
@@ -774,7 +845,7 @@ user home directories.</p>
 	// 2. switch the tabs
 	if (result == `client || result == `admin)
 	{
-	    current = result;
+	    current = (symbol) result;
 	    Wizard::SetHelpText (help_text[current]:"");
 	    if (result == `client)
 		set_client_term ();
@@ -783,7 +854,8 @@ user home directories.</p>
 	}
 
 	// 3. other events
-	if (contains ([`br, `br_passwd, `br_shadow, `br_group ], result))
+	if (is (result, symbol) &&
+	    contains ([`br, `br_passwd, `br_shadow, `br_group ], (symbol)result))
 	{
 	    string dn = Ldap::ldap_initialized ?
 		LdapPopup::BrowseTree (base_dn) :
@@ -804,6 +876,104 @@ user home directories.</p>
 		UI::ChangeWidget (`id(br2entry[result]:nil), `Value, dn);
 	    }
 	}
+	if (result == `add)
+	{
+	    string suffix	= base_dn;
+	    UI::OpenDialog ( `opt(`decorated), `HBox(
+		`HSpacing(1),
+		`VBox(
+		    // TextEntry label
+		    `TextEntry (`id (`cn), _("Name of Password Policy Object")),
+		    `ReplacePoint (`id (`rp_suf), `HBox (
+			// text label,suffix will follow in next label
+			`Label (`id (`suffix_label), _("Suffix:")),
+			`Label (`id (`suffix), base_dn),
+			// pushbutton label
+			`PushButton (`id (`br_suf), _("Change Suffix"))
+		    )),
+		    `HBox (
+			`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
+			`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton())
+		    )
+		),
+		`HSpacing(1)
+	    ));
+	    UI::SetFocus (`id (`cn));
+	    any ret		= nil;
+	    string new_dn	= "";
+	    while (true)
+	    {
+		ret	= UI::UserInput ();
+		if (ret == `cancel)
+		    break;
+		if (ret == `br_suf)
+		{
+		    string suf	= LdapPopup::InitAndBrowseTree (base_dn, $[
+			"hostname"	: Ldap::GetFirstServer (Ldap::server),
+			"port"		: Ldap::GetFirstPort (Ldap::server),
+			"version"	: Ldap::ldap_v2 ? 2 : 3,
+			"use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+		    ]);
+		    if (suf != "")
+			UI::ReplaceWidget (`id (`rp_suf), `HBox (
+			    // text label,suffix will follow in next label
+			    `Label (`id (`suffix_label), _("Suffix:")),
+			    `Label (`id (`suffix), suf),
+			    // pushbutton label
+			    `PushButton (`id (`br_suf), _("Change Suffix"))
+			));
+		}
+		if (ret == `ok)
+		{
+		    string cn		= (string) UI::QueryWidget (`id (`cn), `Value);
+		    if (cn == "") break;
+		    string suffix	= (string) UI::QueryWidget (`id (`suffix), `Value);
+		    new_dn		= sformat ("cn=%1,%2", cn, suffix);
+		    if (haskey (ppolicies, new_dn))
+		    {
+			Popup::Error (sformat (_("The Policy \'%1\' already exists.
+Please select another one."), new_dn));
+			continue;
+		    }
+		    break;
+		}
+	    }
+	    UI::CloseDialog ();
+	    if (ret == `ok && new_dn != "")
+	    {
+		map new	= LdapPopup::PasswordPolicyDialog ($["dn": new_dn ]);
+		if (new != nil)
+		{
+		    ppolicies[new_dn]	= new;
+		    UI::ChangeWidget (`id (`ppolicy_table), `Items, 
+			maplist (string dn, map pp, ppolicies, ``(`item (`id (dn), dn)))
+		    );
+		    UI::ChangeWidget (`id (`edit), `Enabled, size (ppolicies) > 0);
+		    UI::ChangeWidget (`id (`delete), `Enabled, size (ppolicies) > 0);
+		}
+	    }
+	}
+	if (result == `edit || result == `ppolicy_table)
+	{
+	    string dn	= (string) UI::QueryWidget (`id (`ppolicy_table), `CurrentItem);
+	    map changes	= LdapPopup::PasswordPolicyDialog (ppolicies[dn]:$[]);
+	    if (changes != nil)
+	    {
+		ppolicies[dn]	= union (ppolicies[dn]:$[], changes);
+	    }
+	}
+	if (result == `delete)
+	{
+	    string dn   = (string) UI::QueryWidget (`id (`ppolicy_table), `CurrentItem);
+	    ppolicies	= remove (ppolicies, dn);
+	    ppolicies_deleted	= (list<string>) union (ppolicies_deleted, [dn]);
+	    UI::ChangeWidget (`id (`ppolicy_table), `Items,
+		maplist (string dn, map pp, ppolicies, ``(`item (`id (dn), dn)))
+	    );
+	    UI::ChangeWidget (`id (`edit), `Enabled, size (ppolicies) > 0);
+	    UI::ChangeWidget (`id (`delete), `Enabled, size (ppolicies) > 0);
+	}
+
 	if (result == `next || result == `configure)
 	{
 	    if (result == `configure && bind_dn == "")
@@ -817,10 +987,49 @@ user home directories.</p>
 	    if (result == `configure && base_config_dn == "")
 	    {
 		// error popup label
-                Report::Error(_("Enter the configuration base DN"));
+                Report::Error(_("Enter the configuration base DN."));
 		UI::SetFocus (`id (`base_config_dn));
 		continue;
 	    }
+	    foreach (string dn, map ppolicy, ppolicies, {
+		// new ppolicy
+		if (!haskey (ppolicies_orig, dn))
+		{
+		    ppolicy["modified"]		= "added";
+		    ppolicy["pwdattribute"]	= "userpassword";
+		    ppolicy["objectclass"]	= ["pwdpolicy", "namedobject"];
+		    ppolicy["cn"]		= get_cn (dn);
+		    Ldap::ppolicies[dn]	= ppolicy;
+
+		}
+		else
+		{
+		    map pp	= $[];
+		    foreach (string a, any val, (map<string,any>) ppolicy, {
+			if (val != ppolicies_orig[dn,a]:nil)
+			    pp[a]	= val;
+		    });
+		    if (pp != $[])
+		    {
+			pp["modified"]		= "edited";
+			Ldap::ppolicies[dn]	= pp;
+		    }
+		}
+	    });
+	    // deleted ppolicies
+	    foreach (string dn, ppolicies_deleted, {
+		map pp	= Ldap::ppolicies[dn]:$[];
+		if (pp["modified"]:"" == "added")
+		{
+		    Ldap::ppolicies	= remove (Ldap::ppolicies, dn);
+		}
+		else if (haskey (ppolicies_orig, dn))
+		{
+		    pp["modified"]	= "deleted";
+		    Ldap::ppolicies[dn]	= pp;
+		}
+	    });
+
 	    if (Ldap::GetMainConfigDN() != base_config_dn	||
 		Ldap::bind_dn != bind_dn			||
 		Ldap::file_server != file_server		||
@@ -846,7 +1055,7 @@ user home directories.</p>
 	    break;
 	}
     }
-    return result;
+    return (symbol) result;
 }
 
 /**
@@ -904,8 +1113,8 @@ define symbol LDAPReadDialog () ``{
 	if (read_now || (Ldap::modified && !Ldap::ldap_modified) ||
 	    (Ldap::ldap_modified && Popup::AnyQuestion( Popup::NoHeadline(),
 // yes/no popup
-_("Reread settings from server?
-All changes will be lost.
+_("If you reread settings from the server,
+all changes will be lost. Really reread?
 "), Label::YesButton(), Label::NoButton(), `focus_no))
 	)
 	{
@@ -1157,8 +1366,8 @@ define symbol ModuleConfigurationDialog () ``{
     string help_text = _("<p>Here, manage the configuration stored in LDAP directory.</p>") +
 
     // helptext 2/4
-    _("<p>Each configuration set is called a <b>configuration module</b>. If there
-is no configuration module in the provided location (Base Configuration),
+    _("<p>Each configuration set is called a \"configuration module.\" If there
+is no configuration module in the provided location (base configuration),
 create one with <b>New</b>. Delete the current module
 using <b>Delete</b>.</p>
 ") +

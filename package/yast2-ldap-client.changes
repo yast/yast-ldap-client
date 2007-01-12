@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jan 11 15:04:41 CET 2007 - jsuchome@suse.cz
+
+- dialog for editing PasswordPolicy settings (F301179)
+- 2.15.1
+
+-------------------------------------------------------------------
 Tue Dec  5 15:54:13 CET 2006 - jsuchome@suse.cz
 
 - install necessary packages during autoainstallation (#226040)
