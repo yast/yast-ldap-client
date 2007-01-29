@@ -61,7 +61,7 @@ define boolean LdapSummaryHandler (map options ) ``{
  * @param options  a list of parameters passed as args
  * @return boolean true on success
  */
-define boolean LdapChangeConfiguration (map options ) ``{
+define boolean LdapChangeConfiguration (map<string, string> options ) ``{
 
     string server = options["server"]:"";
     if( server != "" )
@@ -75,6 +75,21 @@ define boolean LdapChangeConfiguration (map options ) ``{
 	Ldap::SetDomain (base);
 	Ldap::modified	= true;
     }
+
+    string ldappw = options["ldappw"]:"";
+    if( ldappw != "" )
+    {
+        Ldap::bind_pass = ldappw;
+        Ldap::modified  = true;
+    }
+
+    string command = CommandLine::UniqueOption( options, ["createconfig"]);
+    if( command == "createconfig" )
+    {
+	Ldap::create_ldap = true;
+        Ldap::modified  = true;
+    }
+
     return Ldap::modified;
 }
 
@@ -128,11 +143,18 @@ map cmdline = $[
 	    "help"	: _("Distinguished name (DN) of the search base"),
 	    "type"	: "string"
 	],
+	"createconfig"  :$[
+	   "help"       : _("Create default configuration objects.")
+	],
+	"ldappw"	:$[
+	   "help" 	: _("LDAP admin password"),
+	   "type"       : "string"
+	],
     ],
     "mappings"		: $[
 	"pam"		: [ "enable", "disable" ],
 	"summary"	: [],
-	"configure"	: [ "server", "base" ],
+	"configure"	: [ "server", "base", "createconfig", "ldappw" ],
     ]
 ];
 

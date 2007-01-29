@@ -366,11 +366,9 @@
 	member_attribute= settings ["member_attribute"]:"member";
 	create_ldap	= settings ["create_ldap"]:false;
 
-	_autofs_allowed = haskey (settings, "start_autofs");
 	_start_autofs	= settings["start_autofs"]:false;
 	if (_start_autofs)
-	    required_packages = (list<string>)
-		union (required_packages, ["autofs"]);
+	    required_packages = (list<string>) union (required_packages, ["autofs"]);
 
 	old_domain		= domain;
 	old_server		= server;

@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Fri Jan 26 16:20:31 CET 2007 - jsuchome@suse.cz
+
+- enable creating default configuration object from command line
+  (patch provided by mc@suse.de)
+- enable setting autofs in autoyast UI (#236141)
+- 2.15.2 
+
+-------------------------------------------------------------------
 Thu Jan 11 15:04:41 CET 2007 - jsuchome@suse.cz
 
 - dialog for editing PasswordPolicy settings (F301179)
