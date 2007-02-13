@@ -25,7 +25,7 @@
     import "Popup";
     import "Report";
     import "Service";
-    import "SLP";
+    import "SLPAPI";
     import "Stage";
     import "Wizard";
 
@@ -127,7 +127,7 @@
 	UI::BusyCursor ();
 
 	list items	= [];
-	foreach (map service, SLP::FindSrvs ("service:ldap", ""), {
+	foreach (map service, SLPAPI::FindSrvs ("service:ldap", ""), {
 	    string s	= service["pcHost"]:"";
 	    /* TODO take address+port from url
 	    if (service["pcHost"]:"" == "")
@@ -343,7 +343,16 @@ automatically.</p>
 
 	    if (result == `slp)
 	    {
-		string srv = BrowseServers ();
+		string srv	= "";
+		if (!Package::Installed ("yast-slp"))
+		{
+		    if (Package::Install ("yast2-slp"))
+		    {
+			SCR::RegisterAgent (.slp, `ag_slp(`SlpAgent()));
+			srv = BrowseServers ();
+		    }
+		}
+		else srv = BrowseServers ();
 		if (srv != "")
 		    UI::ChangeWidget (`id(`server), `Value, srv);
 	    }

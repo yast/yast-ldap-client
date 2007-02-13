@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Feb  6 12:58:12 CET 2007 - jsuchome@suse.cz
+
+- remove a dependency on yast2-slp (#238680)
+- 2.15.3 
+
+-------------------------------------------------------------------
 Fri Jan 26 16:20:31 CET 2007 - jsuchome@suse.cz
 
 - enable creating default configuration object from command line

@@ -24,7 +24,8 @@ ynclude_DATA =		\
 
 module_DATA =		\
 	Ldap.ycp	\
-	LdapPopup.ycp
+	LdapPopup.ycp	\
+	SLPAPI.pm
 
 rnc_DATA =              \
 	ldap_client.rnc
