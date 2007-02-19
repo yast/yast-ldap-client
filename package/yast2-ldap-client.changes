@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Mon Feb 19 14:51:47 CET 2007 - jsuchome@suse.cz
+
+- added login_enabled to Set/Export functions (#246235)
+- added Ldap::WriteNow for Write without abort block (#246237)
+- make 'createconfig' command line option non-mandatory
+- 2.15.4
+
+-------------------------------------------------------------------
 Tue Feb  6 12:58:12 CET 2007 - jsuchome@suse.cz
 
 - remove a dependency on yast2-slp (#238680)

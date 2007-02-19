@@ -365,7 +365,7 @@
         nss_base_group	= settings ["nss_base_group"]:"";
 	member_attribute= settings ["member_attribute"]:"member";
 	create_ldap	= settings ["create_ldap"]:false;
-
+	login_enabled	= settings ["login_enabled"]:true;
 	_start_autofs	= settings["start_autofs"]:false;
 	if (_start_autofs)
 	    required_packages = (list<string>) union (required_packages, ["autofs"]);
@@ -409,7 +409,8 @@
 	    "nss_base_group"	: nss_base_group,
 	    "pam_password"	: pam_password,
 	    "member_attribute"	: member_attribute,
-	    "create_ldap"	: create_ldap
+	    "create_ldap"	: create_ldap,
+	    "login_enabled"	: login_enabled
 	];
 	if (_autofs_allowed)
 	    e["start_autofs"]	= _start_autofs;
@@ -739,7 +740,7 @@
 	    "schema": _("A problem occurred while reading schema from the LDAP server."),
 	];
 
-	if (!use_gui)
+	if (!use_gui || Mode::commandline ())
 	{
 	    y2error (error_type[type]:"Unknown LDAP error");
 	    y2error (ldap_error[error]:error);
@@ -948,6 +949,7 @@
      */
     global define string LDAPAskAndBind (boolean enable_anonymous) ``{
 
+	if (Mode::commandline ()) return nil;
 	string pw = GetLDAPPassword (enable_anonymous);
         if (pw != nil)
 	{
@@ -2363,6 +2365,16 @@ Select another one.
 
 	return `next;
     }
+
+    /**
+     * wrapper for Write, without abort block
+     */
+    global define boolean WriteNow () {
+
+	block<boolean> abort = ``{ return false; };
+	return (Write(abort) == `next);
+    }
+
 
     /**
      * Check if base config DN belongs to some existing object and offer

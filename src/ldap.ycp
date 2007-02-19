@@ -83,20 +83,18 @@ define boolean LdapChangeConfiguration (map<string, string> options ) ``{
         Ldap::modified  = true;
     }
 
-    string command = CommandLine::UniqueOption( options, ["createconfig"]);
-    if( command == "createconfig" )
+    if (haskey (options, "createconfig"))
     {
+	if (Ldap::bind_pass == nil)
+	{
+	    // password entering label
+	    Ldap::bind_pass = CommandLine::PasswordInput (_("LDAP Server Password:"));
+	}
 	Ldap::create_ldap = true;
         Ldap::modified  = true;
     }
 
     return Ldap::modified;
-}
-
-define boolean LdapWrite () ``{
-
-    block<boolean> abort = ``{ return false; };
-    return (Ldap::Write(abort) == `next);
 }
 
 /* the command line description map */
@@ -106,7 +104,7 @@ map cmdline = $[
     "help"		: _("LDAP client configuration module"),
     "guihandler"	: LdapSequence,
     "initialize"	: Ldap::Read,
-    "finish"		: LdapWrite,
+    "finish"		: Ldap::WriteNow,
     "actions"		: $[
 	"pam" :$[
 	    "handler"	: LdapEnableHandler,
@@ -144,10 +142,12 @@ map cmdline = $[
 	    "type"	: "string"
 	],
 	"createconfig"  :$[
+	    // command line help text for the 'createconfig' option
 	   "help"       : _("Create default configuration objects.")
 	],
 	"ldappw"	:$[
-	   "help" 	: _("LDAP admin password"),
+	    // command line help text for the 'ldappw' option
+	   "help"	: _("LDAP Server Password"),
 	   "type"       : "string"
 	],
     ],
