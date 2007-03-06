@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Mar  6 10:22:36 CET 2007 - jsuchome@suse.cz
+
+- browser: offer possibility to connect without TLS (#246397)
+- 2.15.5
+
+-------------------------------------------------------------------
 Mon Feb 19 14:51:47 CET 2007 - jsuchome@suse.cz
 
 - added login_enabled to Set/Export functions (#246235)

@@ -79,6 +79,56 @@ Discard these changes?
 	return size (tmp_data) > 0;
     }
 
+    /**
+     * popup shown after failed connection: ask for retry withou TLS (see bug 246397)
+     * @return true if user wants to retry without TLS
+     */
+    define boolean connect_without_tls (map errmap) {
+
+	UI::OpenDialog (`HBox(`HSpacing (0.5),
+	    `VBox(
+		`VSpacing (0.5),
+		// label
+		`Left (`Heading (Label::ErrorMsg())),
+		// error message
+		`Left (`Label (_("Connection to the LDAP server cannot be established."))),
+		`ReplacePoint (`id(`rp), `Empty()),
+		`VSpacing (0.2),
+		`Left (`CheckBox (`id(`details), `opt (`notify),
+		    // checkbox label
+		    _("&Show Details"), false)),
+		`VSpacing (),
+		`Left (`Label (
+		// question following error message (yes/no buttons follow)
+_("A possible cause of the failed connection may be that your client is
+configured for TLS/SSL but the server does not support it.
+
+Retry connection without TLS/SSL?"))),
+		`HBox (
+		    `PushButton (`id(`yes), `opt(`key_F10,`default), Label::YesButton()),
+		    `PushButton (`id(`no),`opt(`key_F9), Label::NoButton())
+		)
+	    ),
+	    `HSpacing(0.5))
+	);
+	any ret = nil;
+	do
+	{
+	    ret = UI::UserInput();
+	    if (ret == `details)
+	    {
+		if ((boolean)UI::QueryWidget (`id(`details), `Value))
+		    UI::ReplaceWidget (`id(`rp), `VBox (
+			`Label (errmap["msg"]:"")));
+		else
+		    UI::ReplaceWidget (`id(`rp), `Empty());
+	    }
+	}
+	while (ret != `yes && ret != `no);
+	UI::CloseDialog ();
+	return ret == `yes;
+    }
+
     // helper: create the value that should be shown instead of whole DN in tree
     define string show_dn (string dn) {
 	if (topdns[dn]:false)
@@ -307,11 +357,31 @@ Discard these changes?
 	    Ldap::bind_pass	= (string) UI::QueryWidget(`id(`pw), `Value);
 	    Ldap::SetAnonymous (ret == `anon);
 
-	    string error	= Ldap::LDAPInit ();
-	    if (error != "")
+	    string error	= "";
+	    map args = $[
+		"hostname"	: Ldap::GetFirstServer (Ldap::server),
+		"port"		: Ldap::GetFirstPort (Ldap::server),
+		"version"	: Ldap::ldap_v2 ? 2 : 3,
+		"use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+	    ];
+	    if (SCR::Execute (.ldap, args) != true)
 	    {
-		Ldap::LDAPErrorMessage ("init", error);
-		continue;
+		map errmap	= Ldap::LDAPErrorMap ();
+		if (Ldap::ldap_tls && errmap["tls_error"]:false && connect_without_tls (errmap))
+		{
+			Ldap::ldap_tls	= false;
+			error        = Ldap::LDAPInit ();
+			if (error != "")
+			{
+			    Ldap::LDAPErrorMessage ("init", error);
+			    continue;
+			}
+		}
+		else
+		{
+		    Ldap::LDAPErrorMessage ("init", errmap["msg"]:"");
+		    continue;
+		}
 	    }
 
 	    error		= Ldap::LDAPBind (Ldap::bind_pass);

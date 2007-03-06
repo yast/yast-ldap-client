@@ -6,7 +6,10 @@ BuildRequires:	doxygen perl-XML-Writer update-desktop-files yast2 yast2-devtools
 
 PreReq:         %fillup_prereq
 
-Requires:	yast2 yast2-ldap yast2-network
+Requires:	yast2 yast2-network
+
+# check for tls_error
+Requires:	yast2-ldap >= 2.15.1
 
 # new API of Pam.ycp
 Requires:	yast2-pam >= 2.14.0
