@@ -6,7 +6,10 @@ BuildRequires:	doxygen perl-XML-Writer update-desktop-files yast2 yast2-devtools
 
 PreReq:         %fillup_prereq
 
-Requires:	yast2 yast2-network
+# SLPAPI.pm
+Requires:	yast2 >= 2.15.17
+
+Requires:	yast2-network
 
 # check for tls_error
 Requires:	yast2-ldap >= 2.15.1
@@ -44,7 +47,6 @@ Summary:	Configuration of LDAP client
 @yncludedir@/ldap/*
 @moduledir@/Ldap.y*
 @moduledir@/LdapPopup.y*
-@moduledir@/SLPAPI.*
 @clientdir@/ldap*.ycp
 @scrconfdir@/*.scr
 @schemadir@/autoyast/rnc/ldap_client.rnc

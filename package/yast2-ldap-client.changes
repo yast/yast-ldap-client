@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Mar  8 18:30:38 CET 2007 - jsuchome@suse.cz
+
+- SLPAPI.pm moved to yast2 (#238680)
+- check if user changed imported LDAP settings (#252094)
+- 2.15.6
+
+-------------------------------------------------------------------
 Tue Mar  6 10:22:36 CET 2007 - jsuchome@suse.cz
 
 - browser: offer possibility to connect without TLS (#246397)

@@ -483,6 +483,17 @@ restarted automatically by YaST.
 			if (message != "")
 			    Popup::Message (message);
 		    }
+		    // check if user changed part of imported settings (#252094)
+		    if (start && Stage::cont () && size (Ldap::initial_defaults) > 0 &&
+			Ldap::create_ldap &&
+			server != Ldap::initial_defaults["ldap_server"]:"" &&
+			domain != Ldap::initial_defaults["ldap_domain"]:"" &&
+			Ldap::bind_dn == Ldap::initial_defaults["bind_dn"]:"" &&
+			!issubstring (Ldap::bind_dn, domain))
+		    {
+			y2warning ("Server and base DN changed but bind_dn remains imported -> disabling LDAP objects creation...");
+			Ldap::create_ldap	= false;
+		    }
 		}
 		Ldap::SetDomain (domain);
 		Ldap::start	= start;
