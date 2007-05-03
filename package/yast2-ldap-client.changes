@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu May  3 13:58:40 CEST 2007 - jsuchome@suse.cz
+
+- support minimal command line for ldap_browser (#269897)
+- 2.15.7
+
+-------------------------------------------------------------------
 Thu Mar  8 18:30:38 CET 2007 - jsuchome@suse.cz
 
 - SLPAPI.pm moved to yast2 (#238680)

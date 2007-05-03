@@ -8,6 +8,7 @@
  *
  */
 {
+    import "CommandLine";
     import "Label";
     import "Ldap";
     import "LdapPopup";
@@ -18,6 +19,15 @@
 
     textdomain "ldap-client";
 
+    map cmdline = $[
+	"id"		: "ldap_browser",
+	"mappings"		: $[
+	]
+    ];
+    if (size (WFM::Args()) > 0)
+    {
+	return CommandLine::Run( cmdline );
+    }
 
     string root_dn		= "";
     string current_dn		= "";
@@ -405,7 +415,7 @@ Retry connection without TLS/SSL?"))),
     if (ret == `cancel)
     {
 	Wizard::CloseDialog ();
-	return;
+	return ret;
     }
 
     set_tree_term ();
@@ -559,4 +569,5 @@ Enter a value."), attr));
 	}
      }
     Wizard::CloseDialog ();
+    return `finish;
 }
