@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Wed May 23 09:50:50 CEST 2007 - jsuchome@suse.cz
+
+- added LDAPInitWithTLSCheck function to offer fallback to uncrypted
+  connection when start_tls method failed (#246397)
+- save changed settings even if PAM is not set (#248181)
+- 2.15.8
+
+-------------------------------------------------------------------
 Thu May  3 13:58:40 CEST 2007 - jsuchome@suse.cz
 
 - support minimal command line for ldap_browser (#269897)

@@ -883,6 +883,103 @@
     }
 
     /**
+     * popup shown after failed connection: ask for retry withou TLS (see bug 246397)
+     * @return true if user wants to retry without TLS
+     */
+    global define boolean ConnectWithoutTLS (map errmap) {
+
+	UI::OpenDialog (`HBox(`HSpacing (0.5),
+	    `VBox(
+		`VSpacing (0.5),
+		// label
+		`Left (`Heading (Label::ErrorMsg())),
+		// error message
+		`Left (`Label (_("Connection to the LDAP server cannot be established."))),
+		`ReplacePoint (`id(`rp), `Empty()),
+		`VSpacing (0.2),
+		`Left (`CheckBox (`id(`details), `opt (`notify),
+		    // checkbox label
+		    _("&Show Details"), false)),
+		`VSpacing (),
+		`Left (`Label (
+		// question following error message (yes/no buttons follow)
+_("A possible cause of the failed connection may be that your client is
+configured for TLS/SSL but the server does not support it.
+
+Retry connection without TLS/SSL?"))),
+		`HBox (
+		    `PushButton (`id(`yes), `opt(`key_F10,`default), Label::YesButton()),
+		    `PushButton (`id(`no),`opt(`key_F9), Label::NoButton())
+		)
+	    ),
+	    `HSpacing(0.5))
+	);
+	any ret = nil;
+	do
+	{
+	    ret = UI::UserInput();
+	    if (ret == `details)
+	    {
+		if ((boolean)UI::QueryWidget (`id(`details), `Value))
+		    UI::ReplaceWidget (`id(`rp), `VBox (
+			`Label (errmap["msg"]:"")));
+		else
+		    UI::ReplaceWidget (`id(`rp), `Empty());
+	    }
+	}
+	while (ret != `yes && ret != `no);
+	UI::CloseDialog ();
+	return ret == `yes;
+    }
+
+    /**
+     * Initializes LDAP agent, offers to turn off TLS if it failed
+     * @args arguments to use for initializaton (if empty, uses the current values)
+     */
+    global define string LDAPInitWithTLSCheck (map args) {
+
+	string ret = "";
+	if (args == $[])
+	    args = $[
+		"hostname"	: GetFirstServer (server),
+		"port"		: GetFirstPort (server),
+		"version"	: ldap_v2 ? 2 : 3,
+		"use_tls"	: ldap_tls ? "yes" : "no"
+	    ];
+	boolean init = (boolean) SCR::Execute (.ldap, args);
+	// error message
+	string unknown	= _("Unknown error. Perhaps 'yast2-ldap' is not available.");
+	if (init == nil)
+	{
+	    ret	= unknown;
+	}
+	else
+	{
+	    if (!init)
+	    {
+		map errmap	= Ldap::LDAPErrorMap ();
+		if (ldap_tls && errmap["tls_error"]:false && ConnectWithoutTLS (errmap))
+		{
+		    args["use_tls"]	= false;
+		    init = (boolean) SCR::Execute (.ldap, args);
+		    if (init == nil)
+			ret	= unknown;
+		    else if (!init)
+			ret	= LDAPError();
+		}
+		else
+		{
+		    ret	= errmap["msg"]:"";
+		    if (errmap["server_msg"]:"" != "")
+			ret = sformat ("%1\n%2", ret, errmap["server_msg"]:"");
+		}
+	    }
+	    ldap_initialized	= init;
+	}
+	return ret;
+    }
+
+    /**
      * Binds to LDAP server
      * @param pass password
      */
@@ -2128,21 +2225,6 @@ Select another one.
 		WriteLdapConfEntry ("ssl", "no");
 
 	    Pam::Set ("mkhomedir", mkhomedir);
-	}
-	if (start) // ldap used for authentocation
-	{
-	    // ---------- correct pam_password value for Novell eDirectory
-	    if (pam_password != "nds" && expert_ui)
-	    {
-		if (!nds_checked && !Mode::autoinst ())
-		{
-		    CheckNDS ();
-		}
-		if (nds)
-		{
-		    pam_password	= "nds";
-		}
-	    }
 
 	    WriteLdapConfEntry ("pam_password", pam_password);
 
@@ -2162,6 +2244,22 @@ Select another one.
 		(nss_base_shadow != "")? nss_base_shadow : user_base);
 	    WriteLdapConfEntry ("nss_base_group",
 		(nss_base_group != "")? nss_base_group : user_base);
+	}
+	if (start) // ldap used for authentocation
+	{
+	    // ---------- correct pam_password value for Novell eDirectory
+	    if (pam_password != "nds" && expert_ui)
+	    {
+		if (!nds_checked && !Mode::autoinst ())
+		{
+		    CheckNDS ();
+		}
+		if (nds)
+		{
+		    pam_password	= "nds";
+		}
+		WriteLdapConfEntry ("pam_password", pam_password);
+	    }
 
 	    // override LDAPNOINIT (#217701)
 	    WriteLdapConfEntry ("tls_checkpeer", "no");

@@ -187,10 +187,10 @@ import "Wizard";
 	    "version"	: Ldap::ldap_v2 ? 2 : 3,
 	    "use_tls"	: Ldap::ldap_tls ? "yes" : "no"
 	];
-	boolean init = (boolean) SCR::Execute (.ldap, args);
-	if (init == nil || !init)
+	string error	= Ldap::LDAPInitWithTLSCheck (args);
+	if (error != "")
 	{
-	    Ldap::LDAPErrorMessage ("init", Ldap::LDAPError ());
+	    Ldap::LDAPErrorMessage ("init", error);
 	    return root_dn;
 	}
 	return BrowseTree (root_dn);
