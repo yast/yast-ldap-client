@@ -1095,7 +1095,7 @@ define symbol LDAPReadDialog () ``{
 	    if (!Ldap::bound || Ldap::old_server != Ldap::server ||
 		 Ldap::DomainChanged ())
 	    {
-		msg = Ldap::LDAPInit ();
+		msg = Ldap::LDAPInitWithTLSCheck ($[]);
 		if (msg != "")
 		{
 		    Ldap::LDAPErrorMessage ("init", msg);
