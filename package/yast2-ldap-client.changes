@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jun  7 16:20:56 CEST 2007 - jsuchome@suse.cz
+
+- fix dialog layout for ncurses mode (#280398)
+- 2.15.10
+
+-------------------------------------------------------------------
 Mon Jun  4 15:44:16 CEST 2007 - jsuchome@suse.cz
 
 - call LDAPInitWithTLSCheck at one more place (#246397)

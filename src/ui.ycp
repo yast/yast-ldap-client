@@ -699,7 +699,7 @@ user home directories.</p>
     define void set_client_term () {
 
 	term cont = `Top (`HBox(`HSpacing (5), `VBox(
-	    `VSpacing(3),
+	    `VSpacing(),
 	    // frame label
 	    `Frame (_("Naming Contexts"), `HBox(
 	    `HSpacing (1), `VBox(
@@ -767,7 +767,7 @@ user home directories.</p>
 			`PushButton (`id(`br), `opt(`key_F6), _("Bro&wse"))
 		    )
 	    ),
-	    `VSpacing(0.5),
+	    `VSpacing(0.4),
 	    `HBox (
 		// textentry label
 		`TextEntry (`id (`bind_dn), _("Administrator &DN"), bind_dn),
@@ -781,7 +781,7 @@ user home directories.</p>
 	    `Left (`CheckBox (`id(`create_ldap),
 		    // checkbox label
 		    _("Crea&te Default Configuration Objects"), create_ldap)),
-	    `VSpacing(0.5),
+	    `VSpacing(0.4),
 	    `Left (`CheckBox (`id(`file_server),
 		// checkbox label
 		_("&Home Directories on This Machine"),
@@ -791,7 +791,7 @@ user home directories.</p>
 	    `Right (`PushButton (`id(`configure),
 		    // pushbutton label
 		    _("Configure User Management &Settings..."))),
-	    `VSpacing (2),
+	    `VSpacing (),
 	    `Table (`id (`ppolicy_table), `opt(`notify), `header (
 		// table header
 		_("Password Policy")),
@@ -803,7 +803,7 @@ user home directories.</p>
 		`PushButton (`id (`delete), Label::DeleteButton ()),
 		`HStretch ()
 	    ),
-	    `VSpacing(0.5)
+	    `VSpacing(0.4)
 	), `HSpacing (5));
 
 	UI::ReplaceWidget (`tabContents, cont);
