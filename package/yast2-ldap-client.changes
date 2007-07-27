@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Jul 27 12:01:03 CEST 2007 - jsuchome@suse.cz
+
+- use "files ldap" instead of "compat" for group entry in 
+  /etc/nsswitch.conf (F302064)
+- 2.15.11 
+
+-------------------------------------------------------------------
 Thu Jun  7 16:20:56 CEST 2007 - jsuchome@suse.cz
 
 - fix dialog layout for ncurses mode (#280398)
