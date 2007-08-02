@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Aug  2 17:05:06 CEST 2007 - jsuchome@suse.cz
+
+- do not reinitialize LDAP connection when not needed (#296284)
+- 2.13.28 
+
+-------------------------------------------------------------------
 Fri Jan 12 11:26:28 CET 2007 - jsuchome@suse.cz
 
 - dialog for editing PasswordPolicy settings (F301179)
