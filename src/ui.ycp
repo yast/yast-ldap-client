@@ -635,7 +635,7 @@ user home directories.</p>
 
 	if (base_dn == "") return;
 
-	if ((boolean)SCR::Execute (.ldap, $[
+	if (Ldap::ldap_initialized || (boolean)SCR::Execute (.ldap, $[
 	"hostname"	: Ldap::GetFirstServer (Ldap::server),
 	"port"		: Ldap::GetFirstPort (Ldap::server),
 	"version"	: Ldap::ldap_v2 ? 2 : 3,
@@ -1493,9 +1493,13 @@ click <b>Configure Template</b>.
 	`HBox (
 	    `ReplacePoint (`id(`rp_modnames), `Empty()),
 	    `VBox (
-		`Label (""), `PushButton (`id (`new), Label::NewButton())),
+		`Label (""),
+		`PushButton (`id (`new), `opt(`key_F3), Label::NewButton())
+	    ),
 	    `VBox (
-		`Label (""), `PushButton (`id (`delete), Label::DeleteButton()))
+		`Label (""),
+		`PushButton (`id (`delete), `opt(`key_F5),Label::DeleteButton())
+	    )
 	),
         `VSpacing(0.5),
 	`Table(`id(`table), `opt(`notify), `header(

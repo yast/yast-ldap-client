@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Aug  2 17:24:53 CEST 2007 - jsuchome@suse.cz
+
+- do not reinitialize LDAP connection when not needed (#296284)
+- 2.15.12 
+
+-------------------------------------------------------------------
 Fri Jul 27 12:01:03 CEST 2007 - jsuchome@suse.cz
 
 - use "files ldap" instead of "compat" for group entry in 
