@@ -2370,9 +2370,10 @@ Select another one.
 
 	if (!write_only)
 	{
-	    if (Service::Status ("nscd") == 0)
+	    if (Package::Installed ("nscd") && modified)
 	    {
-		Service::Restart ("nscd");
+		SCR::Execute (.target.bash, "/usr/sbin/nscd -i passwd");
+		SCR::Execute (.target.bash, "/usr/sbin/nscd -i group");
 	    }
 
 	    // fix for 174589

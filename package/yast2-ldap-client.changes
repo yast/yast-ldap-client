@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Oct 12 11:37:27 CEST 2007 - jsuchome@suse.cz
+
+- clear nscd cache instead of restarting nscd (#333305)
+- 2.16.0 
+
+-------------------------------------------------------------------
 Thu Aug  2 17:24:53 CEST 2007 - jsuchome@suse.cz
 
 - do not reinitialize LDAP connection when not needed (#296284)
