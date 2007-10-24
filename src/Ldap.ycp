@@ -157,6 +157,9 @@
     // if eDirectory is used as server
     global boolean nds		= false;
 
+    // if crypted connection was switched of after failure (#330054)
+    global boolean tls_switched_off = false;
+
     boolean nds_checked		= false;
 
     // if OES is used as a client
@@ -958,7 +961,8 @@ Retry connection without TLS/SSL?"))),
 	    if (!init)
 	    {
 		map errmap	= Ldap::LDAPErrorMap ();
-		if (ldap_tls && errmap["tls_error"]:false && ConnectWithoutTLS (errmap))
+		if (args["use_tls"]:"" == "yes" &&
+		    errmap["tls_error"]:false && ConnectWithoutTLS (errmap))
 		{
 		    args["use_tls"]	= false;
 		    init = (boolean) SCR::Execute (.ldap, args);
@@ -966,6 +970,11 @@ Retry connection without TLS/SSL?"))),
 			ret	= unknown;
 		    else if (!init)
 			ret	= LDAPError();
+		    else
+		    {
+			y2milestone ("switching TLS off...");
+			tls_switched_off	= true;
+		    }
 		}
 		else
 		{

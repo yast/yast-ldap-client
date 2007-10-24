@@ -358,6 +358,7 @@ automatically.</p>
 	    }
 	    if (result == `fetch)
 	    {
+		Ldap::tls_switched_off	= false;
 		string dn = Ldap::ldap_initialized ?
 		    LdapPopup::BrowseTree ("") :
 		    LdapPopup::InitAndBrowseTree ("", $[
@@ -368,6 +369,11 @@ automatically.</p>
 		    ]);
 		if (dn != "")
 		    UI::ChangeWidget (`id(`ldapd), `Value, dn);
+		// adapt the checkbox value
+		if (Ldap::tls_switched_off)
+		{
+		    UI::ChangeWidget (`id (`ldaps), `Value, false);
+		}
 	    }
 
 	    if (result == `next || result == `advanced) {

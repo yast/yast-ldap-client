@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Oct 24 16:15:42 CEST 2007 - jsuchome@suse.cz
+
+- if crypted connection is switched off, adapt the checkbox value
+  (#330054)
+- 2.16.1 
+
+-------------------------------------------------------------------
 Fri Oct 12 11:37:27 CEST 2007 - jsuchome@suse.cz
 
 - clear nscd cache instead of restarting nscd (#333305)
