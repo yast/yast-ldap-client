@@ -2060,14 +2060,16 @@ Select another one.
 	});
 
 	// create user configuration object
-	if (GetLDAPEntry (user_dn) == $[])
+	if (config_modules[user_dn]:$[] == $[] &&
+	    GetLDAPEntry (user_dn) == $[])
 	{
 	    modules [user_dn] = CreateModule (
 	        get_cn (user_dn), "suseuserconfiguration");
 	}
 
 	// create group configuration object
-	if (GetLDAPEntry (group_dn) == $[])
+	if (config_modules[group_dn]:$[] == $[] &&
+	    GetLDAPEntry (group_dn) == $[])
 	{
 	    modules [group_dn] = CreateModule (
 	        get_cn (group_dn), "susegroupconfiguration");
@@ -2087,7 +2089,8 @@ Select another one.
 	    update_modules		= true;
 	}
 
-	if (GetLDAPEntry (template_dn) == $[])
+	if (templates[template_dn]:$[] == $[] &&
+	    GetLDAPEntry (template_dn) == $[])
 	{
 	    templs [template_dn]	= CreateTemplate (
 	        get_cn (template_dn), ["suseuserconfiguration"]);
@@ -2103,7 +2106,8 @@ Select another one.
 	    update_modules		= true;
 	}
 
-	if (GetLDAPEntry (template_dn) == $[])
+	if (templates[template_dn]:$[] == $[] &&
+	    GetLDAPEntry (template_dn) == $[])
 	{
 	    templs [template_dn]	= CreateTemplate (
 	        get_cn (template_dn), ["susegroupconfiguration"]);

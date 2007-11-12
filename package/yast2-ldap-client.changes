@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Mon Nov 12 14:43:40 CET 2007 - jsuchome@suse.cz
+
+- do not override user modifications when creating default objects
+  (#339232)
+- 2.16.2
+
+-------------------------------------------------------------------
 Wed Oct 24 16:15:42 CEST 2007 - jsuchome@suse.cz
 
 - if crypted connection is switched off, adapt the checkbox value
