@@ -227,7 +227,7 @@ automatically.</p>
 	    Stage::cont () && !contains (WFM::Args (), "from_users");
 	boolean start		= Ldap::start || installation;
 
-	string domain		= Ldap::GetDomain ();
+	string base_dn		= Ldap::GetBaseDN ();
 	string server		= Ldap::server;
 	boolean ldap_tls	= Ldap::ldap_tls;
 	boolean ldap_v2		= Ldap::ldap_v2;
@@ -291,7 +291,7 @@ automatically.</p>
 		),
 		`HBox (
 		    // text entry label
-		    `TextEntry (`id (`ldapd), _("LDAP Base &DN"), domain),
+		    `TextEntry (`id (`ldapbasedn), _("LDAP Base &DN"), base_dn),
 		    `VBox (
 			`Label (""),
 			// push button label
@@ -368,7 +368,7 @@ automatically.</p>
 			"use_tls"	: ldap_tls ? "yes" : "no"
 		    ]);
 		if (dn != "")
-		    UI::ChangeWidget (`id(`ldapd), `Value, dn);
+		    UI::ChangeWidget (`id(`ldapbasedn), `Value, dn);
 		// adapt the checkbox value
 		if (Ldap::tls_switched_off)
 		{
@@ -377,11 +377,11 @@ automatically.</p>
 	    }
 
 	    if (result == `next || result == `advanced) {
-		domain	= (string) UI::QueryWidget(`id(`ldapd), `Value);
+		base_dn	= (string) UI::QueryWidget(`id(`ldapbasedn), `Value);
 		autofs	= Ldap::_autofs_allowed &&
 		    (boolean) UI::QueryWidget (`id (`autofs), `Value);
 
-		if (domain == "")
+		if (base_dn == "")
 		{
 		    // error popup label
                     Report::Error(_("Enter an LDAP base DN."));
@@ -456,7 +456,14 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 
 	if (result == `next || result == `advanced)
 	{
-	    if (Ldap::start != start || Ldap::GetDomain() != domain ||
+	    if (Ldap::GetBaseDN() != base_dn &&
+		Ldap::nss_base_passwd == Ldap::GetBaseDN ())
+	    {
+		Ldap::nss_base_passwd	= base_dn;
+		Ldap::nss_base_shadow	= base_dn;
+		Ldap::nss_base_group	= base_dn;
+	    }
+	    if (Ldap::start != start || Ldap::GetBaseDN() != base_dn ||
 		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||
 		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs ||
 		Ldap::login_enabled != login_enabled ||
@@ -493,15 +500,15 @@ restarted automatically by YaST.
 		    if (start && Stage::cont () && size (Ldap::initial_defaults) > 0 &&
 			Ldap::create_ldap &&
 			server != Ldap::initial_defaults["ldap_server"]:"" &&
-			domain != Ldap::initial_defaults["ldap_domain"]:"" &&
+			base_dn != Ldap::initial_defaults["ldap_domain"]:"" &&
 			Ldap::bind_dn == Ldap::initial_defaults["bind_dn"]:"" &&
-			!issubstring (Ldap::bind_dn, domain))
+			!issubstring (Ldap::bind_dn, base_dn))
 		    {
 			y2warning ("Server and base DN changed but bind_dn remains imported -> disabling LDAP objects creation...");
 			Ldap::create_ldap	= false;
 		    }
 		}
-		Ldap::SetDomain (domain);
+		Ldap::SetBaseDN (base_dn);
 		Ldap::start	= start;
 		Ldap::server	= server;
 		Ldap::ldap_v2	= ldap_v2;
@@ -588,7 +595,7 @@ user home directories.</p>
     ];
 
     string bind_dn		= Ldap::bind_dn;
-    string base_dn		= Ldap::GetDomain ();
+    string base_dn		= Ldap::GetBaseDN ();
     boolean file_server		= Ldap::file_server;
     string member_attribute	= Ldap::member_attribute;
     string base_config_dn	= Ldap::GetMainConfigDN();
@@ -1099,7 +1106,7 @@ define symbol LDAPReadDialog () ``{
 	{
 	    // re-init/re-bind only when server information was changed (#39908)
 	    if (!Ldap::bound || Ldap::old_server != Ldap::server ||
-		 Ldap::DomainChanged ())
+		 Ldap::BaseDNChanged ())
 	    {
 		msg = Ldap::LDAPInitWithTLSCheck ($[]);
 		if (msg != "")
@@ -1271,7 +1278,7 @@ removing current ones.</p>
 	    list offer		= [];
 	    list conflicts	= [];
 	    if (attr == "susesecondarygroup")
-		offer		= Ldap::GetGroupsDN (Ldap::GetDomain());
+		offer		= Ldap::GetGroupsDN (Ldap::GetBaseDN());
 	    if (attr == "susenamingattribute")
 	    {
 		list classes	= Ldap::GetDefaultObjectClasses (template);

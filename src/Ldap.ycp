@@ -100,9 +100,9 @@
     global boolean openldap_modified = false;
 
     // base DN
-    string domain = "";
-    string old_domain = nil;
-    boolean domain_changed = false;
+    string base_dn		= "";
+    string old_base_dn		= nil;
+    boolean base_dn_changed	= false;
 
     /* Do we have an v2 or v3 ldap server? */
     global boolean ldap_v2 = false;
@@ -300,31 +300,46 @@
     //----------------------------------------------------------------
 
     /**
-     * If the domain has changed from a nonempty one, it may only be
+     * If the base DN has changed from a nonempty one, it may only be
      * changed at boot time. Use this to warn the user.
-     * @return whether changed by SetDomain
+     * @return whether changed by SetBaseDN
      */
+    global define boolean BaseDNChanged () {
+	return base_dn_changed;
+    }
+
+    // obsolete, use BaseDNChanged
     global define boolean DomainChanged () ``{
-	return domain_changed;
+	return BaseDNChanged ();
     }
 
     /**
-     * @return Get the LDAP domain.
+     * Get the Base DN
      */
+    global define string GetBaseDN () {
+	return base_dn;
+    }
+
+    // obsolete, use GetBaseDN
     global define string GetDomain () ``{
-	return domain;
+	return GetBaseDN ();
     }
 
     /**
-     * Set the LDAP domain.
-     * @param new_domain a new domain
+     * Set new LDAP base DN
+     * @param new_base_dn a new base DN
      */
-    global define void SetDomain (string new_domain) ``{
-	domain = new_domain;
-	if (domain != old_domain && old_domain != "")
+    global define void SetBaseDN (string new_base_dn) {
+	base_dn = new_base_dn;
+	if (base_dn != old_base_dn && old_base_dn != "")
 	{
-	    domain_changed = true;
+	    base_dn_changed = true;
 	}
+    }
+
+    // obsolete, use SetBaseDN
+    global define void SetDomain (string new_domain) {
+	return SetBaseDN (new_domain);
     }
 
     /**
@@ -356,7 +371,8 @@
     global define void Set (map settings)  ``{
 	start		= settings ["start_ldap"]:false;
 	server		= settings ["ldap_server"]:"";
-	domain		= settings ["ldap_domain"]:"";
+	// leaving "ldap_domain" for backward compatibility
+	base_dn		= settings ["ldap_domain"]:"";
 	ldap_v2		= settings ["ldap_v2"]:false;
 	ldap_tls	= settings ["ldap_tls"]:false;
 	pam_password	= settings ["pam_password"]:"crypt";
@@ -373,7 +389,7 @@
 	if (_start_autofs)
 	    required_packages = (list<string>) union (required_packages, ["autofs"]);
 
-	old_domain		= domain;
+	old_base_dn		= base_dn;
 	old_server		= server;
 	old_member_attribute	= member_attribute;
 	modified		= true;
@@ -401,7 +417,7 @@
 	map e = $[
 	    "start_ldap"	: start,
 	    "ldap_server"	: server,
-	    "ldap_domain"	: domain,
+	    "ldap_domain"	: base_dn,
 	    "ldap_v2"		: ldap_v2,
 	    "ldap_tls"		: ldap_tls,
 	    "bind_dn"		: bind_dn,
@@ -434,7 +450,7 @@
 	summary = Summary::AddLine(summary, (start) ? _("Yes") : Summary::NotConfigured());
 	// summary item
 	summary = Summary::AddHeader(summary, _("LDAP Domain"));
-	summary = Summary::AddLine(summary, (domain != "") ? domain : Summary::NotConfigured());
+	summary = Summary::AddLine(summary, (base_dn != "") ? base_dn : Summary::NotConfigured());
 	// summary item
 	summary = Summary::AddHeader(summary, _("LDAP Server"));
 	summary = Summary::AddLine(summary,( server!="") ? server : Summary::NotConfigured());
@@ -460,7 +476,7 @@
 	// summary text
 	summary = sformat (_("<b>Servers</b>:%1<br>"), server!=""? server: nc) +
 	// summary text
-	sformat (_("<b>Base DN</b>:%1<br>"), domain != "" ? domain : nc) +
+	sformat (_("<b>Base DN</b>:%1<br>"), base_dn != "" ? base_dn : nc) +
 	// summary text (yes/no follows)
 	sformat (_("<b>Client Enabled</b>:%1<br>"), start ?
 	    // summary (client enabled?)
@@ -603,17 +619,17 @@
 	nis_available	= nis_available && (Service::Status ("ypbind") == 0);
 
 	server = ReadLdapConfEntry ("host", "");
-	domain  = ReadLdapConfEntry ("base", "");
+	base_dn  = ReadLdapConfEntry ("base", "");
 
-	old_domain = domain;
+	old_base_dn = base_dn;
 	old_server = server;
 
 	ldap_v2 = (ReadLdapConfEntry ("ldap_version", "3") == "2");
 	ldap_tls = (ReadLdapConfEntry ("ssl", "no") == "start_tls");
 
-        nss_base_passwd = ReadLdapConfEntry ("nss_base_passwd", "");
-        nss_base_shadow = ReadLdapConfEntry ("nss_base_shadow",nss_base_passwd);
-        nss_base_group = ReadLdapConfEntry ("nss_base_group", "");
+        nss_base_passwd = ReadLdapConfEntry ("nss_base_passwd", base_dn);
+        nss_base_shadow = ReadLdapConfEntry ("nss_base_shadow", base_dn);
+        nss_base_group = ReadLdapConfEntry ("nss_base_group", base_dn);
 
 	pam_password = ReadLdapConfEntry ("pam_password", "crypt");
 
@@ -681,11 +697,11 @@
 	    if (size (initial_defaults) > 0)
 	    {
 		string old_s	= old_server;
-		string old_d	= old_domain;
+		string old_d	= old_base_dn;
 		string old_m	= old_member_attribute;
 		Set (initial_defaults);
 		old_server	= old_s;
-		old_domain	= old_d;
+		old_base_dn	= old_d;
 		old_member_attribute	= old_m;
 	    }
 	}
@@ -1488,7 +1504,7 @@ The object with the selected DN cannot be created.
 	    });
 	    if (templs == [])
 		templ_cn = "usertemplate";
-	    default_base = sformat ("ou=people,%1", domain);
+	    default_base = sformat ("ou=people,%1", base_dn);
 
 	    // for eDirectory, we have to use cleartext passwords!
 	    if (nds && tolower (obj["susepasswordhash",0]:"") != "clear")
@@ -1505,7 +1521,7 @@ The object with the selected DN cannot be created.
 	    });
 	    if (templs == [])
 		templ_cn = "grouptemplate";
-	    default_base = sformat ("ou=group,%1", domain);
+	    default_base = sformat ("ou=group,%1", base_dn);
 	}
 	// create proposal for defaultTemplate DN
 	if (templ_cn != "")
@@ -1769,7 +1785,7 @@ Select another one.
 	if (!issubstring(out["stdout"]:"", "/etc/openldap/ldap.conf"))
 	    write_openldap_conf = true;
 	// if there are same values as in /etc/ldap.conf
-	else if (old_server == open_host[0]:"" && old_domain == open_base[0]:"")
+	else if(old_server == open_host[0]:"" && old_base_dn == open_base[0]:"")
 	{
 	    write_openldap_conf = true;
 	}
@@ -1780,7 +1796,7 @@ Select another one.
 	    SCR::Write (.etc.ldap_conf.v."/etc/openldap/ldap.conf".host,
 		[server]);
 	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base,
-		[domain]);
+		[base_dn]);
 	    if (ldap_tls)
 	    {
 		SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".TLS_REQCERT, ["allow"]);
@@ -2217,7 +2233,7 @@ Select another one.
 	{
 	    // update ldap.conf
 	    WriteLdapConfEntry ("host", server);
-	    WriteLdapConfEntry ("base", domain);
+	    WriteLdapConfEntry ("base", base_dn);
 
 	    if (member_attribute != old_member_attribute)
 	    {
@@ -2248,15 +2264,18 @@ Select another one.
 	    }
 
 	    // save the user and group bases
-	    user_base = domain;
-	    group_base = domain;
+	    user_base = base_dn;
+	    group_base = base_dn;
 
 	    WriteLdapConfEntry ("nss_base_passwd",
-		(nss_base_passwd != "")? nss_base_passwd : user_base);
+		(nss_base_passwd != base_dn && nss_base_passwd != "") ?
+		nss_base_passwd : nil);
 	    WriteLdapConfEntry ("nss_base_shadow",
-		(nss_base_shadow != "")? nss_base_shadow : user_base);
+		(nss_base_shadow != base_dn && nss_base_shadow != "") ?
+		nss_base_shadow : nil);
 	    WriteLdapConfEntry ("nss_base_group",
-		(nss_base_group != "")? nss_base_group : user_base);
+		(nss_base_group != base_dn && nss_base_group != "") ?
+		nss_base_group : nil);
 	}
 	if (start) // ldap used for authentocation
 	{
@@ -2395,7 +2414,7 @@ Select another one.
 		Service::Restart ("dbus");
 	    }
 
-	    if (Service::Status ("novell-zmd") == 0)
+	    if (Package::Installed ("zmd") && Service::Status("novell-zmd")== 0)
 	    {
 		Service::RunInitScript ("novell-zmd", "try-restart");
 	    }
@@ -2459,7 +2478,7 @@ Select another one.
 	{
 	    ldap_initialized    = false;
 	    old_server          = server;
-	    old_domain          = domain;
+	    old_base_dn         = base_dn;
 	}
 	if (ldap_modified)
 	{
@@ -2472,7 +2491,7 @@ Select another one.
 	if (Stage::cont () && size (initial_defaults) > 0)
 	{
 	    if (start && ldap_ok &&
-		domain == initial_defaults["ldap_domain"]:"" &&
+		base_dn == initial_defaults["ldap_domain"]:"" &&
 		(server == initial_defaults["ldap_server"]:"" ||
 		 DNS::IsHostLocal (server)))
 	    {

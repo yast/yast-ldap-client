@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Tue Nov 20 11:18:26 CET 2007 - jsuchome@suse.cz
+
+- correctly update nss_base_* values when base DN was changed,
+  do not write when the values are same as base DN (#342727)
+- restart zmd only if installed
+- replace Domain in function names with BaseDN 
+- 2.16.3
+
+-------------------------------------------------------------------
 Mon Nov 12 14:43:40 CET 2007 - jsuchome@suse.cz
 
 - do not override user modifications when creating default objects
