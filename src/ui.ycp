@@ -693,7 +693,7 @@ user home directories.</p>
 
     term contents = `VBox (
 	`DumbTab (`id(`tabs), tabs,
-	    `ReplacePoint(`id(`tabContents ), `VBox (`HVStretch())))
+	    `ReplacePoint(`id(`tabContents ), `VBox (`Empty ())))
     );
     boolean has_tabs	= true;
     if (!UI::HasSpecialWidget (`DumbTab))
@@ -705,7 +705,7 @@ user home directories.</p>
 	    tabbar = add (tabbar,`PushButton (it[0]:`id(label), label));
 	});
 	contents = `VBox (`Left(tabbar),
-	    `Frame ("", `ReplacePoint(`id(`tabContents), `HVStretch()))
+	    `Frame ("", `ReplacePoint(`id(`tabContents), `Empty ()))
 	);
     }
 

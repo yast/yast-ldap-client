@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Nov 21 10:20:13 CET 2007 - jsuchome@suse.cz
+
+- deprecated `HVStretch widget replaced by `Empty (#342583)
+- 2.16.4
+
+-------------------------------------------------------------------
 Tue Nov 20 11:18:26 CET 2007 - jsuchome@suse.cz
 
 - correctly update nss_base_* values when base DN was changed,
