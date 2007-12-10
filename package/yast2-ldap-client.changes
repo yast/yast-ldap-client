@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Mon Dec 10 16:23:11 CET 2007 - jsuchome@suse.cz
+
+- disable Password Policy term when the server lacks the policy
+  support (#345965)
+- 2.16.5
+
+-------------------------------------------------------------------
 Wed Nov 21 10:20:13 CET 2007 - jsuchome@suse.cz
 
 - deprecated `HVStretch widget replaced by `Empty (#342583)

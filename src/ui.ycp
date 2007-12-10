@@ -591,7 +591,7 @@ user home directories.</p>
     _("<p><b>Password Policy</b></p>") +
 
     // password policy help
-    _("<p>Configure selected Password Policy with <b>Edit</b>. Use <b>Add</b> to add new Password Policy.</p>")
+    _("<p>Configure selected Password Policy with <b>Edit</b>. Use <b>Add</b> to add new Password Policy. The configuration is only possible when the Password Policies are already enabled on the LDAP server.</p>")
     ];
 
     string bind_dn		= Ldap::bind_dn;
@@ -826,6 +826,13 @@ user home directories.</p>
 	// in autoyast-config mode, don't attach to server...
 	if (Mode::config ())
 	    UI::ChangeWidget (`id(`configure), `Enabled, false);
+
+	if (size (ppolicies) < 1)
+	{
+	    foreach (symbol s, [ `ppolicy_table, `add, `edit, `delete ], {
+		UI::ChangeWidget (`id (s), `Enabled, false);
+	    });
+	}
     }
 
 
