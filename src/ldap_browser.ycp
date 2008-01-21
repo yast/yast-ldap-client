@@ -67,8 +67,8 @@ Discard these changes?
 
     term contents = `VBox (
 	`DumbTab (`id(`tabs), tabs,
-	    `ReplacePoint(`id(`tabContents ), `VBox (`HVStretch())))
-    );
+	    `ReplacePoint (`id(`tabContents ), `VBox (`Empty ()))
+    ));
     boolean has_tabs	= true;
     if (!UI::HasSpecialWidget (`DumbTab))
     {
@@ -79,7 +79,7 @@ Discard these changes?
 	    tabbar = add (tabbar,`PushButton (it[0]:`id(label), label));
 	});
 	contents = `VBox (`Left(tabbar),
-	    `Frame ("", `ReplacePoint(`id(`tabContents), `HVStretch()))
+	    `Frame ("", `ReplacePoint(`id(`tabContents), `Empty ()))
 	);
     }
     boolean textmode	= !has_tabs;
@@ -137,7 +137,7 @@ Discard these changes?
 		  `Right (`PushButton (`id (`open), `opt (`key_F6),_("&Open"))):
 		  `Empty (),
 		// button label
-		`Right (`PushButton (`id(`reload),`opt(`key_F5), _("&Reload"))),
+		`Right (`PushButton (`id(`reload),`opt(`key_F8), _("&Reload"))),
 		`HSpacing (1.5)
 	    ),
 	    `VSpacing (0.6)

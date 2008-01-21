@@ -633,7 +633,7 @@ global define map PasswordPolicyDialog (map ppolicy) {
     ];
     term tabs_term = `VBox (
 	`DumbTab (`id(`tabs), tabs,
-	    `ReplacePoint(`id(`tabContents ), `VBox (`HVStretch())))
+	    `ReplacePoint(`id(`tabContents ), `VBox (`Empty ())))
     );
     boolean has_tabs	= true;
     if (!UI::HasSpecialWidget (`DumbTab))
@@ -645,7 +645,7 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	    tabbar = add (tabbar,`PushButton (it[0]:`id(label), label));
 	});
 	tabs_term = `VBox (`Left(tabbar),
-	    `Frame ("", `ReplacePoint(`id(`tabContents), `HVStretch()))
+	    `Frame ("", `ReplacePoint(`id(`tabContents), `Empty ()))
 	);
     }
 
