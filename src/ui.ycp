@@ -640,7 +640,7 @@ user home directories.</p>
 
 	if (base_dn == "") return;
 
-	if ((boolean)SCR::Execute (.ldap, $[
+	if (Ldap::ldap_initialized || (boolean)SCR::Execute (.ldap, $[
 	"hostname"	: Ldap::GetFirstServer (Ldap::server),
 	"port"		: Ldap::GetFirstPort (Ldap::server),
 	"version"	: Ldap::ldap_v2 ? 2 : 3,
