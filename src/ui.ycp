@@ -467,6 +467,13 @@ Which should be used as the primary authentication service?
 
 	if (result == `next || result == `advanced)
 	{
+	    if (Ldap::GetDomain () != domain &&
+		Ldap::nss_base_passwd == Ldap::GetDomain ())
+	    {
+		Ldap::nss_base_passwd	= domain;
+		Ldap::nss_base_shadow	= domain;
+		Ldap::nss_base_group	= domain;
+	    }
 	    Pam::SetMkHomeDir((boolean)UI::QueryWidget(`id(`mkhomedir),`Value));
 	    if (Ldap::start != start || Ldap::GetDomain() != domain ||
 		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||

@@ -616,9 +616,9 @@
 	ldap_v2 = (ReadLdapConfEntry ("ldap_version", "3") == "2");
 	ldap_tls = (ReadLdapConfEntry ("ssl", "no") == "start_tls");
 
-        nss_base_passwd = ReadLdapConfEntry ("nss_base_passwd", "");
-        nss_base_shadow = ReadLdapConfEntry ("nss_base_shadow",nss_base_passwd);
-        nss_base_group = ReadLdapConfEntry ("nss_base_group", "");
+        nss_base_passwd = ReadLdapConfEntry ("nss_base_passwd", domain);
+        nss_base_shadow = ReadLdapConfEntry ("nss_base_shadow", domain);
+        nss_base_group = ReadLdapConfEntry ("nss_base_group", domain);
 
 	pam_password = ReadLdapConfEntry ("pam_password", "crypt");
 
@@ -2160,6 +2160,19 @@ Select another one.
 	    else
 		WriteLdapConfEntry ("ssl", "no");
 
+	    // save the user and group bases
+	    user_base = domain;
+	    group_base = domain;
+
+	    WriteLdapConfEntry ("nss_base_passwd",
+		(nss_base_passwd != domain && nss_base_passwd != "") ?
+		nss_base_passwd : nil);
+	    WriteLdapConfEntry ("nss_base_shadow",
+		(nss_base_shadow != domain && nss_base_shadow != "") ?
+		nss_base_shadow : nil);
+	    WriteLdapConfEntry ("nss_base_group",
+		(nss_base_group != domain && nss_base_group != "") ?
+		nss_base_group : nil);
 	}
 	if (start) // ldap used for authentocation
 	{
@@ -2183,17 +2196,6 @@ Select another one.
 	    {
 		AddLdapConfEntry ("pam_filter", "objectclass=posixAccount");
 	    }
-
-	    // save the user and group bases
-	    user_base = domain;
-	    group_base = domain;
-
-	    WriteLdapConfEntry ("nss_base_passwd",
-		(nss_base_passwd != "")? nss_base_passwd : user_base);
-	    WriteLdapConfEntry ("nss_base_shadow",
-		(nss_base_shadow != "")? nss_base_shadow : user_base);
-	    WriteLdapConfEntry ("nss_base_group",
-		(nss_base_group != "")? nss_base_group : user_base);
 
 	    // override LDAPNOINIT (#217701)
 	    WriteLdapConfEntry ("tls_checkpeer", "no");
@@ -2336,7 +2338,7 @@ Select another one.
 		Service::Restart ("dbus");
 	    }
 
-	    if (Service::Status ("novell-zmd") == 0)
+	    if (Package::Installed ("zmd") && Service::Status("novell-zmd")== 0)
 	    {
 		Service::RunInitScript ("novell-zmd", "try-restart");
 	    }

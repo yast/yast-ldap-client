@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Jan 31 10:44:21 CET 2008 - jsuchome@suse.cz
+
+- correctly update nss_base_* values when base DN was changed,
+  do not write when the values are same as base DN (#342727)
+- restart zmd only if installed
+- 2.13.29 
+
+-------------------------------------------------------------------
 Thu Aug  2 17:05:06 CEST 2007 - jsuchome@suse.cz
 
 - do not reinitialize LDAP connection when not needed (#296284)
