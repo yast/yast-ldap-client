@@ -299,6 +299,9 @@ Discard these changes?
 	`TextEntry (`id(`admin_dn), _("Administrator DN"), Ldap::GetBindDN ()),
         // password entering label
         `Password(`id(`pw), _("&LDAP Server Password")),
+	`VSpacing (0.2),
+	// check box label
+	`Left (`CheckBox (`id(`ldaps), _("LDAP &TLS/SSL"), Ldap::ldap_tls)),
         `HBox(
             `PushButton (`id(`ok),`opt(`key_F10, `default), Label::OKButton()),
             // button label
@@ -316,6 +319,7 @@ Discard these changes?
 	    Ldap::server = (string) UI::QueryWidget (`id(`server), `Value);
 	    Ldap::bind_dn = (string) UI::QueryWidget (`id(`admin_dn), `Value);
 	    Ldap::bind_pass	= (string) UI::QueryWidget(`id(`pw), `Value);
+	    Ldap::ldap_tls	= (boolean) UI::QueryWidget (`id(`ldaps), `Value);
 	    Ldap::SetAnonymous (ret == `anon);
 
 	    string error	= Ldap::LDAPInitWithTLSCheck ($[]);

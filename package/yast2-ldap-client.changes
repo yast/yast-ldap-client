@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Feb  7 07:46:03 CET 2008 - jsuchome@suse.cz
+
+- enable setting TLS status for LDAP browser (bnc#329779)
+- 2.16.7 
+
+-------------------------------------------------------------------
 Mon Jan 21 10:24:17 CET 2008 - jsuchome@suse.cz
 
 - deprecated `HVStretch widget replaced by `Empty (#344891)
