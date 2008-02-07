@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Feb  5 16:03:41 CET 2008 - jsuchome@suse.cz
+
+- enable setting TLS status for LDAP browser (bnc#329779)
+- 2.13.30
+
+-------------------------------------------------------------------
 Thu Jan 31 10:44:21 CET 2008 - jsuchome@suse.cz
 
 - correctly update nss_base_* values when base DN was changed,
