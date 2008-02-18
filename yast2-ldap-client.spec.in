@@ -52,4 +52,4 @@ Summary:	Configuration of LDAP client
 @schemadir@/autoyast/rnc/ldap_client.rnc
 %doc @docdir@
 
-/var/adm/fillup-templates/sysconfig.ldap
+@fillupdir@/sysconfig.ldap

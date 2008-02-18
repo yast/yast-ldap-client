@@ -9,6 +9,4 @@ scrconf_DATA = ldap_conf.scr    \
 
 fillup_DATA = sysconfig.ldap
 
-fillupdir = /var/adm/fillup-templates
-
 EXTRA_DIST = $(scrconf_DATA) $(fillup_DATA)
