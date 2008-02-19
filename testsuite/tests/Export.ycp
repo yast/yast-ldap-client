@@ -1,0 +1,97 @@
+/**
+ *  Read.ycp
+ *  Test of Ldap:Read function
+ *  Author:	Jiri Suchomel <jsuchome@suse.cz>
+ *  $Id$
+ */
+
+{
+
+    include "testsuite.ycp";
+    // testedfiles: Ldap.ycp
+
+    map READ = $[
+	"etc": $[
+	    "nsswitch_conf" : $[
+		"passwd" : "compat",
+		"group"  : "compat",
+		"passwd_compat": "ldap",
+		"group_compat": "ldap",
+	    ],
+	    "ldap_conf" : $[
+		"v" : $[
+		    "/etc/ldap.conf": $[
+			"host" : "localhost",
+			"base" : "dc=suse,dc=cz",
+			"nss_base_passwd" : nil,
+			"nss_base_shadow" : nil,
+			"nss_base_group" : "ou=group,dc=suse,dc=cz",
+			"ldap_version": nil,
+			"ssl": nil,
+			"pam_password": "crypt",
+		    ]
+		]
+	    ],
+	    // /etc/security/pam_*
+	    "security": $[
+		"section": $[
+		    "/etc/security/pam_unix2.conf": $[],
+		],
+		"v": $[
+		    "/etc/security/pam_unix2.conf": $[
+			"auth"	: ""
+		    ],
+		]
+	    ],
+	],
+	"sysconfig": $[
+	    "ldap": $[
+		"BASE_CONFIG_DN": nil,
+		"BIND_DN": "uid=manager,dc=suse,dc=cz",
+		"FILE_SERVER": "no"
+	    ]
+	],
+	"init": $[
+	    "scripts": $[
+		"exists": false,
+	    ],
+	],
+	"passwd": $[
+	    "passwd": $[
+		"plusline": "+",
+		"pluslines": ["+"]
+	    ]
+	],
+	"product" : $[ "features" :
+	    $[ "EVMS_CONFIG" : "nazdar" ],
+	],
+	"target"	: $[
+	    "size"	: -1,
+	    "stat"	: $[],
+	],
+    ];
+
+    map EX = $[
+	"target": $[
+	    "bash": 0,
+	    "bash_output": $[
+		"stdout"	: "",
+	    ]
+	],
+	"passwd": $[
+	    "init": true
+	]
+    ];
+    TESTSUITE_INIT([READ,$[],$[]], nil);
+
+    import "Ldap";
+
+    DUMP ("==== reading... ============================");
+
+    TEST(``(Ldap::Read ()), [ READ, $[], EX ], 0);
+
+    DUMP ("============================================");
+    // nss_base_* should not be exported when same as base DN (#362120)
+    TEST(``(Ldap::Export ()), [ READ, $[], EX ], 0);
+
+}
