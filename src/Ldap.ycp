@@ -413,13 +413,16 @@
 	    "bind_dn"		: bind_dn,
 	    "file_server"	: file_server,
 	    "base_config_dn"	: base_config_dn,
-	    "nss_base_passwd"	: nss_base_passwd,
-	    "nss_base_shadow"	: nss_base_shadow,
-	    "nss_base_group"	: nss_base_group,
 	    "pam_password"	: pam_password,
 	    "member_attribute"	: member_attribute,
 	    "create_ldap"	: create_ldap
 	];
+	if (nss_base_passwd != domain)
+	    e["nss_base_passwd"]    = nss_base_passwd;
+	if (nss_base_shadow != domain)
+	    e["nss_base_shadow"]    = nss_base_shadow;
+	if (nss_base_group != domain)
+	    e["nss_base_group"]     = nss_base_group;
 	if (_autofs_allowed)
 	    e["start_autofs"]	= _start_autofs;
 	return e;

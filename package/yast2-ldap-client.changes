@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Feb 19 15:11:10 CET 2008 - jsuchome@suse.cz
+
+- do not export nss_base_* when they are same as base DN (#362120)
+- 2.13.31
+
+-------------------------------------------------------------------
 Tue Feb  5 16:03:41 CET 2008 - jsuchome@suse.cz
 
 - enable setting TLS status for LDAP browser (bnc#329779)
