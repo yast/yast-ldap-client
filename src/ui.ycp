@@ -98,6 +98,7 @@
 
 	boolean ret	= true;
 	foreach (string server, splitstring (servers, " \t"), {
+	    if (server == "") return;
 	    if (issubstring (server, ":"))
 	    {
 		integer pos	= search (server, ":");
@@ -389,7 +390,7 @@ automatically.</p>
                     continue;
                 }
 
-		if (server == "")
+		if (server == "" || deletechars (server, " \t") == "")
 		{
 		    // error popup label
 		    Report::Error(_("Enter at least one address of an LDAP server."));
