@@ -25,3 +25,4 @@ Exec=/sbin/yast2 ldap
 Name=LDAP Client
 GenericName=Configure the LDAP client
 X-KDE-SubstituteUID=true
+StartupNotify=true

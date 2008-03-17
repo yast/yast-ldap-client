@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Mar 17 12:43:32 CET 2008 - jsrain@suse.cz
+
+- added 'StartupNotify=true' to the desktop file (bnc #304964)
+
+-------------------------------------------------------------------
 Wed Feb 20 16:13:58 CET 2008 - jsuchome@suse.cz
 
 - allow more spaces as host name separators (bnc#362946)
