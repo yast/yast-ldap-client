@@ -839,7 +839,7 @@ user home directories.</p>
 
     // dialog label
     Wizard::SetContentsButtons (_("Advanced Configuration"), contents,
-	help_text[`client]:"", Label::CancelButton(), Label::AcceptButton());
+	help_text[`client]:"", Label::CancelButton(), Label::OKButton());
     Wizard::HideAbortButton ();
 
     any result	= `notnext;
@@ -1261,7 +1261,7 @@ removing current ones.</p>
     Wizard::OpenNextBackDialog ();
     // dialog label
     Wizard::SetContentsButtons(_("Object Template Configuration"),
-            contents, help_text, Label::CancelButton(), Label::AcceptButton());
+            contents, help_text, Label::CancelButton(), Label::OKButton());
     Wizard::HideAbortButton();
 
     if (size (table_items) > 0)
@@ -1540,7 +1540,7 @@ click <b>Configure Template</b>.
 
     // dialog label
     Wizard::SetContentsButtons(_("Module Configuration"),
-            contents, help_text, Label::CancelButton(), Label::AcceptButton());
+            contents, help_text, Label::CancelButton(), Label::OKButton());
     Wizard::HideAbortButton ();
 
     if (size (modules_attrs_items[current_cn]:[]) > 0)

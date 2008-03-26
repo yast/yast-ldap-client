@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Mar 26 10:39:22 CET 2008 - jsuchome@suse.cz
+
+- do not use Accept button, but OK (fate #120373)
+- 2.16.10 
+
+-------------------------------------------------------------------
 Mon Mar 17 12:43:32 CET 2008 - jsrain@suse.cz
 
 - added 'StartupNotify=true' to the desktop file (bnc #304964)

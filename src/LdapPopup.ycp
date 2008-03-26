@@ -779,7 +779,7 @@ global define map PasswordPolicyDialog (map ppolicy) {
 
     // dialog label
     Wizard::SetContentsButtons (_("Password Policy Configuration"), contents,
-	help_text + tabs_help_text[current_tab]:"", Label::CancelButton(), Label::AcceptButton());
+	help_text + tabs_help_text[current_tab]:"", Label::CancelButton(), Label::OKButton());
     Wizard::HideAbortButton();
 
     set_password_policies_term ();
