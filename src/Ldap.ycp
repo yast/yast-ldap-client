@@ -481,11 +481,19 @@
 	// summary text
 	sformat (_("<b>Base DN</b>:%1<br>"), base_dn != "" ? base_dn : nc) +
 	// summary text (yes/no follows)
-	sformat (_("<b>Client Enabled</b>:%1<br>"), start ?
+	sformat (_("<b>Client Enabled</b>:%1"), start ?
 	    // summary (client enabled?)
 	    _("Yes") :
 	    // summary (client enabled?)
 	    _("No"));
+	if (_start_autofs)
+	    // summary
+	    summary	= summary + "<br>" + _("Automounter Configured");
+	if (ldap_tls)
+	{
+	    // summary
+	    summary	= summary + "<br>" + _("LDAP TLS/SSL Configured");
+	}
 	return summary;
     }
 

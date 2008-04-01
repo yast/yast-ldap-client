@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Apr  1 11:07:58 CEST 2008 - jsuchome@suse.cz
+
+- added CLI options for automounter, mkhomedir and tls (bnc#373825)
+- adapted Ldap::ShortSummary
+- 2.16.11 
+
+-------------------------------------------------------------------
 Wed Mar 26 10:39:22 CET 2008 - jsuchome@suse.cz
 
 - do not use Accept button, but OK (fate #120373)

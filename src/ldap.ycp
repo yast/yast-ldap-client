@@ -82,6 +82,34 @@ define boolean LdapChangeConfiguration (map<string, string> options ) ``{
         Ldap::bind_pass = ldappw;
         Ldap::modified  = true;
     }
+    if (options["automounter"]:"" == "yes" && !Ldap::_start_autofs)
+    {
+	Ldap::_start_autofs	= true;
+	Ldap::modified		= true;
+    }
+    if (options["automounter"]:"" == "no" && Ldap::_start_autofs)
+    {
+	Ldap::_start_autofs	= false;
+	Ldap::modified		= true;
+    }
+    if (options["mkhomedir"]:"" != "")
+    {
+	boolean mkhomedir	= (options["mkhomedir"]:"" == "yes");
+	if (Ldap::mkhomedir != mkhomedir)
+	{
+	    Ldap::mkhomedir	= mkhomedir;
+	    Ldap::modified	= true;
+	}
+    }
+    if (options["tls"]:"" != "")
+    {
+	boolean tls		= (options["tls"]:"" == "yes");
+	if (Ldap::ldap_tls	!= tls)
+	{
+	    Ldap::ldap_tls	= tls;
+	    Ldap::modified	= true;
+	}
+    }
 
     if (haskey (options, "createconfig"))
     {
@@ -150,11 +178,31 @@ map cmdline = $[
 	   "help"	: _("LDAP Server Password"),
 	   "type"       : "string"
 	],
+	"automounter"	:$[
+	    // help text for the 'automounter' option
+	    "help"	: _("Start or stop automounter"),
+	    "type"	: "enum",
+	    "typespec"  : [ "yes", "no" ],
+	],
+	"mkhomedir"	: $[
+	    // help text for the 'mkhomedir' option
+	    "help"	: _("Create Home Directory on Login"),
+	    "type"	: "enum",
+	    "typespec"  : [ "yes", "no" ],
+	],
+	"tls"	: $[
+	    // help text for the 'tls' option
+	    "help"	: _("Encrypted connection (StartTLS)"),
+	    "type"	: "enum",
+	    "typespec"  : [ "yes", "no" ],
+	],
     ],
     "mappings"		: $[
 	"pam"		: [ "enable", "disable" ],
 	"summary"	: [],
-	"configure"	: [ "server", "base", "createconfig", "ldappw" ],
+	"configure"	: [ "server", "base", "createconfig", "ldappw",
+	    "automounter", "mkhomedir", "tls"
+	],
     ]
 ];
 
