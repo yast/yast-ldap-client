@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Fri Apr  4 14:00:41 CEST 2008 - ug@suse.de
+
+- rnc file fixed
+
+-------------------------------------------------------------------
 Tue Apr  1 11:07:58 CEST 2008 - jsuchome@suse.cz
 
 - added CLI options for automounter, mkhomedir and tls (bnc#373825)
