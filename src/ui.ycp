@@ -588,7 +588,7 @@ user home directories.</p>
     _("<p><b>Password Policy</b></p>") +
 
     // password policy help
-    _("<p>Configure selected Password Policy with <b>Edit</b>. Use <b>Add</b> to add new Password Policy. The configuration is only possible when the Password Policies are already enabled on the LDAP server.</p>")
+    _("<p>Configure selected password policy with <b>Edit</b>. Use <b>Add</b> to add a new password policy. The configuration is only possible, if the password policies are already enabled on the LDAP server.</p>")
     ];
 
     string bind_dn		= Ldap::bind_dn;

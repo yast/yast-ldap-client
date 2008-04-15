@@ -933,10 +933,11 @@
 		`VSpacing (),
 		`Left (`Label (
 		// question following error message (yes/no buttons follow)
-_("A possible cause of the failed connection may be that your client is
+_("A possible reason for the failed connection may be that your client is
 configured for TLS/SSL but the server does not support it.
 
-Retry connection without TLS/SSL?"))),
+Retry connection without TLS/SSL?
+"))),
 		`HBox (
 		    `PushButton (`id(`yes), `opt(`key_F10,`default), Label::YesButton()),
 		    `PushButton (`id(`no),`opt(`key_F9), Label::NoButton())
