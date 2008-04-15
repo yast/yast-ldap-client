@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Apr 15 10:07:17 CEST 2008 - jsuchome@suse.cz
+
+- disabling during installation makes sense with current workflow 
+- 2.16.12
+
+-------------------------------------------------------------------
 Fri Apr  4 14:00:41 CEST 2008 - ug@suse.de
 
 - rnc file fixed

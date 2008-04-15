@@ -322,11 +322,7 @@ automatically.</p>
 
 	Wizard::RestoreAbortButton ();
 
-	// during installation, only enabling makes sence
-	if (installation)
-	{
-	    UI::ChangeWidget (`id (`ldapno), `Enabled, false);
-	}
+
 	UI::ChangeWidget (`id(`server),`ValidChars, Address::ValidChars + " ");
 
 	symbol result = `not_next;
