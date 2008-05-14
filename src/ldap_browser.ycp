@@ -298,7 +298,7 @@ Discard these changes?
 	// textentry label
 	`TextEntry (`id(`admin_dn), _("Administrator DN"), Ldap::GetBindDN ()),
         // password entering label
-        `Password(`id(`pw), _("&LDAP Server Password")),
+        `Password(`id(`pw), `opt (`hstretch), _("&LDAP Server Password")),
 	`VSpacing (0.2),
 	// check box label
 	`Left (`CheckBox (`id(`ldaps), _("LDAP &TLS/SSL"), Ldap::ldap_tls)),

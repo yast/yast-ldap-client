@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Wed May 14 15:09:13 CEST 2008 - jsuchome@suse.cz
+
+- check for required packages also in CommandLine mode (bnc#390111)
+- write correct nss_base_* values in CommandLine mode (bnc#390104)
+- options from "configure" command may be used in "pam" command
+- 2.16.14
+
+-------------------------------------------------------------------
 Tue Apr 15 14:00:08 CEST 2008 - jsuchome@suse.cz
 
 - merged texts from proofread

@@ -362,6 +362,37 @@
 	return read_settings;
     }
 
+    /**
+     * Return list of architecture specific packages (derived from package list
+     * given as parameter) merged with the packages in parameter
+     */
+    global define list<string> UpdatedArchPackages (list<string> packages) {
+
+	list<string> ret	= packages;
+	string arch		= Arch::architecture ();
+
+	foreach (string package, packages, {
+	    ret	= (list<string>) union (ret, arch_packages[package,arch]:[]);
+	});
+	return ret;
+    }
+
+    /**
+     * Return needed packages and packages to be removed
+     * during autoinstallation.
+     * @return map of lists.
+     */
+    global  define map AutoPackages() ``{
+
+      if (start)
+	required_packages = (list<string>)
+	    union (required_packages, ["pam_ldap", "nss_ldap"]);
+      list<string> install_pkgs = UpdatedArchPackages (required_packages);
+      list remove_pkgs = [];
+      return ($["install": install_pkgs, "remove": remove_pkgs]);
+    }
+
+
     /* ------------- auto_yast functions -------------------------------- */
 
     /**
@@ -1047,7 +1078,7 @@ Retry connection without TLS/SSL?
         `VBox(
             `HSpacing(40),
             // password entering label
-            `Password(`id(`pw), _("&LDAP Server Password")),
+            `Password(`id(`pw), `opt (`hstretch), _("&LDAP Server Password")),
 	    // label
 	    `Label (sformat (_("Server: %1"), GetFirstServer (server))),
 	    // label (%1 is admin DN - string)
@@ -2521,6 +2552,30 @@ Select another one.
     global define boolean WriteNow () {
 
 	block<boolean> abort = ``{ return false; };
+
+	list<string> needed_packages =
+		UpdatedArchPackages (["pam_ldap", "nss_ldap"]);
+
+	if (_start_autofs && !Package::Installed("autofs"))
+	{
+	   needed_packages	= add (needed_packages, "autofs");
+	}
+
+	if (start && !Package::InstalledAll (needed_packages))
+	{
+	    if (!Package::InstallAll (needed_packages))
+		Report::Error (Message::FailedToInstallPackages ());
+	    start		= false;
+	    _start_autofs	= false;
+	}
+	// during CLI call nss_base_* are not edited: adapt them to new base DN
+	if (old_base_dn != base_dn && nss_base_passwd == old_base_dn)
+	{
+	    nss_base_passwd	= base_dn;
+	    nss_base_shadow	= base_dn;
+	    nss_base_group	= base_dn;
+	}
+
 	return (Write(abort) == `next);
     }
 
@@ -2562,36 +2617,6 @@ exists on the LDAP server. Create it now?
 	    return false;
 	}
 	return true;
-    }
-
-    /**
-     * Return list of architecture specific packages (derived from package list
-     * given as parameter) merged with the packages in parameter
-     */
-    global define list<string> UpdatedArchPackages (list<string> packages) {
-
-	list<string> ret	= packages;
-	string arch		= Arch::architecture ();
-
-	foreach (string package, packages, {
-	    ret	= (list<string>) union (ret, arch_packages[package,arch]:[]);
-	});
-	return ret;
-    }
-
-    /**
-     * Return needed packages and packages to be removed
-     * during autoinstallation.
-     * @return map of lists.
-     */
-    global  define map AutoPackages() ``{
-
-      if (start)
-	required_packages = (list<string>)
-	    union (required_packages, ["pam_ldap", "nss_ldap"]);
-      list<string> install_pkgs = UpdatedArchPackages (required_packages);
-      list remove_pkgs = [];
-      return ($["install": install_pkgs, "remove": remove_pkgs]);
     }
 
     /**

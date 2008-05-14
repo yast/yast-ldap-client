@@ -29,24 +29,6 @@
 // --------------------------------- cmd-line handlers
 
 /**
- * Enable or disable LDAP authentication
- * @param options  a list of parameters passed as args
- * @return boolean true on success
- */
-define boolean LdapEnableHandler( map<string,string> options ) ``{
-    // check the "command" to be present exactly once
-    string command = CommandLine::UniqueOption( options,
-	["enable", "disable" ] );
-    if( command == nil ) return false;
-
-    Ldap::RestartSSHD (
-	command == "enable" && !Ldap::start && Service::Status ("sshd") == 0);
-
-    Ldap::start = ( command == "enable" );
-    return true;
-}
-
-/**
  * Print summary of basic options
  * @return boolean false
  */
@@ -125,6 +107,30 @@ define boolean LdapChangeConfiguration (map<string, string> options ) ``{
     return Ldap::modified;
 }
 
+/**
+ * Enable or disable LDAP authentication
+ * @param options  a list of parameters passed as args
+ * @return boolean true on success
+ */
+define boolean LdapEnableHandler( map<string,string> options ) ``{
+    // check the "command" to be present exactly once
+    string command = CommandLine::UniqueOption( options,
+	["enable", "disable" ] );
+    if( command == nil ) return false;
+
+    Ldap::RestartSSHD (
+	command == "enable" && !Ldap::start && Service::Status ("sshd") == 0);
+
+    if ((Ldap::start && command == "disable") ||
+	(!Ldap::start && command == "enable"))
+	Ldap::modified	= true;
+
+    Ldap::start = ( command == "enable" );
+
+    return LdapChangeConfiguration (options);
+}
+
+
 /* the command line description map */
 map cmdline = $[
     "id"		: "ldap",
@@ -198,7 +204,9 @@ map cmdline = $[
 	],
     ],
     "mappings"		: $[
-	"pam"		: [ "enable", "disable" ],
+	"pam"		: [ "enable", "disable", "server", "base",
+	    "createconfig", "ldappw", "automounter", "mkhomedir", "tls"
+	],
 	"summary"	: [],
 	"configure"	: [ "server", "base", "createconfig", "ldappw",
 	    "automounter", "mkhomedir", "tls"
