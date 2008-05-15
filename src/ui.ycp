@@ -645,31 +645,37 @@ user home directories.</p>
 
 	if (base_dn == "") return;
 
-	if (Ldap::ldap_initialized || (boolean)SCR::Execute (.ldap, $[
-	"hostname"	: Ldap::GetFirstServer (Ldap::server),
-	"port"		: Ldap::GetFirstPort (Ldap::server),
-	"version"	: Ldap::ldap_v2 ? 2 : 3,
-	"use_tls"	: Ldap::ldap_tls ? "yes" : "no"
-	]))
+	if (Ldap::ldap_initialized || true == SCR::Execute (.ldap, $[
+	    "hostname"	: Ldap::GetFirstServer (Ldap::server),
+	    "port"	: Ldap::GetFirstPort (Ldap::server),
+	    "version"	: Ldap::ldap_v2 ? 2 : 3,
+	    "use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+	    ])
+	)
 	{
-	list schemas = (list)SCR::Read (.ldap.search, $[
-	    "base_dn":  "",
-	    "attrs":    [ "subschemasubentry" ],
-	    "scope":    0,
-	]);
-	string schema_dn = schemas[0,"subschemasubentry",0]:"";
-	if (schemas != nil && schema_dn != "" &&
-	    (boolean)SCR::Execute (.ldap.schema, $[ "schema_dn": schema_dn ]))
-	{
-	    ppolicies = (map<string,map>) SCR::Read (.ldap.search, $[
-		"base_dn"	: base_dn,
-		"filter"	: "objectclass=pwdpolicy",
-		"scope"		: 2,
-		"map"		: true,
-		"not_found_ok"	: true
+	    list schemas = (list)SCR::Read (.ldap.search, $[
+		"base_dn":  "",
+		"attrs":    [ "subschemasubentry" ],
+		"scope":    0,
 	    ]);
-	    ppolicies_orig	= ppolicies;
-	}
+	    string schema_dn = schemas[0,"subschemasubentry",0]:"";
+	    if (schemas != nil && schema_dn != "" &&
+		SCR::Execute (.ldap.schema, $[ "schema_dn": schema_dn ])== true)
+	    {
+		map<string,map> pp = (map<string,map>) SCR::Read (.ldap.search,
+		$[
+		    "base_dn"		: base_dn,
+		    "filter"		: "objectclass=pwdpolicy",
+		    "scope"		: 2,
+		    "map"		: true,
+		    "not_found_ok"	: true
+		]);
+		if (pp != nil)
+		{
+		    ppolicies	= pp;
+		    ppolicies_orig	= ppolicies;
+		}
+	    }
 	}
 	// TODO re-read is not supported, is it correct?
 	foreach (string dn, map ppolicy, Ldap::ppolicies, {

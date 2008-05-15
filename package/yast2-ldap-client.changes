@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu May 15 12:46:01 CEST 2008 - jsuchome@suse.cz
+
+- check return value of LDAP search, prevent UI crash (bnc#390261)
+- 2.16.15 
+
+-------------------------------------------------------------------
 Wed May 14 15:09:13 CEST 2008 - jsuchome@suse.cz
 
 - check for required packages also in CommandLine mode (bnc#390111)
