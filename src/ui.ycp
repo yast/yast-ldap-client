@@ -259,7 +259,7 @@ automatically.</p>
 	    `VSpacing (0.5),
 	    // frame label
 	    `Frame (_("User Authentication"), `HBox (`HSpacing (0.5), `VBox (
-		`VSpacing (0.5),
+		`VSpacing (0.4),
 		`RadioButtonGroup (`id(`rd),
 		    `Left(`HVSquash(`VBox (
 			`Left (`RadioButton(`id(`ldapno), `opt (`notify),
@@ -274,12 +274,12 @@ automatically.</p>
 				start && !login_enabled))
 		    )))
 		),
-		`VSpacing (0.5)
+		`VSpacing (0.4)
 	    ))),
 	    `VSpacing (0.4),
 	    // frame label
 	    `Frame (_("LDAP Client"), `HBox (`HSpacing (0.5), `VBox(
-		`VSpacing (0.5),
+		`VSpacing (0.4),
 		`HBox (
 		    // text entry label
 		    `TextEntry (`id (`server), _("Addresses of LDAP &Servers"),
@@ -715,11 +715,11 @@ user home directories.</p>
     define void set_client_term () {
 
 	term cont = `Top (`HBox(`HSpacing (5), `VBox(
-	    `VSpacing(),
+	    `VSpacing(0.4),
 	    // frame label
 	    `Frame (_("Naming Contexts"), `HBox(
 	    `HSpacing (1), `VBox(
-		`VSpacing(0.5),
+		`VSpacing(0.4),
 		`HBox (
 		    `TextEntry (`id (`nss_base_passwd),
 			// textentry label
@@ -750,7 +750,7 @@ user home directories.</p>
 			`PushButton (`id(`br_group), _("Bro&wse"))
 		    )
 		),
-		`VSpacing(0.5)
+		`VSpacing(0.4)
 	    ),
 	    `HSpacing (1)
 	    )),
@@ -772,7 +772,7 @@ user home directories.</p>
     define void set_admin_term () {
 
 	term cont = `HBox (`HSpacing (5), `VBox(
-	    `VSpacing (),
+	    `VSpacing (0.4),
 	    `HBox (
 		    `TextEntry (`id (`base_config_dn),
 			// textentry label
@@ -793,7 +793,7 @@ user home directories.</p>
 		    `CheckBox (`id(`append),_("A&ppend Base DN"), append_base)
 		)
 	    ),
-	    `VSpacing (),
+	    `VSpacing (0.4),
 	    `Left (`CheckBox (`id(`create_ldap),
 		    // checkbox label
 		    _("Crea&te Default Configuration Objects"), create_ldap)),
