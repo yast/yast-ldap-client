@@ -293,10 +293,11 @@ Discard these changes?
     UI::OpenDialog (`opt(`decorated), `VBox(
         `HSpacing(40),
 	// textentry label
-	`TextEntry (`id(`server), _("LDAP Server"),
+	`InputField (`id(`server), `opt (`hstretch), _("LDAP Server"),
 	    Ldap::GetFirstServer(Ldap::server)),
-	// textentry label
-	`TextEntry (`id(`admin_dn), _("Administrator DN"), Ldap::GetBindDN ()),
+	`InputField (`id(`admin_dn),  `opt (`hstretch),
+	    // textentry label
+	     _("Administrator DN"), Ldap::GetBindDN ()),
         // password entering label
         `Password(`id(`pw), `opt (`hstretch), _("&LDAP Server Password")),
 	`VSpacing (0.2),

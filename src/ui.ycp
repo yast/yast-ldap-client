@@ -282,8 +282,8 @@ automatically.</p>
 		`VSpacing (0.4),
 		`HBox (
 		    // text entry label
-		    `TextEntry (`id (`server), _("Addresses of LDAP &Servers"),
-			server),
+		    `InputField (`id (`server), `opt (`hstretch),
+			_("Addresses of LDAP &Servers"), server),
 		    `VBox (
 			`Label (""),
 			// push button label
@@ -291,8 +291,9 @@ automatically.</p>
 		    )
 		),
 		`HBox (
-		    // text entry label
-		    `TextEntry (`id (`ldapbasedn), _("LDAP Base &DN"), base_dn),
+		    `InputField (`id (`ldapbasedn),  `opt (`hstretch),
+			// text entry label
+			_("LDAP Base &DN"), base_dn),
 		    `VBox (
 			`Label (""),
 			// push button label
@@ -721,7 +722,7 @@ user home directories.</p>
 	    `HSpacing (1), `VBox(
 		`VSpacing(0.4),
 		`HBox (
-		    `TextEntry (`id (`nss_base_passwd),
+		    `InputField (`id (`nss_base_passwd), `opt (`hstretch),
 			// textentry label
 			_("&User Map"), nss_base_passwd),
 		    `VBox (
@@ -731,7 +732,7 @@ user home directories.</p>
 		    )
 		),
 		`HBox (
-		    `TextEntry (`id (`nss_base_shadow),
+		    `InputField (`id (`nss_base_shadow), `opt (`hstretch),
 			// textentry label
 			_("&Password Map"), nss_base_shadow),
 		    `VBox (
@@ -741,7 +742,7 @@ user home directories.</p>
 		    )
 		),
 		`HBox (
-		    `TextEntry (`id (`nss_base_group),
+		    `InputField (`id (`nss_base_group), `opt (`hstretch),
 			// textentry label
 			_("&Group Map"), nss_base_group),
 		    `VBox (
@@ -774,7 +775,7 @@ user home directories.</p>
 	term cont = `HBox (`HSpacing (5), `VBox(
 	    `VSpacing (0.4),
 	    `HBox (
-		    `TextEntry (`id (`base_config_dn),
+		    `InputField (`id (`base_config_dn), `opt (`hstretch),
 			// textentry label
 			_("Configuration &Base DN"), base_config_dn),
 		    `VBox (
@@ -785,8 +786,9 @@ user home directories.</p>
 	    ),
 	    `VSpacing(0.4),
 	    `HBox (
-		// textentry label
-		`TextEntry (`id (`bind_dn), _("Administrator &DN"), bind_dn),
+		`InputField (`id (`bind_dn),  `opt (`hstretch),
+		    // textentry label
+		    _("Administrator &DN"), bind_dn),
 		`VBox (
 		    `Label (""),
 		    // checkbox label
@@ -925,8 +927,9 @@ user home directories.</p>
 	    UI::OpenDialog ( `opt(`decorated), `HBox(
 		`HSpacing(1),
 		`VBox(
-		    // TextEntry label
-		    `TextEntry (`id (`cn), _("Name of Password Policy Object")),
+		    // InputField label
+		    `InputField (`id (`cn),  `opt (`hstretch),
+			_("Name of Password Policy Object")),
 		    `ReplacePoint (`id (`rp_suf), `HBox (
 			// text label,suffix will follow in next label
 			`Label (`id (`suffix_label), _("Suffix:")),

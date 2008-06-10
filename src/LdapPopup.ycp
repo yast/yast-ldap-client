@@ -258,19 +258,20 @@ it is possible to choose it from the LDAP tree using <b>Browse</b>.
 	term ret = `VBox();
 	if (single)
 	{
-	    ret = add (ret, `TextEntry (`id (0),
+	    ret = add (ret, `InputField (`id (0), `opt (`hstretch),
 		// textentry label
 		sformat(_("&Value of \"%1\" Attribute"), attr), value[0]:""));
 	}
 	else
 	{
-	    ret = add (ret, `TextEntry (`id (0),
+	    ret = add (ret, `InputField (`id (0), `opt (`hstretch),
 		// textentry label
 		sformat(_("&Values of \"%1\" Attribute"), attr), value[0]:""));
 	    integer i = 1;
 	    while (i < value_size)
 	    {
-		ret = add (ret, `TextEntry (`id (i), "", value[i]:""));
+		ret = add (ret, `InputField (`id (i), `opt (`hstretch),
+		    "", value[i]:""));
 		if (size (value[i]:"" + 10) > hsize)
 		    hsize = size (value[i]:"") + 10;
 		i = i + 1;
@@ -409,8 +410,9 @@ global define map NewModule (list available, list conflicts) ``{
 	`VBox(
 	    `HSpacing (50),
 	    `RadioButtonGroup (`id(`rb), r_buttons),
-	    // textentry label, do not translate "cn"
-	    `TextEntry (`id (`cn), _("&Name of New Module (\"cn\" Value)")),
+	    `InputField (`id (`cn), `opt (`hstretch),
+		// textentry label, do not translate "cn"
+		_("&Name of New Module (\"cn\" Value)")),
 	    `HBox(
 		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
 		`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton())
@@ -497,7 +499,7 @@ as a value of \"homeDirectory\").</p>
 		available)),
 	    `VSpacing(0.5),
 	    // textentry label
-	    `TextEntry (`id (`val), _("Attribute &Value")),
+	    `InputField (`id (`val), `opt (`hstretch), _("Attribute &Value")),
 	    `VSpacing(0.5),
 	    `HBox(
 		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
