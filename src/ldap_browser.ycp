@@ -9,6 +9,8 @@
  */
 {
     import "CommandLine";
+    import "Directory";
+    import "FileUtils";
     import "Label";
     import "Ldap";
     import "LdapPopup";
@@ -21,7 +23,7 @@
 
     map cmdline = $[
 	"id"		: "ldap_browser",
-	"mappings"		: $[
+	"mappings"	: $[
 	]
     ];
     if (size (WFM::Args()) > 0)
@@ -40,51 +42,25 @@
     map topdns			= $[];
     map open_items		= $[];
 
-    map help_text	= $[
-	`general	:
+    string help_text	=
 	// general help text for LDAP browser
-	_("<p>Browse the LDAP tree in the <b>LDAP Tree</b> tab.</p>"),
-	`ldaptree	:
-	// help text for Edit Entry tab
-	_("<p>Edit attributes of the selected LDAP object in the <b>Entry Data</b> tab.</p>"),
-	`entry		:
-	_("<p>Use <b>Edit</b> to change the value of the selected attribute. Use <b>Save</b> to save your changes to LDAP.</p>"),
-    ];
+	_("<p>Browse the LDAP tree in the left part of the dialog.</p>") +
+	// help text for LDAP browser
+	_("<p>Once the LDAP object is selected in the tree, the table shows the object data. Use <b>Edit</b> to change the value of the selected attribute. Use <b>Save</b> to save your changes to LDAP.</p>");
 
     // popup question (Continue/Cancel follows)
     string unsaved	= _("There are unsaved changes in the current entry.
 Discard these changes?
 ");
 
-    string glyph		= "";//UI::Glyph (`BulletArrowRight) + " ";
+    term contents = `HBox (
+	`HWeight (1, `ReplacePoint (`id (`treeContents), `Top (`HBox ()))),
+	`HWeight (1, `ReplacePoint (`id (`entryContents), `Top (`HBox ())))
+    );
+    map display_info	= UI::GetDisplayInfo ();
+    boolean textmode	= display_info["TextMode"]:false;
 
-    list<term> tabs	= [
-	// tab label
-	`item(`id(`ldaptree), _("LDAP &Tree"), true),
-	// tab label
-	`item(`id(`entry), _("Entry &Data")),
-    ];
-
-    term contents = `VBox (
-	`DumbTab (`id(`tabs), tabs,
-	    `ReplacePoint (`id(`tabContents ), `VBox (`Empty ()))
-    ));
-    boolean has_tabs	= true;
-    if (!UI::HasSpecialWidget (`DumbTab))
-    {
-	has_tabs	= false;
-	term tabbar	= `HBox ();
-	foreach (term it, tabs, {
-	    string label = it[1]:"";
-	    tabbar = add (tabbar,`PushButton (it[0]:`id(label), label));
-	});
-	contents = `VBox (`Left(tabbar),
-	    `Frame ("", `ReplacePoint(`id(`tabContents), `Empty ()))
-	);
-    }
-    boolean textmode	= !has_tabs;
-
-    // helper: data modifued?
+    // helper: data modified?
     define boolean Modified () {
 	return size (tmp_data) > 0;
     }
@@ -106,7 +82,7 @@ Discard these changes?
 	    {
 		return `item (`id(dn), show_dn (dn), true,
 		    maplist(string k, subdns, ``(
-			`item (`id(k), glyph + show_dn (k), false, []))));
+			`item (`id(k), show_dn (k), false, []))));
 	    }
 	    integer last = size (it) - 1;
 	    if (size (it[last]:[]) == 0)
@@ -132,20 +108,19 @@ Discard these changes?
 	    ),
 	    `HBox (
 		`HSpacing (1.5),
+		`HStretch (),
 		textmode ?
 		  // button label
-		  `Right (`PushButton (`id (`open), `opt (`key_F6),_("&Open"))):
+		  `PushButton (`id (`open), `opt (`key_F6),_("&Open")):
 		  `Empty (),
 		// button label
-		`Right (`PushButton (`id(`reload),`opt(`key_F8), _("&Reload"))),
+		`PushButton (`id(`reload),`opt(`key_F8), _("&Reload")),
 		`HSpacing (1.5)
 	    ),
 	    `VSpacing (0.6)
 	));
 
-	UI::ReplaceWidget (`tabContents, cont);
-	if (has_tabs)
-	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `ldaptree);
+	UI::ReplaceWidget (`treeContents, cont);
 
 	if (size (tree_items) == 0)
 	{
@@ -181,7 +156,7 @@ Discard these changes?
 	    if (size (bases) > 0)
 		tree_items = maplist (string dn, bases[0,"namingcontexts"]:[], {
 		    topdns[dn]	= true;
-		    return `item(`id(dn), glyph + dn, false, []);
+		    return `item(`id(dn), dn, false, []);
 		});
 	    if (size (tree_items) > 0)
 		UI::ReplaceWidget (`id (`reptree), textmode ?
@@ -231,6 +206,7 @@ Discard these changes?
 		data [at] = value;
 	    }
 	    items = add (items,`item (`id(at), at, mergestring(value,",")));
+//	    items = add (items,`item (`id(attr), attr, mergestring(value,",")));
 	});
 
 	// generate table items with empty values
@@ -264,9 +240,7 @@ Discard these changes?
 	    `HSpacing (1.5)
 	);
 
-	UI::ReplaceWidget (`tabContents, cont);
-	if (has_tabs)
-	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `entry);
+	UI::ReplaceWidget (`entryContents, cont);
 
 	if (size (items) == 0)
 	    UI::ChangeWidget (`id(`edit), `Enabled, false);
@@ -277,50 +251,178 @@ Discard these changes?
 
     Wizard::CreateDialog ();
 
-    Wizard::SetDesktopIcon("ldap_browser");
-    Wizard::SetContentsButtons(_("LDAP Browser"),
-	contents, help_text[`general]:"" + help_text[`ldaptree]:"",
-	"", Label::CloseButton());
+    Wizard::SetDesktopIcon ("ldap_browser");
+    // dialog caption
+    Wizard::SetContentsButtons (_("LDAP Browser"),
+	contents, help_text, "", Label::CloseButton());
 
     Wizard::HideBackButton ();
     Wizard::HideAbortButton ();
 
-    // initialize LDAP
+    // read current LDAP configuration
     Ldap::Read ();
 
-    // -------------
+    list configurations	= [];
+    string configurations_file	= Directory::vardir + "/ldap_servers.ycp";
+    // combobox item
+    string default_name	= _("Current LDAP Client settings");
+    map configuration	= $[
+	"server"	: Ldap::GetFirstServer (Ldap::server),
+	"bind_dn"	: Ldap::GetBindDN (),
+	"ldap_tls"	: Ldap::ldap_tls,
+	"name"		: default_name
+    ];
+    // read configuration of LDAP browser
+    if (FileUtils::Exists (configurations_file))
+    {
+	configurations	= (list) SCR::Read (.target.ycp, configurations_file);
+	if (configurations == nil || !is (configurations, list))
+	    configurations	= [];
+    }
+    if (configurations == [])
+    {
+	configurations	= [ configuration ];
+    }
 
-    UI::OpenDialog (`opt(`decorated), `VBox(
+    configuration	= configurations[0]:$[];
+
+    // helper function: generate items for combo box
+    list connection_items (string selected) {
+	integer i	= -1;
+	return maplist (map conf, (list<map>) configurations, {
+	    i		= i + 1;
+	    return `item (`id (i), conf["name"]:"",conf["name"]:"" == selected);
+	});
+    }
+
+    // update the combo box with LDAP connections list
+    void update_connection_items (string selected) {
+	UI::ChangeWidget (`id (`delete), `Enabled, selected != default_name);
+	UI::ReplaceWidget (`id (`rpcombo),
+	        `ComboBox (`id(`configs), `opt (`hstretch, `notify),
+		    // combo box label
+		    _("LDAP Connections"), connection_items (selected)
+		)
+	);
+	foreach (string s, [ "server", "bind_dn", "ldap_tls" ], {
+	    UI::ChangeWidget (`id (s), `Enabled, selected != default_name);
+	    UI::ChangeWidget (`id (s), `Value, s == "ldap_tls" ?
+		configuration[s]:false : configuration[s]:"");
+	});
+    }
+    // ask which LDAP connection to choose
+    UI::OpenDialog (`opt(`decorated), `HBox (`HSpacing (0.2), `VBox (
+	`VSpacing (0.2),
         `HSpacing(40),
+	`HBox (
+	    `ReplacePoint (`id (`rpcombo),
+	        `ComboBox (`id(`configs), `opt (`hstretch, `notify),
+		    // combo box label
+		    _("LDAP Connections"), []
+		)
+	    ),
+	    `VBox (
+		`Label (""),
+		`PushButton (`id (`add), Label::AddButton ())
+	    ),
+	    `VBox (
+		`Label (""),
+		`PushButton (`id (`delete), Label::DeleteButton ())
+	    )
+	),
 	// textentry label
-	`InputField (`id(`server), `opt (`hstretch), _("LDAP Server"),
-	    Ldap::GetFirstServer(Ldap::server)),
-	`InputField (`id(`admin_dn),  `opt (`hstretch),
+	`InputField (`id ("server"), `opt (`hstretch, `notify),_("LDAP Server"),
+	     configuration["server"]:""),
+	`InputField (`id ("bind_dn"),  `opt (`hstretch, `notify),
 	    // textentry label
-	     _("Administrator DN"), Ldap::GetBindDN ()),
+	     _("Administrator DN"), configuration["bind_dn"]:""),
         // password entering label
-        `Password(`id(`pw), `opt (`hstretch), _("&LDAP Server Password")),
+        `Password (`id("pw"), `opt (`hstretch), _("&LDAP Server Password")),
 	`VSpacing (0.2),
 	// check box label
-	`Left (`CheckBox (`id(`ldaps), _("LDAP &TLS/SSL"), Ldap::ldap_tls)),
+	`Left (`CheckBox (`id ("ldap_tls"), `opt (`notify), _("L&DAP TLS"),
+	    configuration["ldap_tls"]:false)
+	),
         `HBox(
             `PushButton (`id(`ok),`opt(`key_F10, `default), Label::OKButton()),
             // button label
-	    `PushButton (`id(`anon), `opt(`key_F6), _("&Anonymous Access")),
+	    `PushButton (`id(`anon), `opt(`key_F6), _("A&nonymous Access")),
             `PushButton (`id(`cancel),`opt(`key_F9), Label::CancelButton())
-	)
-    ));
+	),
+	`VSpacing (0.2)
+    ), `HSpacing (0.2)));
 
+    string current_name	= configuration["name"]:"";
+    update_connection_items (current_name);
     any ret = nil;
     while (true)
     {
 	ret	= UI::UserInput();
+	integer conf= (integer)UI::QueryWidget (`id (`configs), `Value);
+
+	// save configuration currently selected before switching to new one
+	if (ret == `ok || ret == `anon || is (ret, string))
+	{
+	    configuration	= configurations[conf]:$[];
+	    current_name	= configuration["name"]:"";
+	    if (current_name != default_name)
+	    {
+		foreach (string s, [ "server", "bind_dn", "ldap_tls" ], {
+		    configuration[s]	= UI::QueryWidget (`id (s), `Value);
+		});
+		integer i	= -1;
+		configurations	= maplist (map c, (list<map>) configurations, {
+		    i		= i + 1;
+		    return i == conf ? configuration : c;
+		});
+	    }
+	}
+	if (ret == `configs)
+	{
+	    configuration	= configurations[conf]:$[];
+	    current_name	= configuration["name"]:"";
+	    UI::ChangeWidget (`id (`delete), `Enabled,
+		current_name != default_name);
+	    foreach (string s, [ "server", "bind_dn", "ldap_tls" ], {
+		UI::ChangeWidget (`id (s), `Enabled,current_name!=default_name);
+		UI::ChangeWidget (`id (s), `Value, s == "ldap_tls" ?
+		    configuration[s]:false : configuration[s]:"");
+	    });
+	}
+	if (ret == `add)
+	{
+	    UI::OpenDialog ( `opt(`decorated), `HBox (`HSpacing (0.2), `VBox (
+		`VSpacing (0.2),
+		`InputField (`id (`new),
+		    // InputField label
+		    _("Enter the name of new LDAP connection")),
+		`HBox (
+		    `PushButton (`id(`ok), `opt(`default), Label::OKButton ()),
+		    `PushButton (`id(`cancel), Label::CancelButton ())
+		)
+	    ), `HSpacing(0.2)));
+	    any r	= UI::UserInput ();
+	    string new	= (string) UI::QueryWidget (`id (`new), `Value);
+	    UI::CloseDialog ();
+	    if (r == `cancel || new == "")
+		continue;
+	    configuration	= $[
+		"name"		: new
+	    ];
+	    configurations	= add (configurations, configuration);
+	    update_connection_items (new);
+	}
+	if (ret == `delete)
+	{
+	    configurations	= remove (configurations, conf);
+	    update_connection_items (default_name);
+	}
 	if (ret == `ok || ret == `anon)
 	{
-	    Ldap::server = (string) UI::QueryWidget (`id(`server), `Value);
-	    Ldap::bind_dn = (string) UI::QueryWidget (`id(`admin_dn), `Value);
-	    Ldap::bind_pass	= (string) UI::QueryWidget(`id(`pw), `Value);
-	    Ldap::ldap_tls	= (boolean) UI::QueryWidget (`id(`ldaps), `Value);
+	    Ldap::server = (string) UI::QueryWidget (`id ("server"), `Value);
+	    Ldap::bind_dn = (string) UI::QueryWidget (`id ("bind_dn"), `Value);
+	    Ldap::bind_pass	= (string) UI::QueryWidget(`id("pw"), `Value);
+	    Ldap::ldap_tls = (boolean) UI::QueryWidget (`id("ldap_tls"),`Value);
 	    Ldap::SetAnonymous (ret == `anon);
 
 	    string error	= Ldap::LDAPInitWithTLSCheck ($[]);
@@ -353,8 +455,18 @@ Discard these changes?
 	Wizard::CloseDialog ();
 	return ret;
     }
+    SCR::Write (.target.ycp, configurations_file, configurations);
+
+    // LDAP initialized, we can open the browser now
 
     set_tree_term ();
+
+    current_dn = (string) UI::QueryWidget (`id(`tree), `CurrentItem);
+    if (current_dn == nil) current_dn	= "";
+
+    set_entry_term ();
+    if (textmode)
+        UI::SetFocus (`id(`tree));
 
     symbol result	= `notnext;
     symbol current	= `ldaptree;
@@ -362,57 +474,52 @@ Discard these changes?
     while (true) {
 
 	result = (symbol) UI::UserInput ();
-
+y2internal ("result:%1", result);
 	if (result == `cancel && !Popup::ReallyAbort (false))
 	    result = `not_next;
 
 	if (result == `back || result == `cancel)
 	    break;
 
-	// 1. get the data from dialogs
-	if (current == `ldaptree)
-	{
-	    current_dn = (string) UI::QueryWidget (`id(`tree),`CurrentItem);
-	    if (current_dn == nil)
-		current_dn	= "";
-	}
+	if (result == `open)
+	    result	= `tree;
 
-	// 2. switch the tabs
-	if ((result == `ldaptree && Modified ()) &&
-	    !Popup::ContinueCancel (unsaved))
+	current_dn = (string) UI::QueryWidget (`id(`tree),`CurrentItem);
+	if (current_dn == nil)
+	    current_dn	= "";
+
+	// switch to different entry while current was modified
+	if (result == `tree && Modified ())
 	{
-	    result	= `not_next;
-	    if (has_tabs)
-		UI::ChangeWidget (`id (`tabs), `CurrentItem, `entry);
-	    continue;
-	}
-	if (result == `ldaptree || result == `entry)
-	{
-	    current = result;
-	    Wizard::SetHelpText(help_text[`general]:"" + help_text[current]:"");
-	    if (result == `ldaptree)
+	    if (Popup::ContinueCancel (unsaved))
 	    {
-		set_tree_term ();
+		// discard the changes
 		tmp_data	= $[];
 	    }
 	    else
 	    {
-		data		= Ldap::GetLDAPEntry (current_dn);
-		set_entry_term ();
+		result	= `not_next;
+		continue;
 	    }
 	}
 
-	// events in tree tab
-	if (result == `tree || result == `open)
+	// events in tree
+	if (result == `tree)
 	{
 	    if (! dns[current_dn]:false)
 	    {
-		subdns = (list<string>) SCR::Read (.ldap.search, $[
+		UI::BusyCursor ();
+		subdns = sort ((list<string>) SCR::Read (.ldap.search, $[
 		    "base_dn"		: current_dn,
 		    "scope"		: 1,
 		    "dn_only"		: true,
 		    "not_found_ok"	: true,
-		]);
+		]));
+		if (subdns == nil)
+		{
+		    y2warning ("the search for %1 returned nil...", current_dn);
+		    continue;
+		}
 		dns [current_dn]	= true;
 		if (size (subdns) > 0)
 		// TODO if size (subdns) > 0) || dn has glyph
@@ -425,7 +532,12 @@ Discard these changes?
 		    UI::ChangeWidget (`id(`tree), `CurrentItem, current_dn);
 		    open_items = $[];
 		}
+		current_dn = (string) UI::QueryWidget (`id(`tree),`CurrentItem);
 	    }
+	    data		= Ldap::GetLDAPEntry (current_dn);
+	    tmp_data		= $[];
+	    set_entry_term ();
+	    UI::NormalCursor ();
 	    if (textmode)
 		UI::SetFocus (`id(`tree));
 	}
@@ -441,7 +553,7 @@ Discard these changes?
 	    set_tree_term ();
 	}
 
-	// events in Edit Entry tab
+	// events in Edit Entry part
 	if (result == `edit || result == `table)
 	{
 	    string attr	= (string) UI::QueryWidget (`id(`table), `CurrentItem);
@@ -503,7 +615,7 @@ Enter a value."), attr));
 	    }
 	    break;
 	}
-     }
+    }
     Wizard::CloseDialog ();
     return `finish;
 }
