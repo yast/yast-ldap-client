@@ -172,35 +172,39 @@
      * defaults for adding new config objects and templates
      */
     global map new_objects = $[
-	"suseuserconfiguration"	: $[
-	    "susesearchfilter"	: ["objectclass=posixaccount"],
-	    "susepasswordhash"	: ["CRYPT"],
-	    "suseskeldir"	: ["/etc/skel"],
-	    "suseminuniqueid"	: ["1000"],
-	    "susenextuniqueid"	: ["1000"],
-	    "susemaxuniqueid"	: ["60000"],
-	    "suseminpasswordlength" : ["5"],
-	    "susemaxpasswordlength" : ["8"],
+	"suseUserConfiguration"	: $[
+	    "suseSearchFilter"	: ["objectClass=posixAccount"],
+	    "susePasswordHash"	: ["CRYPT"],
+	    "suseSkelDir"	: ["/etc/skel"],
+	    "suseMinUniqueId"	: ["1000"],
+	    "suseNextUniqueId"	: ["1000"],
+	    "suseMaxUniqueId"	: ["60000"],
+	    "suseMinPasswordLength" : ["5"],
+	    "suseMaxPasswordLength" : ["8"],
 	],
-	"susegroupconfiguration": $[
-	    "susesearchfilter"	: ["objectclass=posixgroup"],
-	    "suseminuniqueid"	: ["1000"],
-	    "susenextuniqueid"	: ["1000"],
-	    "susemaxuniqueid"	: ["60000"],
+	"suseGroupConfiguration": $[
+	    "suseSearchFilter"	: ["objectClass=posixGroup"],
+	    "suseMinUniqueId"	: ["1000"],
+	    "suseNextUniqueId"	: ["1000"],
+	    "suseMaxUniqueId"	: ["60000"],
 	],
-	"suseusertemplate"	: $[
-	    "objectclass"	: [ "top", "suseobjecttemplate", "suseusertemplate"],
-	    "susenamingattribute"	: [ "uid" ],
-	    "susedefaultvalue"  : [
-		"homedirectory=/home/%uid",
-		"loginshell=/bin/bash"
+	"suseUserTemplate"	: $[
+	    "objectClass"	: [
+		"top", "suseObjectTemplate", "suseUserTemplate"
 	    ],
-	    "suseplugin"		: [ "UsersPluginLDAPAll" ]
+	    "suseNamingAttribute"	: [ "uid" ],
+	    "suseDefaultValue"  : [
+		"homeDirectory=/home/%uid",
+		"loginShell=/bin/bash"
+	    ],
+	    "susePlugin"		: [ "UsersPluginLDAPAll" ]
 	],
-	"susegrouptemplate"	: $[
-	    "objectclass"	: [ "top", "suseobjecttemplate", "susegrouptemplate"],
-	    "susenamingattribute"	: [ "cn" ],
-	    "suseplugin"		: [ "UsersPluginLDAPAll" ]
+	"suseGroupTemplate"	: $[
+	    "objectClass"	: [
+		"top", "suseObjectTemplate", "suseGroupTemplate"
+	    ],
+	    "suseNamingAttribute"	: [ "cn" ],
+	    "susePlugin"		: [ "UsersPluginLDAPAll" ]
 	]
     ];
 
@@ -234,12 +238,12 @@
     global list hash_schemas = ["CLEAR", "CRYPT", "SHA", "SSHA", "MD5", "SMD5"];
 
     /**
-     * Available configuration modules (objectclass names)
+     * Available configuration modules (objectClass names)
      * TODO update
      */
     global list<string> available_config_modules = [
-	"suseuserconfiguration",
-	"susegroupconfiguration"
+	"suseUserConfiguration",
+	"suseGroupConfiguration"
     ];
 
     /**
@@ -416,7 +420,7 @@
 	member_attribute= settings ["member_attribute"]:"member";
 	create_ldap	= settings ["create_ldap"]:false;
 	login_enabled	= settings ["login_enabled"]:true;
-	_start_autofs	= settings["start_autofs"]:false;
+	_start_autofs	= settings ["start_autofs"]:false;
 	if (_start_autofs)
 	    required_packages = (list<string>) union (required_packages, ["autofs"]);
 
@@ -1255,16 +1259,16 @@ Retry connection without TLS/SSL?
 
     /**
      * For a given object, add all atributes this object is allowed to have
-     * according to its "objectclass" value. Added attributes have empty values.
+     * according to its "objectClass" value. Added attributes have empty values.
      * @param object map describing LDAP entry
      * @return updated map
      */
     global define map AddMissingAttributes (map object) ``{
 
-	foreach (string class, object["objectclass"]:[], ``{
+	foreach (string class, object["objectClass"]:[], {
 	    foreach (string attr, (list<string>) GetAllAttributes (class), ``{
-		if (!haskey (object, tolower (attr)))
-		    object = add (object, tolower (attr), []);
+		if (!haskey (object, attr) && !haskey (object, tolower (attr)))
+		    object = add (object, attr, []);
 	    });
 	});
 	return object;
@@ -1279,10 +1283,10 @@ Retry connection without TLS/SSL?
 
 	list schemas = (list)SCR::Read (.ldap.search, $[
 	    "base_dn":  "",
-	    "attrs":    [ "subschemasubentry" ],
+	    "attrs":    [ "subschemaSubentry" ],
 	    "scope":    0, //0:base
 	]);
-	string schema_dn = schemas[0,"subschemasubentry",0]:"";
+	string schema_dn = schemas[0,"subschemaSubentry",0]:"";
 	if (schemas == nil || schema_dn == "")
 	    return LDAPError();
 
@@ -1295,7 +1299,7 @@ Retry connection without TLS/SSL?
 
     /**
      * In template object, convert the list of values
-     * (where is in the form [ "a1=v1", "a2=v2"])
+     * (which is in the form [ "a1=v1", "a2=v2"])
      * to map (in the form $[ "a1":"v1", "a2":"v2"]
      * @param templ original template map
      * @return updated template map
@@ -1303,9 +1307,9 @@ Retry connection without TLS/SSL?
     global define map ConvertDefaultValues (map templ) {
 
         map template = add (templ, "default_values", $[]);
-	foreach (string value, templ["susedefaultvalue"]:[], {
+	foreach (string value, templ["suseDefaultValue"]:[], {
 	    list<string> lvalue	= splitstring (value, "=");
-	    string at = tolower (lvalue[0]:"");
+	    string at = lvalue[0]:"";
 	    string v = size (lvalue) > 1 ?
 		// '=' could be part of value, so we cannot use lvalue[1]
 		substring (value, search (value, "=") + 1) : "";
@@ -1323,7 +1327,7 @@ Retry connection without TLS/SSL?
 	templates = $[];
 	map all = (map)SCR::Read (.ldap.search, $[
 	    "base_dn":	base_config_dn,
-	    "filter":   "objectclass=suseobjecttemplate",
+	    "filter":   "objectClass=suseObjectTemplate",
 	    "attrs":	[],
 	    "scope":	2,// sub: all templates under config DN
 	    "map":	true,
@@ -1351,7 +1355,7 @@ Retry connection without TLS/SSL?
 	config_modules = $[];
 	map modules = (map)SCR::Read (.ldap.search, $[
 	    "base_dn":	base_config_dn,
-	    "filter":   "objectclass=susemoduleconfiguration",
+	    "filter":   "objectClass=suseModuleConfiguration",
 	    "attrs":	[],
 	    "scope":	1, // one - deeper searches would have problems with
 			   // constructing the dn
@@ -1476,16 +1480,16 @@ The object with the selected DN cannot be created.
      */
     global define list GetDefaultObjectClasses (map template) {
 
-	list ocs = maplist (string c,template["objectclass"]:[],``(tolower(c)));
+	list ocs = maplist (string c,template["objectClass"]:[],``(tolower(c)));
 
 	if (contains (ocs, "susegrouptemplate"))
 	{
-	    return ["top", "posixgroup", "groupofnames"];
+	    return ["top", "posixGroup", "groupOfNames"];
 	    // TODO sometimes there is groupofuniquenames...
 	}
 	else if (contains (ocs, "suseusertemplate"))
 	{
-	    return ["top","posixaccount","shadowaccount", "inetorgperson"];
+	    return ["top","posixAccount","shadowAccount", "InetOrgPerson"];
 	}
 	return [];
     }
@@ -1505,15 +1509,15 @@ The object with the selected DN cannot be created.
 	classes = maplist (string c, classes, ``(tolower (c)));
 	if (contains (classes, "suseuserconfiguration"))
 	{
-	    obj = union (obj, new_objects ["suseusertemplate"]:$[]);
+	    obj = union (obj, new_objects ["suseUserTemplate"]:$[]);
 	}
 	else if (contains (classes, "susegroupconfiguration"))
 	{
-	    obj = union (obj, new_objects ["susegrouptemplate"]:$[]);
+	    obj = union (obj, new_objects ["suseGroupTemplate"]:$[]);
 	}
 	else
 	{
-	    obj["objectclass"] = [ "top", "suseobjecttemplate"];
+	    obj["objectClass"] = [ "top", "suseObjectTemplate"];
 	}
 
 	obj = ConvertDefaultValues (obj);
@@ -1522,15 +1526,14 @@ The object with the selected DN cannot be created.
 
     /**
      * Creates default new map for new configuration object
-     * @param class additional objectclass of new module (e.g.userConfiguration)
+     * @param class additional objectClass of new module (e.g.userConfiguration)
      * @return new module map
      */
     global define map<string,any> CreateModule (string cn, string class) ``{
 
-	class = tolower (class);
 	map obj = $[
 	    "cn":		[ cn ],
-	    "objectclass":	add (["top", "susemoduleconfiguration"], class),
+	    "objectClass":	add (["top", "suseModuleConfiguration"], class),
 	    "modified":		"added"
 	];
 	// create some good defaults
@@ -1538,11 +1541,10 @@ The object with the selected DN cannot be created.
 	list templs = [];
 	string templ_cn = "";
 	string default_base = "";
-	if (class == "suseuserconfiguration")
+	if (tolower (class) == "suseuserconfiguration")
 	{
-	    foreach (string dn, map t, (map<string,map<string,any> >)templates, ``{
-		list cls = maplist(string c,t["objectclass"]:[],``(tolower(c)));
-		if (contains (cls, "suseusertemplate"))
+	    foreach (string dn, map t, (map<string,map<string,any> >)templates,{
+		list cls = maplist(string c,t["objectClass"]:[],``(tolower(c)));		if (contains (cls, "suseusertemplate"))
 		    templs = add (templs, dn);
 	    });
 	    if (templs == [])
@@ -1550,15 +1552,15 @@ The object with the selected DN cannot be created.
 	    default_base = sformat ("ou=people,%1", base_dn);
 
 	    // for eDirectory, we have to use cleartext passwords!
-	    if (nds && tolower (obj["susepasswordhash",0]:"") != "clear")
+	    if (nds && tolower (obj["susePasswordHash",0]:"") != "clear")
 	    {
-		obj["susepasswordhash"]	= [ "clear" ];
+		obj["susePasswordHash"]	= [ "clear" ];
 	    }
 	}
-	if (class == "susegroupconfiguration")
+	if (tolower (class) == "susegroupconfiguration")
 	{
-	    foreach (string dn, map t, (map<string,map<string,any> >)templates, ``{
-		list cls = maplist(string c,t["objectclass"]:[],``(tolower(c)));
+	    foreach (string dn, map t, (map<string,map<string,any> >)templates,{
+		list cls = maplist(string c,t["objectClass"]:[],``(tolower(c)));
 		if (contains (cls, "susegrouptemplate"))
 		    templs = add (templs, dn);
 	    });
@@ -1578,15 +1580,15 @@ The object with the selected DN cannot be created.
 	    }
 	    templs = [ tdn ];
 	}
-	obj ["susedefaulttemplate"] = templs;
-	obj ["susedefaultbase"] = [ default_base ];
+	obj ["suseDefaultTemplate"] = templs;
+	obj ["suseDefaultBase"] = [ default_base ];
 	return (map<string,any>) AddMissingAttributes (obj);
     }
 
     /**
      * Searches for DN's of all objects defined by filter in given base ("sub")
      * @param base search base
-     * @param search_filter if filter is empty, "objectclass=*" is used
+     * @param search_filter if filter is empty, "objectClass=*" is used
      * @return list of DN's (list of strings)
      */
     global define list<string> ReadDN (string base, string search_filter) ``{
@@ -1608,14 +1610,14 @@ The object with the selected DN cannot be created.
     }
 
     /**
-     * Returns DN's of groups (objectclass=posixGroup) in given base
+     * Returns DN's of groups (objectClass=posixGroup) in given base
      * @param base LDAP search base
      * @return groups (list of strings)
      */
     global define list GetGroupsDN (string base) ``{
 
 	if (groups_dn == [])
-	    groups_dn = ReadDN (base, "objectclass=posixgroup");
+	    groups_dn = ReadDN (base, "objectClass=posixGroup");
 	return groups_dn;
     }
 
@@ -1635,7 +1637,7 @@ The object with the selected DN cannot be created.
 	    // OK, does not exist
 	    return $[];
 	}
-	list cls = maplist (string c, object["objectclass"]:[],``(tolower (c)));
+	list cls = maplist (string c, object["objectClass"]:[],``(tolower (c)));
 	if (contains (cls, "suseobjecttemplate"))
 	{
 	    // exists as a template -> return object
@@ -1658,7 +1660,7 @@ Select another one.
      */
     global define boolean CommitConfigModules (map modules) ``{
 
-	foreach (string dn, map modmap, (map<string,map<string,any> >)modules, ``{
+	foreach (string dn, map modmap, (map<string,map>) modules, {
 
 	    if (!haskey (config_modules, dn))
 	    {
@@ -1686,7 +1688,7 @@ Select another one.
      */
     global define boolean CommitTemplates (map templs) ``{
 
-	foreach (string dn, map template, (map<string,map<string,any> >)templs, ``{
+	foreach (string dn, map template, (map<string,map>) templs, {
 
 	    if (!haskey (templates, dn))
 	    {
@@ -1720,7 +1722,7 @@ Select another one.
     global define map WriteToLDAP (map objects) ``{
 
 	map ret = $[];
-	foreach (string dn, map object, (map<string,map<string,any> >)objects, ``{
+	foreach (string dn, map object, (map<string,map>) objects, {
 
 	    if (ret != $[])
 		return;
@@ -1729,9 +1731,10 @@ Select another one.
 		object = remove (object, "modified");
 	    else return;
 
+	    // convert the default values back to the LDAP format
 	    if (haskey (object, "default_values"))
 	    {
-		object["susedefaultvalue"] = maplist (string key, string val,
+		object["suseDefaultValue"] = maplist (string key, string val,
 		    (map<string,string>) object["default_values"]:$[], ``{
 		    return sformat ("%1=%2", key, val);
 		});
@@ -1957,19 +1960,19 @@ Select another one.
 
 	    // 1. create suseDefaultBase object if not present
 
-	    string base_dn	= m["susedefaultbase",0]:"";
+	    string base_dn	= m["suseDefaultBase",0]:"";
 	    if (base_dn != "")
 	    {
 		map object = GetLDAPEntry (base_dn);
 		if (object == nil)
 		{
 		    y2warning ("reference to nothing? (%1)", base_dn);
-		    config_modules[dn]	= remove (m, "susedefaultbase");
+		    config_modules[dn]	= remove (m, "suseDefaultBase");
 		}
 		else if (object == $[])
 		{
 		    map default_base	= $[
-			"objectclass"	: [ "top", "organizationalunit"],
+			"objectClass"	: [ "top", "organizationalUnit"],
 			"modified"	: "added",
 			"ou"		: get_cn (base_dn)
 		    ];
@@ -1984,13 +1987,13 @@ Select another one.
 			!WriteLDAP ($[ base_dn : default_base ]))
 		    {
 			y2error ("%1 cannot be created", base_dn);
-			config_modules[dn]	= remove (m, "susedefaultbase");
+			config_modules[dn]	= remove (m, "suseDefaultBase");
 		    }
 		}
 	    }
 
 	    // 2. empty template must be created when there is a reference
-	    string template_dn	=  m["susedefaulttemplate",0]:"";
+	    string template_dn	=  m["suseDefaultTemplate",0]:"";
 	    if (template_dn != "" && ! haskey (templates, template_dn))
 	    {
 		map object = GetLDAPEntry (template_dn);
@@ -1998,8 +2001,8 @@ Select another one.
 		{
 		    y2milestone("template does not exist, creating default...");
 		    string t_class =
-			contains (m["objectclass"]:[],"susegroupconfiguration")?
-			"susegrouptemplate" : "suseusertemplate";
+			contains (m["objectClass"]:[],"suseGroupConfiguration")?
+			"suseGroupTemplate" : "suseUserTemplate";
 		    map template = $[
 			"modified"	: "added",
 			"cn"		: get_cn (template_dn)
@@ -2009,7 +2012,7 @@ Select another one.
 			!WriteLDAP ($[ template_dn: template ]))
 		    {
 			y2error ("%1 cannot be created", template_dn);
-			config_modules[dn] = remove (m, "susedefaulttemplate");
+			config_modules[dn] = remove (m, "suseDefaultTemplate");
 		    }
 		}
 	    }
@@ -2018,7 +2021,7 @@ Select another one.
 	// 3. check references to secondary groups in templates
 	foreach (string dn, map m, (map<string,map>) templates, ``{
 
-	    list groups		= m["susesecondarygroup"]:[];
+	    list groups		= m["suseSecondaryGroup"]:[];
 	    if (size (groups) > 0)
 	    {
 		list new_groups	= [];
@@ -2033,7 +2036,7 @@ Select another one.
 			new_groups	= add (new_groups, group);
 		    }
 		});
-		m["susesecondarygroup"]	= new_groups;
+		m["suseSecondaryGroup"]	= new_groups;
 	    }
 	});
 	return true;
@@ -2080,7 +2083,7 @@ Select another one.
 	    if (ParentExists (base_config_dn))
 	    {
 		map config_object	= $[
-		    "objectclass"	: [ "top", "organizationalunit"],
+		    "objectClass"	: [ "top", "organizationalUnit"],
 		    "modified"		: "added",
 		    "ou"		: get_cn (base_config_dn)
 		];
@@ -2111,7 +2114,7 @@ Select another one.
 
 	// check which objects already exist...
 	foreach (string dn, map m, (map<string,map>) config_modules, ``{
-	    list cl = maplist (string c, m["objectclass"]:[],``(tolower(c)));
+	    list cl = maplist (string c, m["objectClass"]:[],``(tolower(c)));
 	    if (contains (cl, "suseuserconfiguration"))
 	        user_dn = dn;
 	    if (contains (cl, "susegroupconfiguration"))
@@ -2123,7 +2126,7 @@ Select another one.
 	    GetLDAPEntry (user_dn) == $[])
 	{
 	    modules [user_dn] = CreateModule (
-	        get_cn (user_dn), "suseuserconfiguration");
+	        get_cn (user_dn), "suseUserConfiguration");
 	}
 
 	// create group configuration object
@@ -2131,7 +2134,7 @@ Select another one.
 	    GetLDAPEntry (group_dn) == $[])
 	{
 	    modules [group_dn] = CreateModule (
-	        get_cn (group_dn), "susegroupconfiguration");
+	        get_cn (group_dn), "suseGroupConfiguration");
 	}
 
 	CommitConfigModules (modules);
@@ -2140,11 +2143,11 @@ Select another one.
 
 	// create user template...
 	string template_dn	=
-	    get_string (modules[user_dn]:$[], "susedefaulttemplate");
-	if (modules [user_dn,"susedefaulttemplate"]:[] == [])
+	    get_string (modules[user_dn]:$[], "suseDefaultTemplate");
+	if (modules [user_dn,"suseDefaultTemplate"]:[] == [])
 	{
 	    template_dn	= "cn=usertemplate," + base_config_dn;
-	    modules [user_dn,"susedefaulttemplate"]	= [ template_dn ];
+	    modules [user_dn,"suseDefaultTemplate"]	= [ template_dn ];
 	    update_modules		= true;
 	}
 
@@ -2152,16 +2155,16 @@ Select another one.
 	    GetLDAPEntry (template_dn) == $[])
 	{
 	    templs [template_dn]	= CreateTemplate (
-	        get_cn (template_dn), ["suseuserconfiguration"]);
+	        get_cn (template_dn), ["suseUserConfiguration"]);
 	}
 
 	// group template...
 	template_dn	=
-	    get_string (modules[group_dn]:$[], "susedefaulttemplate");
-	if (modules [group_dn,"susedefaulttemplate"]:[] == [])
+	    get_string (modules[group_dn]:$[], "suseDefaultTemplate");
+	if (modules [group_dn,"suseDefaultTemplate"]:[] == [])
 	{
 	    template_dn	= "cn=grouptemplate," + base_config_dn;
-	    modules [group_dn,"susedefaulttemplate"] = [ template_dn ];
+	    modules [group_dn,"suseDefaultTemplate"] = [ template_dn ];
 	    update_modules		= true;
 	}
 
@@ -2169,7 +2172,7 @@ Select another one.
 	    GetLDAPEntry (template_dn) == $[])
 	{
 	    templs [template_dn]	= CreateTemplate (
-	        get_cn (template_dn), ["susegroupconfiguration"]);
+	        get_cn (template_dn), ["suseGroupConfiguration"]);
 	}
 
 	if (update_modules)
@@ -2303,7 +2306,7 @@ Select another one.
 	    // see bugs #suse37665 (pam_filter necessary), #118779 (not always)
 	    if (ReadLdapConfEntry ("pam_filter", "") == "")
 	    {
-		AddLdapConfEntry ("pam_filter", "objectclass=posixAccount");
+		AddLdapConfEntry ("pam_filter", "objectClass=posixAccount");
 	    }
 
 	    // save the user and group bases
@@ -2601,7 +2604,7 @@ exists on the LDAP server. Create it now?
 		if (!ParentExists (dn))
 		    return false;
 		map config_object	= $[
-		    "objectclass"	: [ "top", "organizationalunit"],
+		    "objectClass"	: [ "top", "organizationalUnit"],
 		    "modified"		: "added",
 		    "ou"		: get_cn (dn)
 		];

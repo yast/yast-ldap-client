@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Jul 21 14:12:56 CEST 2008 - jsuchome@suse.cz
+
+- do not lowercase LDAP object names (fate#303596) 
+- 2.17.2
+
+-------------------------------------------------------------------
 Thu Jul 17 11:25:00 CEST 2008 - jsuchome@suse.cz
 
 - LDAP Browser: store configured connections, do not use tabs so

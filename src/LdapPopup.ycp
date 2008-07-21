@@ -87,10 +87,10 @@ import "Wizard";
 	    list bases = (list) SCR::Read (.ldap.search, $[
 		"base_dn"	: "",
 	        "scope"		: 0,
-		"attrs"		: [ "namingcontexts" ]
+		"attrs"		: [ "namingContexts" ]
 	    ]);
 	    if (size (bases) > 0)
-		items = maplist (string dn, bases[0,"namingcontexts"]:[],
+		items = maplist (string dn, bases[0,"namingContexts"]:[],
 		    ``(`item(dn, false, [])));
 	    if (size (items) > 0)
 		UI::ReplaceWidget (`id (`reptree), textmode ?
@@ -605,21 +605,29 @@ global define map PasswordPolicyDialog (map ppolicy) {
 
     // map of attribute names for each tab
     map attributes	= $[
-	`pwchange	: [ "pwdinhistory", "pwdmustchange", "pwdallowuserchange", "pwdsafemodify",
-	    "pwdcheckquality", "pwdminlength" ],
-	`aging		: [ "pwdminage", "pwdmaxage", "pwdexpirewarning", "pwdgraceauthnlimit" ],
-	`lockout	: [ "pwdlockout", "pwdlockoutduration", "pwdmaxfailure",
-	    "pwdfailurecountinterval"],
+	`pwchange	: [
+	    "pwdInHistory", "pwdMustChange", "pwdAllowUserChange",
+	    "pwdSafeModify", "pwdCheckQuality", "pwdMinLength"
+	],
+	`aging		: [
+	    "pwdMinAge", "pwdMaxAge", "pwdExpireWarning", "pwdGraceAuthNLimit"
+	],
+	`lockout	: [
+	    "pwdLockout", "pwdLockoutDuration", "pwdMaxFailure",
+	    "pwdFailureCountInterval"
+	],
     ];
 
-    list time_attributes = [ "pwdminage", "pwdmaxage", "pwdexpirewarning", "pwdlockoutduration",
-	"pwdfailurecountinterval" ];
+    list time_attributes = [
+	"pwdMinAge", "pwdMaxAge", "pwdExpireWarning", "pwdLockoutDuration",
+	"pwdFailureCountInterval"
+    ];
 
     map default_values	= $[
-	"pwdmustchange"		: false,
-	"pwdallowuserchange"	: true,
-	"pwdsafemodify"		: false,
-	"pwdlockout"		: false,
+	"pwdMustChange"		: false,
+	"pwdAllowUserChange"	: true,
+	"pwdSafeModify"		: false,
+	"pwdLockout"		: false,
     ];
 
     // maximal value of IntFields
@@ -655,44 +663,51 @@ global define map PasswordPolicyDialog (map ppolicy) {
 
     // generate the term of password policy tab and update the help text
     void set_password_policies_term () {
-	integer	pwdcheckquality	= tointeger (ppolicy["pwdcheckquality"]:"0");
+	integer	pwdcheckquality	= tointeger (ppolicy["pwdCheckQuality"]:"0");
 	term tab_cont	= `Top (`HBox (`HSpacing (0.5), `VBox (
 	    `VSpacing (0.8),
-	    // IntField label
-	    `IntField (`id ("pwdinhistory"), _("Ma&ximum Number of Passwords Stored in History"),
-		0, max, tointeger (ppolicy["pwdinhistory"]:"0")),
+	    `IntField (`id ("pwdInHistory"),
+		// IntField label
+		_("Ma&ximum Number of Passwords Stored in History"),
+		0, max, tointeger (ppolicy["pwdInHistory"]:"0")),
 	    `VSpacing (0.4),
-	    // checkbox label
-	    `Left (`CheckBox (`id ("pwdmustchange"), _("U&ser Must Change Password after Reset"),
-		ppolicy["pwdmustchange"]:false)),
+	    `Left (`CheckBox (`id ("pwdMustChange"),
+		// checkbox label
+		_("U&ser Must Change Password after Reset"),
+		ppolicy["pwdMustChange"]:false)),
 	    `VSpacing (0.2),
-	    // checkbox label
-	    `Left (`CheckBox (`id ("pwdallowuserchange"), _("&User Can Change Password"),
-		ppolicy["pwdallowuserchange"]:true)),
+	    `Left (`CheckBox (`id ("pwdAllowUserChange"),
+		// checkbox label
+		_("&User Can Change Password"),
+		ppolicy["pwdAllowUserChange"]:true)),
 	    `VSpacing (0.2),
-	    // checkbox label
-	    `Left (`CheckBox (`id ("pwdsafemodify"), _("&Old Password Required for Password Change"),
-		ppolicy["pwdsafemodify"]:false)),
+	    `Left (`CheckBox (`id ("pwdSafeModify"),
+		// checkbox label
+		_("&Old Password Required for Password Change"),
+		ppolicy["pwdSafeModify"]:false)),
 	    `VSpacing (0.4),
-	    `HBox (`HSpacing (2), `Frame (_("Password Quality Checking"), `VBox (
+	    // frame label
+	    `HBox (`HSpacing (2), `Frame (_("Password Quality Checking"), `VBox(
 		`VSpacing (0.5),
-		`RadioButtonGroup (`id("pwdcheckquality"), `VBox (
+		`RadioButtonGroup (`id("pwdCheckQuality"), `VBox (
 		    `Left (`RadioButton (`id(0), `opt (`notify),
 			_("&No Checking"), pwdcheckquality == 0)),
 		    `Left (`RadioButton(`id(1), `opt (`notify),
-			_("Acc&ept Uncheckable Passwords"), pwdcheckquality == 1)),
+			_("Acc&ept Uncheckable Passwords"),
+			pwdcheckquality == 1)),
 		    `Left (`RadioButton(`id(2), `opt (`notify),
-			_("&Only Accept Checked Passwords"), pwdcheckquality == 2))
+			_("&Only Accept Checked Passwords"),
+			pwdcheckquality == 2))
 		)),
 		`VSpacing (0.4),
 		// IntField label
-		`IntField (`id ("pwdminlength"), _("&Minimum Password Length"), 0, max,
-		    tointeger (ppolicy["pwdminlength"]:"0"))
+		`IntField (`id ("pwdMinLength"), _("&Minimum Password Length"),
+		    0, max, tointeger (ppolicy["pwdMinLength"]:"0"))
 	    )))
 	), `HSpacing (0.5)));
 
 	UI::ReplaceWidget (`tabContents, tab_cont);
-	UI::ChangeWidget (`id ("pwdminlength"), `Enabled, pwdcheckquality > 0);
+	UI::ChangeWidget (`id ("pwdMinLength"), `Enabled, pwdcheckquality > 0);
 	return;
     }
 
@@ -728,15 +743,16 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	term tab_cont = `Top (`HBox (`HSpacing (0.5), `VBox (
 	    `VSpacing (0.7),
 	    // frame label
-	    time_dialog ("pwdminage", _("Minimum Password Age")),
+	    time_dialog ("pwdMinAge", _("Minimum Password Age")),
 	    `VSpacing (0.4),
 	    // frame label
-	    time_dialog ("pwdmaxage", _("Maximum Password Age")),
+	    time_dialog ("pwdMaxAge", _("Maximum Password Age")),
 	    `VSpacing (0.4),
-	    // frame label
-	    time_dialog ("pwdexpirewarning", _("Time before Password Expiration to Issue Warning")),
+	    time_dialog ("pwdExpireWarning",
+		// frame label
+		_("Time before Password Expiration to Issue Warning")),
 	    `VSpacing (0.2),
-	    `IntField (`id ("pwdgraceauthnlimit"),
+	    `IntField (`id ("pwdGraceAuthNLimit"),
 		// IntField label
 		_("Allowed Uses of an Expired Password"), 0, max, 0)
 	), `HSpacing (0.5)));
@@ -747,29 +763,34 @@ global define map PasswordPolicyDialog (map ppolicy) {
     // generate the term of lockout aging tab
     void set_lockout_policies_term () {
 
-	boolean pwdlockout	= ppolicy["pwdlockout"]:false;
+	boolean pwdlockout	= ppolicy["pwdLockout"]:false;
 
 	term tab_cont = `Top (`HBox (`HSpacing (0.5), `VBox (
 	    `VSpacing (0.8),
-	    // check box label
-	    `Left (`CheckBox (`id ("pwdlockout"), `opt (`notify), _("Enable Password Locking"),
+	    `Left (`CheckBox (`id ("pwdLockout"), `opt (`notify),
+		// check box label
+		_("Enable Password Locking"),
 		pwdlockout)),
 	    `VSpacing (0.4),
-	    // intField label
-	    `IntField (`id ("pwdmaxfailure"), _("Bind Failures to Lock the Password"),
-		0, max, tointeger (ppolicy["pwdmaxfailure"]:"0")),
+	    `IntField (`id ("pwdMaxFailure"),
+		// intField label
+		_("Bind Failures to Lock the Password"),
+		0, max, tointeger (ppolicy["pwdMaxFailure"]:"0")),
 	    // frame label
-	    time_dialog ("pwdlockoutduration", _("Password Lock Duration")),
+	    time_dialog ("pwdLockoutDuration", _("Password Lock Duration")),
 	    `VSpacing (0.4),
-	    // frame label
-	    time_dialog ("pwdfailurecountinterval", _("Bind Failures Cache Duration"))
+	    time_dialog ("pwdFailureCountInterval",
+		// frame label
+		_("Bind Failures Cache Duration"))
 	), `HSpacing (0.5)));
 
 	UI::ReplaceWidget (`tabContents, tab_cont);
-	UI::ChangeWidget (`id ("pwdmaxfailure"), `Enabled, pwdlockout);
+	UI::ChangeWidget (`id ("pwdMaxFailure"), `Enabled, pwdlockout);
 	foreach (string suffix, [ "d", "h", "m", "s" ], {
-	    UI::ChangeWidget (`id ("pwdlockoutduration" + suffix), `Enabled, pwdlockout);
-	    UI::ChangeWidget (`id ("pwdfailurecountinterval" + suffix), `Enabled, pwdlockout);
+	    UI::ChangeWidget (`id ("pwdLockoutDuration" + suffix),
+		`Enabled, pwdlockout);
+	    UI::ChangeWidget (`id ("pwdFailureCountInterval" + suffix),
+		`Enabled, pwdlockout);
 	});
 	return;
     }
@@ -781,7 +802,8 @@ global define map PasswordPolicyDialog (map ppolicy) {
 
     // dialog label
     Wizard::SetContentsButtons (_("Password Policy Configuration"), contents,
-	help_text + tabs_help_text[current_tab]:"", Label::CancelButton(), Label::OKButton());
+	help_text + tabs_help_text[current_tab]:"",
+	Label::CancelButton(), Label::OKButton());
     Wizard::HideAbortButton();
 
     set_password_policies_term ();
@@ -790,7 +812,8 @@ global define map PasswordPolicyDialog (map ppolicy) {
     {
 	result		= UI::UserInput ();
 
-	if (is(result,symbol) && contains ([`back, `cancel, `abort], (symbol)result))
+	if (is(result,symbol) &&
+	    contains ([`back, `cancel, `abort], (symbol)result))
 	    break;
 
 	// save the values from UI
@@ -806,7 +829,8 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	    ppolicy[attr]	= val;
 	});
 
-	if ((result == `pwchange || result == `aging || result == `lockout) && result!= current_tab)
+	if ((result == `pwchange || result == `aging || result == `lockout) &&
+	    result!= current_tab)
 	{
 	    if (result == `pwchange)
 		set_password_policies_term ();
@@ -825,7 +849,7 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	    boolean cont = false;
 
 	    // check the template required attributes...
-	    foreach (string oc, ppolicy["objectclass"]:[], ``{
+	    foreach (string oc, ppolicy["objectClass"]:[], ``{
 		if (cont) return;
 		foreach (string attr, Ldap::GetRequiredAttributes (oc), ``{
 		    any val = ppolicy[attr]:nil;
@@ -844,15 +868,17 @@ Enter a value."), attr));
 	// now solve events inside the tabs
 	if (current_tab == `pwchange && is (result, integer))
 	{
-	    UI::ChangeWidget (`id ("pwdminlength"), `Enabled, result != 0);
+	    UI::ChangeWidget (`id ("pwdMinLength"), `Enabled, result != 0);
 	}
-	if (current_tab == `lockout && result == "pwdlockout")
+	if (current_tab == `lockout && result == "pwdLockout")
 	{
-	    boolean pwdlockout = (boolean) UI::QueryWidget (`id ("pwdlockout"), `Value);
-	    UI::ChangeWidget (`id ("pwdmaxfailure"), `Enabled, pwdlockout);
+	    boolean pwdlockout = (boolean) UI::QueryWidget (`id ("pwdLockout"), `Value);
+	    UI::ChangeWidget (`id ("pwdMaxFailure"), `Enabled, pwdlockout);
 	    foreach (string suffix, [ "d", "h", "m", "s" ], {
-		UI::ChangeWidget (`id ("pwdfailurecountinterval" + suffix), `Enabled, pwdlockout);
-		UI::ChangeWidget (`id ("pwdlockoutduration" + suffix), `Enabled, pwdlockout);
+		UI::ChangeWidget (`id ("pwdFailureCountInterval" + suffix),
+		    `Enabled, pwdlockout);
+		UI::ChangeWidget (`id ("pwdLockoutDuration" + suffix),
+		    `Enabled, pwdlockout);
 	    });
 	}
     }

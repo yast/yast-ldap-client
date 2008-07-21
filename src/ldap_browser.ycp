@@ -151,10 +151,10 @@ Discard these changes?
 	    list bases = (list) SCR::Read (.ldap.search, $[
 		"base_dn"	: "",
 	        "scope"		: 0,
-		"attrs"		: [ "namingcontexts" ]
+		"attrs"		: [ "namingContexts" ]
 	    ]);
 	    if (size (bases) > 0)
-		tree_items = maplist (string dn, bases[0,"namingcontexts"]:[], {
+		tree_items = maplist (string dn, bases[0,"namingContexts"]:[], {
 		    topdns[dn]	= true;
 		    return `item(`id(dn), dn, false, []);
 		});
@@ -163,7 +163,7 @@ Discard these changes?
 		    `Tree (`id(`tree), root_dn, tree_items) :
 		    `Tree (`id(`tree), `opt(`notify), root_dn, tree_items));
 	    if (size (topdns) == 1)
-		root_dn	= bases[0,"namingcontexts",0]:"";
+		root_dn	= bases[0,"namingContexts",0]:"";
 	}
 
 	if (textmode)
@@ -181,7 +181,6 @@ Discard these changes?
 
 	// generate table items from already existing values
         foreach (string attr, any val, (map<string,any>) data, {
-	    string at = tolower (attr);
 	    if (is (val, map) || val == nil)
 		return;
 	    list<string> value = [];
@@ -192,27 +191,26 @@ Discard these changes?
 	    if (is (val, byteblock) ||
 		(is (val, list) && is (value[0]:nil, byteblock)))
 	    {
-		y2warning ("binary value (%1) cannot be edited", at);
+		y2warning ("binary value (%1) cannot be edited", attr);
 		return;
 	    }
 	    else if (is (val, integer))
 	    {
 		value = [ sformat ("%1", val) ];
-		data [at] = value;
+		data [attr] = value;
 	    }
 	    else if (is (val, string))
 	    {
 		value = [ (string)val ];
-		data [at] = value;
+		data [attr] = value;
 	    }
-	    items = add (items,`item (`id(at), at, mergestring(value,",")));
-//	    items = add (items,`item (`id(attr), attr, mergestring(value,",")));
+	    items = add (items,`item (`id(attr), attr, mergestring(value,",")));
 	});
 
 	// generate table items with empty values
 	// (not set for this user/group yet)
 	// we need to read available attributes from Ldap
-	foreach (string class, (list<string>) sort (data["objectclass"]:[]), {
+	foreach (string class, (list<string>) sort (data["objectClass"]:[]), {
 	    foreach (string at,(list<string>)Ldap::GetAllAttributes (class), {
 		if (!haskey (data, at))
 		{
@@ -474,7 +472,7 @@ Discard these changes?
     while (true) {
 
 	result = (symbol) UI::UserInput ();
-y2internal ("result:%1", result);
+
 	if (result == `cancel && !Popup::ReallyAbort (false))
 	    result = `not_next;
 
@@ -577,7 +575,7 @@ y2internal ("result:%1", result);
 	    if (Modified ())
 	    {
 		boolean cont	= false;
-		foreach (string oc, data["objectclass"]:[], {
+		foreach (string oc, data["objectClass"]:[], {
 		    if (cont) return;
 		    foreach (string attr, Ldap::GetRequiredAttributes (oc), {
 			any val = tmp_data[attr]:nil;

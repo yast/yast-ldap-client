@@ -666,7 +666,7 @@ user home directories.</p>
 		map<string,map> pp = (map<string,map>) SCR::Read (.ldap.search,
 		$[
 		    "base_dn"		: base_dn,
-		    "filter"		: "objectclass=pwdpolicy",
+		    "filter"		: "objectClass=pwdPolicy",
 		    "scope"		: 2,
 		    "map"		: true,
 		    "not_found_ok"	: true
@@ -1042,8 +1042,8 @@ Please select another one."), new_dn));
 		if (!haskey (ppolicies_orig, dn))
 		{
 		    ppolicy["modified"]		= "added";
-		    ppolicy["pwdattribute"]	= "userpassword";
-		    ppolicy["objectclass"]	= ["pwdpolicy", "namedobject"];
+		    ppolicy["pwdAttribute"]	= "userPassword";
+		    ppolicy["objectClass"]	= ["pwdPolicy", "namedObject"];
 		    ppolicy["cn"]		= get_cn (dn);
 		    Ldap::ppolicies[dn]	= ppolicy;
 
@@ -1208,7 +1208,8 @@ removing current ones.</p>
 
 	if (Ldap::SingleValued (attr) || attr == "cn")
 	    return val[0]:"";
-	else if (contains (["susesecondarygroup", "susedefaulttemplate"], attr))
+	else if (contains (
+	    ["susesecondarygroup", "susedefaulttemplate"], tolower(attr)))
 	    return mergestring (val, " ");
 	else
 	    return mergestring (val, ",");
@@ -1290,9 +1291,9 @@ removing current ones.</p>
 	    list<string> value	= template [attr]:[];
 	    list offer		= [];
 	    list conflicts	= [];
-	    if (attr == "susesecondarygroup")
+	    if (tolower (attr) == "susesecondarygroup")
 		offer		= Ldap::GetGroupsDN (Ldap::GetBaseDN());
-	    if (attr == "susenamingattribute")
+	    if (tolower (attr) == "susenamingattribute")
 	    {
 		list classes	= Ldap::GetDefaultObjectClasses (template);
 		offer		= Ldap::GetObjectAttributes (classes);
@@ -1312,7 +1313,7 @@ removing current ones.</p>
 		"conflicts"	: conflicts,
 		"single"	: Ldap::SingleValued (attr) || attr == "cn",
 		"offer"		: offer,
-		"browse"	: attr == "susesecondarygroup"
+		"browse"	: tolower (attr) == "susesecondarygroup"
 	    ]);
 
 	    if (value == template[attr]:[])
@@ -1329,7 +1330,7 @@ removing current ones.</p>
 	    list available = Ldap::GetObjectAttributes (classes);
 	    // filter out objectclass
 	    map dfl = LdapPopup::AddDefaultValue (sort (available),
-		add (conflicts, "objectclass"));
+		add (conflicts, "objectClass"));
 	    if (dfl["value"]:"" == "")
 		continue;
 	    string attr = dfl["attr"]:"";
@@ -1381,7 +1382,7 @@ removing current ones.</p>
 	    boolean cont = false;
 
 	    // check the template required attributes...
-	    foreach (string oc, template["objectclass"]:[], ``{
+	    foreach (string oc, template["objectClass"]:[], ``{
 		if (cont) return;
 		foreach (string attr, Ldap::GetRequiredAttributes (oc), ``{
 		    any val = template[attr]:nil;
@@ -1450,7 +1451,7 @@ click <b>Configure Template</b>.
 	    dn		= tolower (dn);
 	foreach (string attr, any value, modules[dn]:$[], ``{
 	    any val = value;
-	    if (contains (["objectclass", "modified", "old_dn"], attr))
+	    if (contains (["objectclass", "modified", "old_dn"], tolower(attr)))
 		return;
 	    if (is (value, list))
 	    {
@@ -1506,7 +1507,9 @@ click <b>Configure Template</b>.
     define void replace_templates_items () ``{
 
 	list items = maplist (string dn,
-	    modules[current_dn,"susedefaulttemplate"]:[], ``(`item (`id(dn), dn)));
+	    modules[current_dn,"suseDefaultTemplate"]:[],
+	    ``(`item (`id(dn), dn))
+	);
 	UI::ReplaceWidget (`id(`rp_templs),
 	    `PushButton (`id(`templ_pb), `opt(`key_F7),
 		// button label
@@ -1563,11 +1566,11 @@ click <b>Configure Template</b>.
 	string attr	= (string)UI::QueryWidget (`id(`table), `CurrentItem);
 
 	// check the correctness of entry
-	if (contains (modules [current_dn, "susedefaulttemplate"]:[], result) ||
+	if (contains (modules [current_dn, "suseDefaultTemplate"]:[], result) ||
 	    result == `next || result == `modules || result == `new)
 	{
-	    foreach (string oc, modules [current_dn, "objectclass"]:[], ``{
-		foreach (string attr, Ldap::GetRequiredAttributes (oc), ``{
+	    foreach (string oc, modules [current_dn, "objectClass"]:[], {
+		foreach (string attr, Ldap::GetRequiredAttributes (oc), {
 		    any val = modules [current_dn, attr]:nil;
 		    if (val == nil || val == [] || val == "") {
 			//error popup, %1 is attribute name
@@ -1619,7 +1622,7 @@ Enter a value."), attr));
 	    foreach (string dn, map mod, modules, ``{
 		if (mod["modified"]:"" == "deleted")
 		    return;
-		foreach (string cl, mod["objectclass"]:[], ``{
+		foreach (string cl, mod["objectClass"]:[], {
 		    available = filter (string c, available, ``(
 			tolower (c) != tolower (cl)));
 		});
@@ -1658,9 +1661,9 @@ of each type, so you cannot add a new one."));
 	    list conflicts	= [];
 	    if (attr == "cn")
 		conflicts = names;
-	    if (attr == "susedefaulttemplate")
+	    if (tolower (attr) == "susedefaulttemplate")
 		offer		= templates_dns;
-	    else if (attr == "susepasswordhash")
+	    else if (tolower (attr) == "susepasswordhash")
 		offer		= Ldap::hash_schemas;
 
 	    value = LdapPopup::EditAttribute ($[
@@ -1671,7 +1674,8 @@ of each type, so you cannot add a new one."));
 		"offer"		: offer,
 		"browse"	:
 		    // TODO function, that checks if value should be DN
-		    (attr == "susedefaultbase" || attr == "susedefaulttemplate")
+		    (tolower (attr) == "susedefaultbase" ||
+		     tolower (attr) == "susedefaulttemplate")
 	    ]);
 
 	    if (value == modules [current_dn, attr]:[]) //nothing was changed
@@ -1701,13 +1705,13 @@ of each type, so you cannot add a new one."));
 		current_dn = get_dn (cn);
 		replace_module_names ();
 	    }
-	    if (attr == "susedefaulttemplate")
+	    if (tolower (attr) == "susedefaulttemplate")
 		replace_templates_items ();
 	}
 	// configure template
 	if (result == `templ_pb)
 	{
-	    string template_dn = modules [current_dn, "susedefaulttemplate", 0]:"";
+	    string template_dn = modules[current_dn,"suseDefaultTemplate",0]:"";
 	    Ldap::current_template_dn = template_dn;
 	    map template = (map) eval (templates [template_dn]:$[]);
 	    // template not loaded, check DN:
@@ -1721,7 +1725,7 @@ of each type, so you cannot add a new one."));
 		    if (!Ldap::ParentExists (template_dn))
 			continue;
 		    template = Ldap::CreateTemplate (get_cn (template_dn),
-			modules [current_dn, "objectclass"]:[]);
+			modules [current_dn, "objectClass"]:[]);
 		}
 		templates_dns = add (templates_dns, template_dn);
 	    }
@@ -1744,8 +1748,8 @@ of each type, so you cannot add a new one."));
 		    dn != template_dn));
 		templates_dns = add (templates_dns, new_dn);
 		// update list of templates
-		modules [current_dn, "susedefaulttemplate"] = maplist (
-		    string dn, modules [current_dn, "susedefaulttemplate"]:[],``{
+		modules [current_dn, "suseDefaultTemplate"] = maplist (
+		    string dn, modules [current_dn, "suseDefaultTemplate"]:[], {
 			if (dn == template_dn) return new_dn;
 			return dn;
 		});

@@ -11,8 +11,8 @@ Requires:	yast2 >= 2.15.17
 
 Requires:	yast2-network
 
-# check for tls_error
-Requires:	yast2-ldap >= 2.15.1
+# removed lowercasing of LDAP object names
+Requires:	yast2-ldap >= 2.17.1
 
 # new API of Pam.ycp
 Requires:	yast2-pam >= 2.14.0

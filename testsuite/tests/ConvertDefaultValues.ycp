@@ -11,9 +11,9 @@
     import "Ldap";
 
     map template	= $[
-	"susedefaultvalue"	: [
-	    "homedirectory=/home/%uid",
-	    "loginshell=/bin/bash",
+	"suseDefaultValue"	: [
+	    "homeDirectory=/home/%uid",
+	    "loginShell=/bin/bash",
 	    "testvalue=first=second",
 	    "novalue"
 	]
