@@ -15,7 +15,9 @@
 
     import "Arch";
     import "Autologin";
+    import "FileUtils";
     import "DNS";
+    import "Hostname";
     import "Label";
     import "Message";
     import "Mode";
@@ -669,6 +671,35 @@
 
 	old_base_dn = base_dn;
 	old_server = server;
+
+	// ask DNS for LDAP server address if none is defined
+	if ((server == "" ||
+	    (server == "127.0.0.1" && base_dn == "dc=example,dc=com"))
+	    && FileUtils::Exists ("/usr/bin/dig") && !Mode::test())
+	{
+	    string domain	= Hostname::CurrentDomain ();
+	    map out = (map) SCR::Execute (.target.bash_output, sformat ("dig SRV _ldap._tcp.%1 +short", domain));
+	    string first = splitstring (out["stdout"]:"", "\n")[0]:"";
+	    string srv	= splitstring (first, " ")[3]:"";
+	    if (srv != "")
+	    {
+		// remove dot from the end of line
+		server	= substring (srv, 0, size (srv) - 1);
+		y2milestone ("LDAP server address acquired from DNS...");
+		// now, check if there is reasonable 'default' DN
+		string dn	= "";
+		foreach (string part, splitstring (domain, "."), {
+		    if (dn != "")
+			dn	= dn + ",";
+		    dn	= dn + "dc=" + part;
+		});
+		if (0 == SCR::Execute (.target.bash, sformat ("ldapsearch -x -h %1 -s base -b '' namingContexts | grep -i '^namingContexts: %2'", server, dn)))
+		{
+		    y2milestone ("proposing DN %1 based on %2", dn, domain);
+		    base_dn	= dn;
+		}
+	    }
+	}
 
 	ldap_v2 = (ReadLdapConfEntry ("ldap_version", "3") == "2");
 	ldap_tls = (ReadLdapConfEntry ("ssl", "no") == "start_tls");

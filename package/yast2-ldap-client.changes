@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Aug 13 09:22:31 CEST 2008 - jsuchome@suse.cz
+
+- ask DNS for availability of LDAP server (fate#301340)
+- 2.17.3
+
+-------------------------------------------------------------------
 Mon Jul 21 14:12:56 CEST 2008 - jsuchome@suse.cz
 
 - do not lowercase LDAP object names (fate#303596) 
