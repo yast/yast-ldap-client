@@ -42,7 +42,6 @@ import "Wizard";
 	    `HBox (
 		`HSpacing (),
 		`ReplacePoint (`id (`reptree), `Tree (`id(`tree), root_dn, [])),
-		`ReplacePoint (`id (`repbuttons), `Empty ()),
 		`HSpacing ()
 	    ),
 	    `HBox (
@@ -64,7 +63,7 @@ import "Wizard";
 	list<term> items	= [];
 	list<string> out	= (list<string>) SCR::Read (.ldap.search, $[
 		"base_dn"	: root_dn,
-		"scope"		: 1,
+		"scope"		: root_dn != "" ? 0 : 1,
 		"dn_only"	: true,
 		"not_found_ok"	: true ]
 	);
@@ -81,6 +80,8 @@ import "Wizard";
 	    UI::ReplaceWidget (`id (`reptree), textmode ?
 		`Tree (`id(`tree), root_dn, items) :
 		`Tree (`id(`tree), `opt(`notify), root_dn, items));
+	    // no item is selected
+	    UI::ChangeWidget (`tree, `CurrentItem, nil);
 	}
 	else if (root_dn == "")
 	{
@@ -754,7 +755,9 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	    `VSpacing (0.2),
 	    `IntField (`id ("pwdGraceAuthNLimit"),
 		// IntField label
-		_("Allowed Uses of an Expired Password"), 0, max, 0)
+		_("Allowed Uses of an Expired Password"), 0, max,
+		tointeger (ppolicy["pwdGraceAuthNLimit"]:"0")
+	    )
 	), `HSpacing (0.5)));
 	UI::ReplaceWidget (`tabContents, tab_cont);
 	return;
