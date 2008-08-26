@@ -656,10 +656,10 @@ user home directories.</p>
 	{
 	    list schemas = (list)SCR::Read (.ldap.search, $[
 		"base_dn":  "",
-		"attrs":    [ "subschemasubentry" ],
+		"attrs":    [ "subschemaSubentry" ],
 		"scope":    0,
 	    ]);
-	    string schema_dn = schemas[0,"subschemasubentry",0]:"";
+	    string schema_dn = schemas[0,"subschemaSubentry",0]:"";
 	    if (schemas != nil && schema_dn != "" &&
 		SCR::Execute (.ldap.schema, $[ "schema_dn": schema_dn ])== true)
 	    {
