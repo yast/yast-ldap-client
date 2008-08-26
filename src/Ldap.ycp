@@ -2376,7 +2376,17 @@ Select another one.
 	    if (!oes)
 	    {
 		// pam settigs
-		Pam::Add ("ldap");
+		if (Pam::Enabled("krb5"))
+		{
+		    // If kerberos is used for authentication we configure
+		    // pam_ldap in a way that we use only the account checking.
+		    // Other configuration would mess up password changing
+		    Pam::Add ("ldap-account_only");
+		}
+		else
+		{
+		    Pam::Add ("ldap");
+		}
 		// modify sources in /etc/nsswitch.conf
 		Nsswitch::WriteDb ("passwd", ["compat"]);
 		Nsswitch::WriteDb ("passwd_compat", (list<string>)
@@ -2425,7 +2435,14 @@ Select another one.
 
 	    Nsswitch::Write ();
 
-	    Pam::Remove ("ldap");
+	    if (Pam::Enabled("ldap"))
+	    {
+		Pam::Remove ("ldap");
+	    }
+	    else if(Pam::Enabled("ldap-account_only"))
+	    {
+		Pam::Remove ("ldap-account_only");
+	    }
 
 	    WriteLdapConfEntry ("tls_checkpeer", nil);
 	}
