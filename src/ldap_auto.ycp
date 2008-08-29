@@ -67,6 +67,9 @@ else if (func == "Change") {
 else if (func == "Export") {
     ret = Ldap::Export();
 }
+else if (func == "Read") {
+    ret = Ldap::Read ();
+}
 /**
  * Return if configuration  was changed
  * return boolean
