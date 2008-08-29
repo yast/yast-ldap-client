@@ -637,6 +637,7 @@ user home directories.</p>
 
     list ppolicy_list	= [];
 
+    boolean ppolicies_enabled	= false;
     map<string,map> ppolicies	= $[];
     map<string,map> ppolicies_orig= $[];
     list<string> ppolicies_deleted	= []; // list of DN
@@ -654,6 +655,11 @@ user home directories.</p>
 	    ])
 	)
 	{
+	    ppolicies_enabled	= (boolean) SCR::Execute (.ldap.ppolicy, $[
+		"hostname"	: Ldap::GetFirstServer (Ldap::server),
+		"bind_dn"	: Ldap::GetBaseDN ()
+	    ]);
+
 	    list schemas = (list)SCR::Read (.ldap.search, $[
 		"base_dn":  "",
 		"attrs":    [ "subschemaSubentry" ],
@@ -832,12 +838,9 @@ user home directories.</p>
 	if (Mode::config ())
 	    UI::ChangeWidget (`id(`configure), `Enabled, false);
 
-	if (size (ppolicies) < 1)
-	{
-	    foreach (symbol s, [ `ppolicy_table, `add, `edit, `delete ], {
-		UI::ChangeWidget (`id (s), `Enabled, false);
-	    });
-	}
+	foreach (symbol s, [ `ppolicy_table, `add, `edit, `delete ], {
+	    UI::ChangeWidget (`id (s), `Enabled, ppolicies_enabled);
+	});
     }
 
 

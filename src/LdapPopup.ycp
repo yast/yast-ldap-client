@@ -675,7 +675,7 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	    `Left (`CheckBox (`id ("pwdMustChange"),
 		// checkbox label
 		_("U&ser Must Change Password after Reset"),
-		ppolicy["pwdMustChange"]:false)),
+		ppolicy["pwdMustChange"]:true)),
 	    `VSpacing (0.2),
 	    `Left (`CheckBox (`id ("pwdAllowUserChange"),
 		// checkbox label
