@@ -94,9 +94,12 @@ import "Wizard";
 		items = maplist (string dn, bases[0,"namingContexts"]:[],
 		    ``(`item(dn, false, [])));
 	    if (size (items) > 0)
+	    {
 		UI::ReplaceWidget (`id (`reptree), textmode ?
 		    `Tree (`id(`tree), root_dn, items) :
 		    `Tree (`id(`tree), `opt(`notify), root_dn, items));
+		UI::ChangeWidget (`tree, `CurrentItem, nil);
+	    }
 	}
 
 	if (textmode)

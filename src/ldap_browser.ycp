@@ -393,7 +393,7 @@ Discard these changes?
 		`VSpacing (0.2),
 		`InputField (`id (`new),
 		    // InputField label
-		    _("Enter the name of new LDAP connection")),
+		    _("Enter the name of the new LDAP connection")),
 		`HBox (
 		    `PushButton (`id(`ok), `opt(`default), Label::OKButton ()),
 		    `PushButton (`id(`cancel), Label::CancelButton ())
