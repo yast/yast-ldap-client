@@ -11,6 +11,7 @@
     // testedfiles: Ldap.ycp
 
     map READ = $[
+	"target" : $[ "size" : -1 ],
 	"product" : $[ "features" :
 	    $[ "EVMS_CONFIG" : "nazdar" ],
 	],

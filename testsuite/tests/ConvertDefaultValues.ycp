@@ -7,6 +7,14 @@
 
 {
     // testedfiles: Ldap.ycp
+    include "testsuite.ycp";
+    map READ = $[
+	"target" : $[
+	    "tmpdir" : "/tmp",
+	    "stat" : $[],
+	],
+    ];
+    TESTSUITE_INIT ([READ], 0);
     import "Testsuite";
     import "Ldap";
 
@@ -18,6 +26,6 @@
 	    "novalue"
 	]
     ];
-    Testsuite::Test (``(Ldap::ConvertDefaultValues (template)), [], 0);
+    Testsuite::Test (``(Ldap::ConvertDefaultValues (template)), [READ], 0);
 }
 

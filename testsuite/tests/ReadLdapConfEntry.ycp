@@ -25,6 +25,9 @@
 	"product" : $[ "features" :
 	    $[ "EVMS_CONFIG" : "nazdar" ],
 	],
+	"target" : $[
+            "size" : -1,
+        ],
     ];
 
     TESTSUITE_INIT([READ,$[],$[]], nil);

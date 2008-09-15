@@ -10,7 +10,9 @@
     include "testsuite.ycp";
     // testedfiles: Ldap.ycp
 
-    map READ =	$[ "ldap": $[
+    map READ =	$[ "target" : $[
+            "size" : -1,
+        ],"ldap": $[
 	"error": $[
 	    "msg": "Bind failed",
 	],

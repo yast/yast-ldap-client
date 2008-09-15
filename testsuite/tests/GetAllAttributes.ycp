@@ -10,7 +10,12 @@
     include "testsuite.ycp";
     // testedfiles: Ldap.ycp
 
-    map READ1 =	$[ "ldap": $[
+    map READ1 =	$[ 
+	"target" : $[
+	    "size" : -1,
+	],
+
+      "ldap": $[
 	"schema": $[
 	    "oc": $[
 		"desc":"User object template",
@@ -73,7 +78,7 @@
 	]
 	*/
     ];
-
+    
     DUMP ("==================================================");
     DUMP (sformat ("===== current object_classes (keys):\n %1",
 	maplist (string k, map v, (map<string,map<string,any> >) Ldap::object_classes, ``(k))));
@@ -93,7 +98,11 @@
     DUMP ("===== looking for non-existent class =============");
     DUMP ("==================================================");
 
-    map READ2 =	$[ "ldap": $[
+    map READ2 =	$[
+	"target" : $[
+	    "size" : -1,
+	],
+       "ldap": $[
 	"schema": $[
 	    "oc": nil
 	],
