@@ -7,15 +7,16 @@
 
 {
     // testedfiles: Ldap.ycp
-    include "testsuite.ycp";
+    import "Testsuite";
+
     map READ = $[
 	"target" : $[
 	    "tmpdir" : "/tmp",
 	    "stat" : $[],
 	],
     ];
-    TESTSUITE_INIT ([READ], 0);
-    import "Testsuite";
+    Testsuite::Init ([READ], 0);
+
     import "Ldap";
 
     map template	= $[
