@@ -1938,26 +1938,6 @@ Select another one.
 	    }
 	}
 
-	file	= "/etc/group";
-	what	= "+:::";
-	plus_lines	= (list<string>) SCR::Read (.passwd.group.pluslines);
-
-	if (!contains (plus_lines, what))
-	{
-	    plus_lines	= add (plus_lines, what);
-
-	    if ((boolean) SCR::Write (.passwd.group.pluslines, plus_lines))
-	    {
-		SCR::Execute (.target.bash,
-		    sformat("/bin/cp %1 %1.YaST2save",file));
-		// empty map as a parameter means "use data you have read"
-		if (!SCR::Write (.passwd.groups, $[]))
-		{
-		    Report::Error (Message::ErrorWritingFile (file));
-		    return false;
-		}
-	    }
-	}
 	file	= "/etc/shadow";
 	what	= "+";
 	plus_lines	= (list<string>) SCR::Read (.passwd.shadow.pluslines);
