@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Sep 25 09:07:58 CEST 2008 - jsuchome@suse.cz
+
+- do not restart dbus service, reload it (bnc#429520)
+- 2.17.10
+
+-------------------------------------------------------------------
 Thu Sep 18 14:14:20 CEST 2008 - jsuchome@suse.cz
 
 - do not write + lines to /etc/group (bnc#427288)
