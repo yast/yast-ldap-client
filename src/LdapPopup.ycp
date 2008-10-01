@@ -577,7 +577,7 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	_("<p>If the existing password must be provided along with the new password, check <b>Old Password Required for Password Change</b>.</p>") +
 
 	// help text for pwdCheckQuality attribute
-	_("<p>Select whether the password quality should be verified while passwords are modified or added. Select <b>No Checking</b> if passwords should not be checked at all. With <b>Accept Uncheckable Passwords</b>, passwords are accepted even if the check cannot be performed, for example, if the user has provided an encrypted password. With <b>Only Accept Checked Passwords</b> passwords are refused if the quality test fails or the password cannot be checked.<p>") +
+	_("<p>Select whether the password quality should be verified while passwords are modified or added. Select <b>No Checking</b> if passwords should not be checked at all. With <b>Accept Uncheckable Passwords</b>, passwords are accepted even if the check cannot be performed, for example, if the user has provided an encrypted password. With <b>Only Accept Checked Passwords</b> passwords are refused if the quality test fails or the password cannot be checked.</p>") +
 
 	// help text for pwdMinLength attribute
 	_("Set the minimum number of characters that must be used in a password in <b>Minimum Password Length</b>.</p>"),
