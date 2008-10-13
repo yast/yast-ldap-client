@@ -2485,7 +2485,7 @@ Select another one.
 	    // fix for 174589
 	    if (Service::Status ("dbus") == 0)
 	    {
-		Service::Reload ("dbus");
+		Service::Restart ("dbus");
 	    }
 
 	    if (Package::Installed ("zmd") && Service::Status("novell-zmd")== 0)

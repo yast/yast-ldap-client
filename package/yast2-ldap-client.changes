@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Oct 13 16:34:43 CEST 2008 - jsuchome@suse.cz
+
+- restart of dbus is back, there's no reload
+- 2.17.12
+
+-------------------------------------------------------------------
 Wed Oct  1 15:11:55 CEST 2008 - jsuchome@suse.cz
 
 - fixed help text (bnc#430521)
