@@ -678,6 +678,13 @@
 	    && FileUtils::Exists ("/usr/bin/dig") && !Mode::test())
 	{
 	    string domain	= Hostname::CurrentDomain ();
+	    // workaround for bug#393951
+	    if (domain == "" && Stage::cont ())
+	    {
+	        map out = (map) SCR::Execute (.target.bash_output,"domainname");
+		if (out["exit"]:0 == 0)
+		    domain = deletechars (out["stdout"]:"", "\n");
+	    }
 	    map out = (map) SCR::Execute (.target.bash_output, sformat ("dig SRV _ldap._tcp.%1 +short", domain));
 	    string first = splitstring (out["stdout"]:"", "\n")[0]:"";
 	    string srv	= splitstring (first, " ")[3]:"";
