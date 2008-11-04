@@ -2489,12 +2489,6 @@ Select another one.
 		SCR::Execute (.target.bash, "/usr/sbin/nscd -i group");
 	    }
 
-	    // fix for 174589
-	    if (Service::Status ("dbus") == 0)
-	    {
-		Service::Restart ("dbus");
-	    }
-
 	    if (Package::Installed ("zmd") && Service::Status("novell-zmd")== 0)
 	    {
 		Service::RunInitScript ("novell-zmd", "try-restart");

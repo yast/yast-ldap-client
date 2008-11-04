@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Nov  4 13:31:04 CET 2008 - jsuchome@suse.cz
+
+- do not restart dbus at all (bnc#441435)
+- 2.17.14 
+
+-------------------------------------------------------------------
 Wed Oct 15 12:47:13 CEST 2008 - jsuchome@suse.cz
 
 - use domainname to get the domain name (workaround for bnc#393951)
