@@ -318,10 +318,13 @@ automatically.</p>
 	Wizard::SetContentsButtons (
 	    // dialog title
 	    _("LDAP Client Configuration"), con, help_text,
-	    Label::BackButton(),
-	    Stage::cont () ? Label::NextButton(): Label::FinishButton());
+	    Stage::cont () ? Label::BackButton() : Label::CancelButton (),
+	    Stage::cont () ? Label::NextButton() : Label::OKButton());
 
-	Wizard::RestoreAbortButton ();
+	if (Stage::cont ())
+	    Wizard::RestoreAbortButton ();
+	else
+	    Wizard::HideAbortButton ();
 
 
 	UI::ChangeWidget (`id(`server),`ValidChars, Address::ValidChars + " ");
@@ -847,6 +850,7 @@ user home directories.</p>
     // dialog label
     Wizard::SetContentsButtons (_("Advanced Configuration"), contents,
 	help_text[`client]:"", Label::CancelButton(), Label::OKButton());
+
     Wizard::HideAbortButton ();
 
     any result	= `notnext;
@@ -1270,7 +1274,7 @@ removing current ones.</p>
     Wizard::OpenNextBackDialog ();
     // dialog label
     Wizard::SetContentsButtons(_("Object Template Configuration"),
-            contents, help_text, Label::CancelButton(), Label::OKButton());
+	contents, help_text, Label::CancelButton(), Label::OKButton());
     Wizard::HideAbortButton();
 
     if (size (table_items) > 0)

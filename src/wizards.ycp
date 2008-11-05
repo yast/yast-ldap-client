@@ -113,7 +113,15 @@ define symbol LdapSequence() ``{
 	]
     ];
 
-    Wizard::CreateDialog();
+    if (Stage::cont ())
+    {
+	Wizard::CreateDialog();
+    }
+    else
+    {
+	Wizard::OpenNextBackDialog ();
+	Wizard::HideAbortButton ();
+    }
     Wizard::SetDesktopIcon("ldap");
 
     any ret = Sequencer::Run (aliases, sequence);
