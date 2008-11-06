@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Nov  6 16:21:31 CET 2008 - jsuchome@suse.cz
+
+- note services that should be restarted after installation
+  (bnc#395402)
+- 2.17.16
+
+-------------------------------------------------------------------
 Wed Nov  5 13:07:03 CET 2008 - jsuchome@suse.cz
 
 - button labels adapted to current style guide (bnc#440526)
