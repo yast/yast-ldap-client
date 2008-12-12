@@ -177,7 +177,7 @@
     global map new_objects = $[
 	"suseUserConfiguration"	: $[
 	    "suseSearchFilter"	: ["objectClass=posixAccount"],
-	    "susePasswordHash"	: ["CRYPT"],
+	    "susePasswordHash"	: ["SSHA"],
 	    "suseSkelDir"	: ["/etc/skel"],
 	    "suseMinUniqueId"	: ["1000"],
 	    "suseNextUniqueId"	: ["1000"],
@@ -413,7 +413,7 @@
 	base_dn		= settings ["ldap_domain"]:"";
 	ldap_v2		= settings ["ldap_v2"]:false;
 	ldap_tls	= settings ["ldap_tls"]:false;
-	pam_password	= settings ["pam_password"]:"crypt";
+	pam_password	= settings ["pam_password"]:"exop";
 	bind_dn		= settings ["bind_dn"]:"";
 	file_server	= settings ["file_server"]:false;
 	base_config_dn	= settings ["base_config_dn"]:"";
@@ -716,7 +716,7 @@
         nss_base_shadow = ReadLdapConfEntry ("nss_base_shadow", base_dn);
         nss_base_group = ReadLdapConfEntry ("nss_base_group", base_dn);
 
-	pam_password = ReadLdapConfEntry ("pam_password", "crypt");
+	pam_password = ReadLdapConfEntry ("pam_password", "exop");
 
 	// read sysconfig values
 	base_config_dn = (string)SCR::Read (.sysconfig.ldap.BASE_CONFIG_DN);

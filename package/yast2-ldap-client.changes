@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Fri Dec 12 15:57:59 CET 2008 - jsuchome@suse.cz
+
+- 'exop' is the correct default value for pam_password
+- 'SSHA' is the correct default value for password encryption
+  (bnc#457993)
+- 2.17.17 
+
+-------------------------------------------------------------------
 Thu Nov  6 16:21:31 CET 2008 - jsuchome@suse.cz
 
 - note services that should be restarted after installation
