@@ -111,9 +111,8 @@
     global boolean ldap_v2 = false;
     global boolean ldap_tls = false;
 
-    /* Which crypt method should be used? If not set, use crypt.
-       Not configurable now! TODO */
-    global string pam_password = "";
+    // Which crypt method should be used?
+    global string pam_password = "exop";
 
     // lines of /etc/passwd, starting with +/-
     global list<string> plus_lines_passwd	= [];

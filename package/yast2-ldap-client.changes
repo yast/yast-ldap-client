@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Dec 12 16:16:03 CET 2008 - jsuchome@suse.cz
+
+- really use 'exop' as default value for pam_password (bnc#458363)
+- 2.17.18 
+
+-------------------------------------------------------------------
 Fri Dec 12 15:57:59 CET 2008 - jsuchome@suse.cz
 
 - 'exop' is the correct default value for pam_password
