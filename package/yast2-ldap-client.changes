@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Jan  8 14:53:11 CET 2009 - jsuchome@suse.cz
+
+- do not require double clicking in LDAP Browser tree (bnc#464144)
+- disable renaming of the LDAP objects and modification of
+  objectClass attribute in the LDAP Browser (bnc#464148)
+
+-------------------------------------------------------------------
 Fri Dec 12 16:16:03 CET 2008 - jsuchome@suse.cz
 
 - really use 'exop' as default value for pam_password (bnc#458363)

@@ -129,7 +129,7 @@ Discard these changes?
 		"scope"		: 1,
 		"dn_only"	: true,
 		"not_found_ok"	: true ]
-	);
+	    );
 	    if (size (out) > 0)
 	    {
 		tree_items = maplist (string dn, out, {
@@ -145,6 +145,8 @@ Discard these changes?
 	    UI::ReplaceWidget (`id (`reptree), textmode ?
 		`Tree (`id(`tree), root_dn, tree_items) :
 		`Tree (`id(`tree), `opt(`notify), root_dn, tree_items));
+	    // no item is selected
+	    UI::ChangeWidget (`tree, `CurrentItem, nil);
 	}
 	else if (root_dn == "")
 	{
@@ -159,9 +161,12 @@ Discard these changes?
 		    return `item(`id(dn), dn, false, []);
 		});
 	    if (size (tree_items) > 0)
+	    {
 		UI::ReplaceWidget (`id (`reptree), textmode ?
 		    `Tree (`id(`tree), root_dn, tree_items) :
 		    `Tree (`id(`tree), `opt(`notify), root_dn, tree_items));
+		UI::ChangeWidget (`tree, `CurrentItem, nil);
+	    }
 	    if (size (topdns) == 1)
 		root_dn	= bases[0,"namingContexts",0]:"";
 	}
@@ -222,7 +227,7 @@ Discard these changes?
 
 	term cont = `HBox(`HSpacing (1.5), `VBox(
 	    `Left (`Label (current_dn)),
-	    `Table(`id(`table), `opt(`notify), `header(
+	    `Table(`id(`table), `opt (`notify, `immediate), `header(
 		// table header 1/2
 		_("Attribute") + "  ",
 		// table header 2/2
@@ -242,6 +247,9 @@ Discard these changes?
 
 	if (size (items) == 0)
 	    UI::ChangeWidget (`id(`edit), `Enabled, false);
+	else
+	    // no item is selected
+	    UI::ChangeWidget (`table, `CurrentItem, nil);
 
 	UI::ChangeWidget (`id(`save), `Enabled, false);
         UI::SetFocus (`id(`table));
@@ -471,7 +479,8 @@ Discard these changes?
 
     while (true) {
 
-	result = (symbol) UI::UserInput ();
+	map event       = UI::WaitForEvent ();
+	result		= (symbol) event["ID"]:nil;
 
 	if (result == `cancel && !Popup::ReallyAbort (false))
 	    result = `not_next;
@@ -507,17 +516,18 @@ Discard these changes?
 	    if (! dns[current_dn]:false)
 	    {
 		UI::BusyCursor ();
-		subdns = sort ((list<string>) SCR::Read (.ldap.search, $[
+		subdns = (list<string>) SCR::Read (.ldap.search, $[
 		    "base_dn"		: current_dn,
 		    "scope"		: 1,
 		    "dn_only"		: true,
 		    "not_found_ok"	: true,
-		]));
+		]);
 		if (subdns == nil)
 		{
 		    y2warning ("the search for %1 returned nil...", current_dn);
 		    continue;
 		}
+		else subdns	= sort (subdns);
 		dns [current_dn]	= true;
 		if (size (subdns) > 0)
 		// TODO if size (subdns) > 0) || dn has glyph
@@ -531,6 +541,7 @@ Discard these changes?
 		    open_items = $[];
 		}
 		current_dn = (string) UI::QueryWidget (`id(`tree),`CurrentItem);
+		if (current_dn == nil) current_dn	= "";
 	    }
 	    data		= Ldap::GetLDAPEntry (current_dn);
 	    tmp_data		= $[];
@@ -550,11 +561,32 @@ Discard these changes?
 	    root_dn	= "";
 	    set_tree_term ();
 	}
-
 	// events in Edit Entry part
-	if (result == `edit || result == `table)
+	if (result == `edit)
+	    result	= `table;
+	if (result == `table && event["EventReason"]:"" == "SelectionChanged")
+	{
+	    string attr = (string) UI::QueryWidget (`id(`table), `CurrentItem);
+	    boolean enable	= true;
+	    if (size (attr) < size (current_dn) &&
+		substring (current_dn, 0, size (attr) + 1) == (attr + "="))
+	    {
+		y2debug ("disabling %1 for editing...", attr);
+		enable		= false;
+	    }
+	    if (attr == "objectClass")
+		enable		= false;
+	    UI::ChangeWidget (`id (`edit), `Enabled, enable);
+	}
+	else if (result == `table)
 	{
 	    string attr	= (string) UI::QueryWidget (`id(`table), `CurrentItem);
+	    if (UI::QueryWidget  (`id (`edit), `Enabled) == false)
+	    {
+		y2milestone ("editing the value of attribute '%1' is not allowed", attr);
+		result = `notnext;
+		continue;
+	    }
 	    list<string> value	= tmp_data [attr]:data[attr]:[];
 	    value		= LdapPopup::EditAttribute ($[
 		"attr"          : attr,
