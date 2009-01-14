@@ -45,7 +45,7 @@
 	boolean ret = true;
 	if (!Stage::cont () || contains (WFM::Args (), "from_users"))
 	{
-	    ret = Popup::ReallyAbort (Modified());;
+	    ret = Modified() ? Popup::ReallyAbort (true) : true;
 	}
 	else
 	{
@@ -406,7 +406,7 @@ automatically.</p>
 		    continue;
 		}
 	    }
-	    if ((result == `abort || result == `cancel) &&
+	    if ((result == `abort || result == `cancel || result == `back) &&
 		ReallyAbort () != `abort)
 	    {
 		result = `not_next;
