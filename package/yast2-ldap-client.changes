@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jan 15 14:45:54 CET 2009 - jsuchome@suse.cz
+
+- show port in the server field, read the data if there were
+  not read yet (patch from L3 team, bnc#464203) 
+
+-------------------------------------------------------------------
 Wed Jan 14 15:38:41 CET 2009 - jsuchome@suse.cz
 
 - no exit confirmation popup if no changes were made (bnc#460161)

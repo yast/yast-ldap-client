@@ -945,6 +945,12 @@
     // this is a hack
     global define integer GetFirstPort (string servers) ``{
 
+	if (bind_pass == nil && servers == "")
+	{
+	    y2milestone ("--- server not read yet or empty, reading now");
+	    servers	= ReadLdapConfEntry ("host", "");
+	}
+
 	list l_servers = splitstring (servers, " \t");
 	string srv = l_servers[0]:"";
 	if (!issubstring (srv, ":"))
@@ -1122,7 +1128,8 @@ Retry connection without TLS/SSL?
             // password entering label
             `Password(`id(`pw), `opt (`hstretch), _("&LDAP Server Password")),
 	    // label
-	    `Label (sformat (_("Server: %1"), GetFirstServer (server))),
+	    `Label (sformat (_("Server: %1:%2"),
+		GetFirstServer (server), GetFirstPort (server))),
 	    // label (%1 is admin DN - string)
 	    `Label (sformat (_("Administrator: %1"), GetBindDN ())),
             `HBox(
