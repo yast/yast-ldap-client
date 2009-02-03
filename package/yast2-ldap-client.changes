@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Feb  3 15:37:38 CET 2009 - jsuchome@suse.cz
+
+- do not require entering data when disabling LDAP (bnc#471852)
+- 2.18.0 
+
+-------------------------------------------------------------------
 Thu Jan 15 14:45:54 CET 2009 - jsuchome@suse.cz
 
 - show port in the server field, read the data if there were

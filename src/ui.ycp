@@ -377,11 +377,15 @@ automatically.</p>
 		}
 	    }
 
-	    if (result == `next || result == `advanced) {
+	    if (result == `next || result == `advanced)
+	    {
 		base_dn	= (string) UI::QueryWidget(`id(`ldapbasedn), `Value);
 		autofs	= Ldap::_autofs_allowed &&
 		    (boolean) UI::QueryWidget (`id (`autofs), `Value);
+	    }
 
+	    if ((result == `next || result == `advanced) && start)
+	    {
 		if (base_dn == "")
 		{
 		    // error popup label
