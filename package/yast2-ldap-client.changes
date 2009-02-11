@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Feb 11 21:57:00 CET 2009 - jsuchome@suse.cz
+
+- show port in the server field, read the data if there were
+  not read yet (patch from L3 team, bnc#464203) 
+- 2.13.33
+
+-------------------------------------------------------------------
 Wed Feb 20 16:07:43 CET 2008 - jsuchome@suse.cz
 
 - allow more spaces as host name separators (bnc#362946)
