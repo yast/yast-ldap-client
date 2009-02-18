@@ -251,7 +251,8 @@ Discard these changes?
 	    // no item is selected
 	    UI::ChangeWidget (`table, `CurrentItem, nil);
 
-	UI::ChangeWidget (`id(`save), `Enabled, false);
+	UI::ChangeWidget (`id (`edit), `Enabled, false);
+	UI::ChangeWidget (`id (`save), `Enabled, false);
         UI::SetFocus (`id(`table));
     }
 

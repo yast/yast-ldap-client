@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Feb 18 13:55:35 CET 2009 - jsuchome@suse.cz
+
+- LDAP browser: disable Edit button after change to new entry
+  (bnc#464148)
+
+-------------------------------------------------------------------
 Tue Feb  3 15:37:38 CET 2009 - jsuchome@suse.cz
 
 - do not require entering data when disabling LDAP (bnc#471852)
