@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Mar 11 19:09:27 CET 2009 - jsuchome@suse.cz
+
+- when checking if external values were used, look at the first
+  server (bnc#484202)
+- 2.18.1 
+
+-------------------------------------------------------------------
 Wed Feb 18 13:55:35 CET 2009 - jsuchome@suse.cz
 
 - LDAP browser: disable Edit button after change to new entry

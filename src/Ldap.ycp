@@ -354,6 +354,7 @@
      */
     global define boolean SetDefaults (map settings) ``{
 
+	y2milestone ("using initial defaults: %1", settings);
 	initial_defaults = eval (settings);
 	return true;
     }
@@ -780,6 +781,7 @@
 	{
 	    if (size (initial_defaults) > 0)
 	    {
+		y2milestone ("using values defined externaly");
 		string old_s	= old_server;
 		string old_d	= old_base_dn;
 		string old_m	= old_member_attribute;
@@ -2590,12 +2592,14 @@ Select another one.
 	// real values
 	if (Stage::cont () && size (initial_defaults) > 0)
 	{
+	    string first_s	= GetFirstServer (server);
 	    if (start && ldap_ok &&
 		base_dn == initial_defaults["ldap_domain"]:"" &&
-		(server == initial_defaults["ldap_server"]:"" ||
-		 DNS::IsHostLocal (server)))
+		(first_s == initial_defaults["ldap_server"]:"" ||
+		 DNS::IsHostLocal (first_s)))
 	    {
 		initial_defaults_used	= true;
+		y2milestone ("initial defaults were used");
 	    }
 	    initial_defaults	= $[];
 	}
