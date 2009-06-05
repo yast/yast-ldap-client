@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Jun  5 13:50:17 CEST 2009 - jsuchome@suse.cz
+
+- fixed architecture dependent packages for PPC (bnc#505263)
+- 2.17.20
+
+-------------------------------------------------------------------
 Thu Jan  8 14:55:20 CET 2009 - jsuchome@suse.cz
 
 - do not require double clicking in LDAP Browser tree (bnc#464144)
