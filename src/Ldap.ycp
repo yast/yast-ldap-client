@@ -282,13 +282,13 @@
     global map arch_packages	= $[
 	"pam_ldap"	: $[
 	    "ia64"	: [ "pam_ldap-x86" ],
-	    "ppc64"	: [ "pam_ldap-64bit" ],
+	    "ppc64"	: [ "pam_ldap-32bit" ],
 	    "s390_64"	: [ "pam_ldap-32bit" ],
 	    "x86_64"	: [ "pam_ldap-32bit" ],
 	],
 	"nss_ldap"	: $[
 	    "ia64"	: [ "nss_ldap-x86" ],
-	    "ppc64"	: [ "nss_ldap-64bit" ],
+	    "ppc64"	: [ "nss_ldap-32bit" ],
 	    "s390_64"	: [ "nss_ldap-32bit" ],
 	    "x86_64"	: [ "nss_ldap-32bit" ],
 

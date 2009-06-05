@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Jun  5 14:10:52 CEST 2009 - jsuchome@suse.cz
+
+- fixed architecture dependent packages for PPC (bnc#505263)
+- 2.18.2 
+
+-------------------------------------------------------------------
 Wed Mar 11 19:09:27 CET 2009 - jsuchome@suse.cz
 
 - when checking if external values were used, look at the first
