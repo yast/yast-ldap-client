@@ -735,13 +735,15 @@
 	{
 	    list<string> map_attrs = ReadLdapConfEntries ("nss_map_attribute");
 	    foreach (string map_attr, map_attrs, {
-		map_attr		= tolower (map_attr);
-		if (issubstring (map_attr, "uniquemember"))
+		if (issubstring (tolower (map_attr), "uniquemember"))
 		{
 		    list<string> attr	= splitstring (map_attr, " \t");
-		    if (attr[0]:"" == "uniquemember")
+		    if (tolower (attr[0]:"") == "uniquemember")
 		    {
 			member_attribute	= attr[1]:member_attribute;
+			// LDAP needs to know correct attribute name
+			if (member_attribute == "uniquemember")
+			    member_attribute = "uniqueMember";
 			old_member_attribute	= member_attribute;
 		    }
 		}
