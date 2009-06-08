@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Jun  8 14:45:51 CEST 2009 - jsuchome@suse.cz
+
+- fixed handling of uniqueMember option (bnc#509874)
+- 2.18.3
+
+-------------------------------------------------------------------
 Fri Jun  5 14:10:52 CEST 2009 - jsuchome@suse.cz
 
 - fixed architecture dependent packages for PPC (bnc#505263)

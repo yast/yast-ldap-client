@@ -613,9 +613,9 @@ user home directories.</p>
 
     list<term>member_attributes	= [
 	`item (`id("member"), "member", member_attribute == "member"),
-	`item (`id("uniquemember"), "uniquemember", member_attribute == "uniquemember")
+	`item (`id("uniqueMember"), "uniqueMember", member_attribute == "uniqueMember")
     ];
-    if (member_attribute != "member" && member_attribute != "uniquemember")
+    if (member_attribute != "member" && member_attribute != "uniqueMember")
     {
 	member_attributes = add (member_attributes,
 	    `item (`id(member_attribute), member_attribute, true));
