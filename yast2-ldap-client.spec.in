@@ -23,7 +23,7 @@ Obsoletes:	yast2-trans-ldap_client
 
 BuildArchitectures:	noarch
 
-Summary:	Configuration of LDAP client
+Summary:	YaST2 - LDAP Client Configuration
 
 %description
 -
