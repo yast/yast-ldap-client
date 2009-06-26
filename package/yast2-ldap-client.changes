@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Jun 25 22:12:56 CEST 2009 - jsuchome@suse.cz
+
+- manual installation of 32bit packages packages no longer needed 
+  (bnc#354164)
+- 2.18.4
+
+-------------------------------------------------------------------
 Mon Jun  8 14:45:51 CEST 2009 - jsuchome@suse.cz
 
 - fixed handling of uniqueMember option (bnc#509874)

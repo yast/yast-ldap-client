@@ -13,7 +13,6 @@
     module "Ldap";
     textdomain "ldap-client";
 
-    import "Arch";
     import "Autologin";
     import "Directory";
     import "FileUtils";
@@ -278,23 +277,6 @@
     // if /etc/passwd was read
     boolean passwd_read			= false;
 
-    // packages to install for specific arhitectures (#49808)
-    global map arch_packages	= $[
-	"pam_ldap"	: $[
-	    "ia64"	: [ "pam_ldap-x86" ],
-	    "ppc64"	: [ "pam_ldap-32bit" ],
-	    "s390_64"	: [ "pam_ldap-32bit" ],
-	    "x86_64"	: [ "pam_ldap-32bit" ],
-	],
-	"nss_ldap"	: $[
-	    "ia64"	: [ "nss_ldap-x86" ],
-	    "ppc64"	: [ "nss_ldap-32bit" ],
-	    "s390_64"	: [ "nss_ldap-32bit" ],
-	    "x86_64"	: [ "nss_ldap-32bit" ],
-
-	]
-    ];
-
     /**
      * if pam_mkhomedir is set in /etc/pam.d/commond-session
      */
@@ -370,21 +352,6 @@
     }
 
     /**
-     * Return list of architecture specific packages (derived from package list
-     * given as parameter) merged with the packages in parameter
-     */
-    global define list<string> UpdatedArchPackages (list<string> packages) {
-
-	list<string> ret	= packages;
-	string arch		= Arch::architecture ();
-
-	foreach (string package, packages, {
-	    ret	= (list<string>) union (ret, arch_packages[package,arch]:[]);
-	});
-	return ret;
-    }
-
-    /**
      * Return needed packages and packages to be removed
      * during autoinstallation.
      * @return map of lists.
@@ -394,9 +361,7 @@
       if (start)
 	required_packages = (list<string>)
 	    union (required_packages, ["pam_ldap", "nss_ldap"]);
-      list<string> install_pkgs = UpdatedArchPackages (required_packages);
-      list remove_pkgs = [];
-      return ($["install": install_pkgs, "remove": remove_pkgs]);
+      return ($["install": required_packages, "remove": []]);
     }
 
 
@@ -2616,8 +2581,7 @@ Select another one.
 
 	block<boolean> abort = ``{ return false; };
 
-	list<string> needed_packages =
-		UpdatedArchPackages (["pam_ldap", "nss_ldap"]);
+	list<string> needed_packages = ["pam_ldap", "nss_ldap"];
 
 	if (_start_autofs && !Package::Installed("autofs"))
 	{

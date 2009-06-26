@@ -430,8 +430,7 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 		    }
 		}
 
-		list<string> needed_packages =
-		    Ldap::UpdatedArchPackages (["pam_ldap", "nss_ldap"]);
+		list<string> needed_packages = ["pam_ldap", "nss_ldap"];
 
 		if (start && !Package::InstalledAll (needed_packages))
 		{
