@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Sep  3 14:11:25 CEST 2009 - jsuchome@suse.cz
+
+- added keywords to desktop files 
+- 2.18.5
+
+-------------------------------------------------------------------
 Thu Jun 25 22:12:56 CEST 2009 - jsuchome@suse.cz
 
 - manual installation of 32bit packages packages no longer needed 
