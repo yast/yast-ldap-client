@@ -682,6 +682,17 @@
         nss_base_group = ReadLdapConfEntry ("nss_base_group", base_dn);
 
 	pam_password = ReadLdapConfEntry ("pam_password", "exop");
+	// check if Password Modify extenstion is supported (bnc#546398, c#6)
+	if (pam_password == "exop")
+	{
+	    if (0 == SCR::Execute (.target.bash, "ldapsearch -x -b '' -s base") && // LDAP server accessible
+		0 != SCR::Execute (.target.bash,
+		    "ldapsearch -x -b '' -s base supportedExtension | grep -i '^supportedExtension:[[:space:]]*1.3.6.1.4.1.4203.1.11.1'"))
+	    {
+		y2warning ("'exop' value not supported on server, using 'crypt'");
+		pam_password	= "crypt";
+	    }
+	}
 
 	// read sysconfig values
 	base_config_dn = (string)SCR::Read (.sysconfig.ldap.BASE_CONFIG_DN);

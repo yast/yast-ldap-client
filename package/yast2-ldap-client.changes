@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Jan 13 09:06:44 CET 2010 - jsuchome@suse.cz
+
+- use crypt for pam_password if exop is not supported (bnc#546398)
+- 2.19.0
+
+-------------------------------------------------------------------
 Thu Sep  3 14:11:25 CEST 2009 - jsuchome@suse.cz
 
 - added keywords to desktop files 
