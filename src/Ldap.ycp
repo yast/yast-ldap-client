@@ -110,6 +110,13 @@
     global boolean ldap_v2 = false;
     global boolean ldap_tls = false;
 
+    // CA certificates for server certificate verification
+    // At least one of these are required if tls_checkpeer is "yes"
+    global string tls_cacertdir		= "";
+    global string tls_cacertfile	= "";
+    // Require and verify server certificate (yes/no)
+    global string tls_checkpeer		= "yes";
+
     // Which crypt method should be used?
     global string pam_password = "exop";
 
@@ -389,6 +396,9 @@
 	create_ldap	= settings ["create_ldap"]:false;
 	login_enabled	= settings ["login_enabled"]:true;
 	_start_autofs	= settings ["start_autofs"]:false;
+	tls_cacertdir	= settings ["tls_cacertdir"]:"";
+	tls_cacertfile	= settings ["tls_cacertfile"]:"";
+	tls_checkpeer	= settings ["tls_checkpeer"]:"yes";
 	if (_start_autofs)
 	    required_packages = (list<string>) union (required_packages, ["autofs"]);
 
@@ -431,6 +441,12 @@
 	    "create_ldap"	: create_ldap,
 	    "login_enabled"	: login_enabled
 	];
+	if (tls_checkpeer != "yes")
+	    e["tls_checkpeer"]	= tls_checkpeer;
+	if (tls_cacertdir != "")
+	    e["tls_cacertdir"]	= tls_cacertdir;
+	if (tls_cacertfile != "")
+	    e["tls_cacertfile"]	= tls_cacertfile;
 	if (nss_base_passwd != base_dn)
 	    e["nss_base_passwd"]    = nss_base_passwd;
 	if (nss_base_shadow != base_dn)
@@ -676,6 +692,9 @@
 
 	ldap_v2 = (ReadLdapConfEntry ("ldap_version", "3") == "2");
 	ldap_tls = (ReadLdapConfEntry ("ssl", "no") == "start_tls");
+	tls_cacertdir	= ReadLdapConfEntry ("tls_cacertdir", "");
+	tls_cacertfile	= ReadLdapConfEntry ("tls_cacertfile", "");
+	tls_checkpeer	= ReadLdapConfEntry ("tls_checkpeer", "yes");
 
         nss_base_passwd = ReadLdapConfEntry ("nss_base_passwd", base_dn);
         nss_base_shadow = ReadLdapConfEntry ("nss_base_shadow", base_dn);
@@ -1868,10 +1887,6 @@ Select another one.
 		[server]);
 	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base,
 		[base_dn]);
-	    if (ldap_tls)
-	    {
-		SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".TLS_REQCERT, ["allow"]);
-	    }
 	    y2milestone ("file /etc/openldap/ldap.conf was modified");
 	}
 	return write_openldap_conf;
@@ -2304,6 +2319,9 @@ Select another one.
 	    else
 		WriteLdapConfEntry ("ssl", "no");
 
+	    WriteLdapConfEntry ("tls_cacertdir", tls_cacertdir == "" ? nil : tls_cacertdir);
+	    WriteLdapConfEntry ("tls_cacertfile", tls_cacertfile == "" ? nil : tls_cacertfile);
+
 	    Pam::Set ("mkhomedir", mkhomedir);
 
 	    WriteLdapConfEntry ("pam_password", pam_password);
@@ -2327,6 +2345,9 @@ Select another one.
 	    WriteLdapConfEntry ("nss_base_group",
 		(nss_base_group != base_dn && nss_base_group != "") ?
 		nss_base_group : nil);
+
+	    // default value is 'yes'
+	    WriteLdapConfEntry ("tls_checkpeer", tls_checkpeer == "yes" ? nil : tls_checkpeer);
 	}
 	if (start) // ldap used for authentocation
 	{
@@ -2344,8 +2365,6 @@ Select another one.
 		WriteLdapConfEntry ("pam_password", pam_password);
 	    }
 
-	    // override LDAPNOINIT (#217701)
-	    WriteLdapConfEntry ("tls_checkpeer", "no");
 
 	    if (!oes)
 	    {
@@ -2417,8 +2436,6 @@ Select another one.
 	    {
 		Pam::Remove ("ldap-account_only");
 	    }
-
-	    WriteLdapConfEntry ("tls_checkpeer", nil);
 	}
 
 

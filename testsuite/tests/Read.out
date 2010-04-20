@@ -3,6 +3,9 @@ Read	.etc.ldap_conf.v."/etc/ldap.conf"."host" "localhost"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."base" "dc=suse,dc=cz"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."ldap_version" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."ssl" nil
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."tls_cacertdir" "/etc/openldap/cacerts/"
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."tls_cacertfile" nil
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."tls_checkpeer" "no"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_passwd" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_shadow" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_group" nil

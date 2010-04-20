@@ -15,6 +15,8 @@
 
     import "Address";
     import "Autologin";
+    import "Directory";
+    import "FileUtils";
     import "Label";
     import "Ldap";
     import "LdapPopup";
@@ -200,13 +202,7 @@ addresses without using LDAP. You can also specify the port on which the server 
 	// help text 6/9
 	_("<p>Some LDAP servers support StartTLS (RFC2830).
 If your server supports it and it is configured, activate <b>LDAP TLS/SSL</b>
-to encrypt your communication with the LDAP server.</p>
-") +
-
-	// help text 7/9
-	_("<p>Normally, the LDAP version 3 protocol is used. If you have
-an LDAP server using protocol 2 (for example, OpenLDAP v1), activate
-<b>LDAP Version 2</b>.</p>
+to encrypt your communication with the LDAP server. You may download CA certificate file in PEM format from given URL.</p>
 ") +
 
 	// help text 8/9
@@ -231,8 +227,9 @@ automatically.</p>
 	string base_dn		= Ldap::GetBaseDN ();
 	string server		= Ldap::server;
 	boolean ldap_tls	= Ldap::ldap_tls;
-	boolean ldap_v2		= Ldap::ldap_v2;
+	string tls_checkpeer	= Ldap::tls_checkpeer;
 	boolean login_enabled	= Ldap::login_enabled;
+	string certTmpFile	= sformat ("%1/__LDAPcert.crt", Directory::tmpdir);
 
 	boolean autofs		= Ldap::_start_autofs;
 	term autofs_con		= `Empty ();
@@ -300,13 +297,16 @@ automatically.</p>
 			`PushButton (`id(`fetch), _("F&etch DN"))
 		    )
 		),
-		`VSpacing (0.2),
-		// check box label
-		`Left (`CheckBox (`id(`ldaps), _("LDAP &TLS/SSL"), ldap_tls)),
-		`VSpacing (0.2),
-		// check box label
-		`Left (`CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2)),
 		`VSpacing (0.4)
+	    ), `HSpacing (0.5))),
+	    `Frame (_("Secure Connection"), `HBox (`HSpacing (0.5), `VBox(
+		`HBox (
+		    // check box label
+		    `Left (`CheckBox (`id(`ldaps), `opt (`notify), _("LDAP &TLS/SSL"), ldap_tls)),
+		    // push button label
+		    `PushButton (`id(`import_cert), _("Download CA Certificate"))
+		),
+		`VSpacing (0.2)
 	    ), `HSpacing (0.5))),
 	    autofs_con,
 	    mkhomedir_term,
@@ -328,6 +328,7 @@ automatically.</p>
 
 
 	UI::ChangeWidget (`id(`server),`ValidChars, Address::ValidChars + " ");
+	UI::ChangeWidget (`id(`import_cert),`Enabled, ldap_tls);
 
 	symbol result = `not_next;
 	do {
@@ -338,9 +339,10 @@ automatically.</p>
 	    login_enabled = (rb != `ldapnologin);
 
 	    server	= (string) UI::QueryWidget(`id(`server), `Value);
-	    ldap_v2	= (boolean) UI::QueryWidget(`id(`ldapv), `Value);
 	    ldap_tls	= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
 	    mkhomedir	= (boolean) UI::QueryWidget (`id(`mkhomedir),`Value);
+
+	    UI::ChangeWidget (`id(`import_cert), `Enabled, ldap_tls);
 
 	    if (result == `slp)
 	    {
@@ -365,7 +367,7 @@ automatically.</p>
 		    LdapPopup::InitAndBrowseTree ("", $[
 			"hostname"	: Ldap::GetFirstServer (server),
 			"port"		: Ldap::GetFirstPort (server),
-			"version"	: ldap_v2 ? 2 : 3,
+			"version"	: Ldap::ldap_v2 ? 2 : 3,
 			"use_tls"	: ldap_tls ? "yes" : "no"
 		    ]);
 		if (dn != "")
@@ -374,6 +376,75 @@ automatically.</p>
 		if (Ldap::tls_switched_off)
 		{
 		    UI::ChangeWidget (`id (`ldaps), `Value, false);
+		}
+	    }
+	    if (result == `import_cert)
+	    {
+		string dir		= Ldap::tls_cacertdir;
+		if (Ldap::tls_cacertdir == "")
+		    dir = "/etc/openldap/cacerts/";
+
+		UI::OpenDialog ( `opt(`decorated), `HBox(
+		    `HSpacing(1),
+		    `VBox (
+			`HSpacing (75),
+			// InputField label
+			`InputField (`id (`url),  `opt (`hstretch),
+			    _("CA Certificate URL for Download")),
+			`HBox (
+			    `PushButton(`id(`ok),`opt(`default,`key_F10), Label::OKButton()),
+			    `PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton())
+			)
+		    ),
+		    `HSpacing(1)
+		));
+		UI::SetFocus (`id (`url));
+
+		any ret	= nil;
+		boolean success	= false;
+		string name	= "";
+
+		while (true)
+		{
+		    ret	= UI::UserInput ();
+		    if (ret == `cancel)
+			break;
+		    if (ret == `ok)
+		    {
+			string cert_url = (string) UI::QueryWidget (`id (`url), `Value);
+			string curlcmd = sformat("curl -f --connect-timeout 60  --max-time 120  '%1' -o  %2", cert_url, certTmpFile);
+
+			if (SCR::Execute(.target.bash, curlcmd) != 0)
+			{
+			    // error message
+			    Popup::Error (_("Could not download the certificate file from specified URL."));
+			}
+			else if (FileUtils::CheckAndCreatePath (dir))
+			{
+			    list <string> l = splitstring (cert_url, "/");
+			    name	= l[size(l) - 1]:"downloaded-by-yast2-ldap-client.pem";
+			    success = SCR::Execute (.target.bash, sformat ("/bin/cp -a '%1' '%2/%3'", certTmpFile, dir, name)) == 0;
+			    break;
+			}
+		    }
+		}
+		UI::CloseDialog ();
+
+		if (ret == `cancel)
+		{
+		    continue;
+		}
+		if (success)
+		{
+		    // popup message, %1 is file name, %2 directory
+		    Popup::Message (sformat (_("The downloaded certificate file
+
+'%1'
+
+was copied to '%2' directory"), name, dir));
+
+		    Ldap::tls_cacertdir	= dir;
+		    Ldap::modified	= true;
 		}
 	    }
 
@@ -468,7 +539,7 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 		Ldap::nss_base_group	= base_dn;
 	    }
 	    if (Ldap::start != start || Ldap::GetBaseDN() != base_dn ||
-		Ldap::server != server || Ldap::ldap_v2 != ldap_v2 ||
+		Ldap::server != server ||
 		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs ||
 		Ldap::login_enabled != login_enabled ||
 		Ldap::mkhomedir != mkhomedir)
@@ -500,6 +571,13 @@ restarted automatically by YaST.
 			if (message != "")
 			    Popup::Message (message);
 		    }
+		    if (ldap_tls && tls_checkpeer == "no")
+		    {
+			// yes/no question
+			if (Popup::YesNo (_("The security connection is enabled, but server certificate verification is disabled.
+Enable certificate checks now?")))
+			    Ldap::tls_checkpeer	= "yes";
+		    }
 		    // check if user changed part of imported settings (#252094)
 		    if (start && Stage::cont () && size (Ldap::initial_defaults) > 0 &&
 			Ldap::create_ldap &&
@@ -515,7 +593,6 @@ restarted automatically by YaST.
 		Ldap::SetBaseDN (base_dn);
 		Ldap::start	= start;
 		Ldap::server	= server;
-		Ldap::ldap_v2	= ldap_v2;
 		Ldap::ldap_tls	= ldap_tls;
 		Ldap::_start_autofs = autofs;
 		Ldap::login_enabled = login_enabled;
@@ -551,7 +628,16 @@ in /etc/ldap.conf file.</p>
     sformat (_("<p>Set the type of LDAP groups to use.
 The default value for <b>Group Member Attribute</b> is <i>%1</i>.</p>
 "),
-    "member"),
+    "member") +
+
+    _("<p>If secure connection requires certificate checking, you may specify where is your certificate file located. It is possible to enter either directory with certificates, or the explicit path to one certificate file.</p>") +
+
+    // help text 7/9
+    _("<p>Normally, the LDAP version 3 protocol is used. If you have
+an LDAP server using protocol 2 (for example, OpenLDAP v1), activate
+<b>LDAP Version 2</b>.</p>
+"),
+
 
 	`admin		:
     // help text caption 2
@@ -609,6 +695,9 @@ user home directories.</p>
     string nss_base_shadow	= Ldap::nss_base_shadow;
     string nss_base_group	= Ldap::nss_base_group;
     string pam_password		= Ldap::pam_password;
+    boolean ldap_v2		= Ldap::ldap_v2;
+    string tls_cacertdir	= Ldap::tls_cacertdir;
+    string tls_cacertfile	= Ldap::tls_cacertfile;
 
     list<term>member_attributes	= [
 	`item (`id("member"), "member", member_attribute == "member"),
@@ -750,7 +839,7 @@ user home directories.</p>
 		    `VBox (
 			`Label (""),
 			// button label
-			`PushButton (`id(`br_shadow), _("Br&owse"))
+			`PushButton (`id(`br_shadow), _("Brow&se"))
 		    )
 		),
 		`HBox (
@@ -767,14 +856,39 @@ user home directories.</p>
 	    ),
 	    `HSpacing (1)
 	    )),
-	    `VSpacing (0.5),
+	    `VSpacing (0.4),
 	    `ComboBox (`id (`pam_password), `opt(`notify,`hstretch,`editable),
 		// combobox label
-		_("Pa&ssword Change Protocol"), pam_password_items),
-	    `VSpacing(0.5),
+		_("Passwor&d Change Protocol"), pam_password_items),
+	    `VSpacing(0.4),
 	    `ComboBox (`id (`group_style), `opt (`notify, `hstretch),
 		// combobox label
-		_("G&roup Member Attribute"), member_attributes)
+		_("Group Member &Attribute"), member_attributes),
+	    // check box label
+	    `VSpacing(0.4),
+	    `HBox (
+	      `HWeight (1, `HBox (
+		`InputField (`id (`tls_cacertdir), `opt (`hstretch), _("Certificate Directory"),
+		    tls_cacertdir
+		),
+		`VBox (
+		    `Label (""),
+		    // button label
+		    `PushButton (`id(`br_tls_cacertdir), _("B&rowse"))
+		)
+	      )), `HWeight (1, `HBox (
+		`InputField (`id (`tls_cacertfile), `opt (`hstretch), _("CA Certificate File"),
+		    tls_cacertfile
+		),
+		`VBox (
+		    `Label (""),
+		    // button label
+		    `PushButton (`id(`br_tls_cacertfile), _("Brows&e"))
+		)
+	      ))
+	    ),
+	    `VSpacing(0.2),
+	    `Left (`CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2))
 	), `HSpacing (5)));
 
 	UI::ReplaceWidget (`tabContents, cont);
@@ -882,6 +996,10 @@ user home directories.</p>
 	    nss_base_group	= (string)
 		UI::QueryWidget(`id(`nss_base_group),`Value);
 	    pam_password = (string) UI::QueryWidget(`id(`pam_password), `Value);
+
+	    tls_cacertfile	= (string) UI::QueryWidget(`id(`tls_cacertfile), `Value);
+	    tls_cacertdir	= (string) UI::QueryWidget(`id(`tls_cacertdir), `Value);
+	    ldap_v2		= (boolean) UI::QueryWidget(`id(`ldapv), `Value);
 	}
 	if (current == `admin)
 	{
@@ -929,6 +1047,24 @@ user home directories.</p>
 		    `br_group	: `nss_base_group
 		];
 		UI::ChangeWidget (`id(br2entry[result]:nil), `Value, dn);
+	    }
+	}
+	if (result == `br_tls_cacertdir)
+	{
+	    string dir = UI::AskForExistingDirectory (tls_cacertdir, _("Choose the directory with certificates"));
+	    if (dir != nil)
+	    {
+		tls_cacertdir	= dir;
+		UI::ChangeWidget (`id (`tls_cacertdir), `Value, dir);
+	    }
+	}
+	if (result == `br_tls_cacertfile)
+	{
+	    string file = UI::AskForExistingFile (tls_cacertfile, "*.pem *.crt", _("Choose the certificate file"));
+	    if (file != nil)
+	    {
+		tls_cacertfile	= file;
+		UI::ChangeWidget (`id (`tls_cacertfile), `Value, file);
 	    }
 	}
 	if (result == `add)
@@ -1094,7 +1230,10 @@ Please select another one."), new_dn));
 		Ldap::pam_password != pam_password		||
 		Ldap::nss_base_passwd != nss_base_passwd	||
 		Ldap::nss_base_group != nss_base_group		||
-		Ldap::nss_base_shadow != nss_base_shadow
+		Ldap::nss_base_shadow != nss_base_shadow	||
+		Ldap::ldap_v2 != ldap_v2 ||
+		Ldap::tls_cacertdir != tls_cacertdir ||
+		Ldap::tls_cacertfile != tls_cacertfile
 	    )
 	    {
 		Ldap::bind_dn		= bind_dn;
@@ -1106,6 +1245,9 @@ Please select another one."), new_dn));
 		Ldap::nss_base_passwd	= nss_base_passwd;
 		Ldap::nss_base_group	= nss_base_group;
 		Ldap::nss_base_shadow	= nss_base_shadow;
+		Ldap::ldap_v2		= ldap_v2;
+		Ldap::tls_cacertdir	= tls_cacertdir;
+		Ldap::tls_cacertfile	= tls_cacertfile;
 		Ldap::modified		= true;
 	    }
 	    break;

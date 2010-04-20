@@ -29,6 +29,9 @@
 			"ldap_version": nil,
 			"ssl": nil,
 			"pam_password": "crypt",
+			"tls_cacertdir"	: "/etc/openldap/cacerts/",
+			"tls_cacertfile": nil,
+			"tls_checkpeer" : nil
 		    ]
 		]
 	    ],
