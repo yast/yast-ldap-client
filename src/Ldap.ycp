@@ -423,6 +423,7 @@
 	create_ldap	= settings ["create_ldap"]:false;
 	login_enabled	= settings ["login_enabled"]:true;
 	_start_autofs	= settings ["start_autofs"]:false;
+	mkhomedir       = settings ["mkhomedir"]:mkhomedir;
 	if (_start_autofs)
 	    required_packages = (list<string>) union (required_packages, ["autofs"]);
 
@@ -463,7 +464,8 @@
 	    "pam_password"	: pam_password,
 	    "member_attribute"	: member_attribute,
 	    "create_ldap"	: create_ldap,
-	    "login_enabled"	: login_enabled
+	    "login_enabled"	: login_enabled,
+	    "mkhomedir"		: mkhomedir
 	];
 	if (nss_base_passwd != base_dn)
 	    e["nss_base_passwd"]    = nss_base_passwd;

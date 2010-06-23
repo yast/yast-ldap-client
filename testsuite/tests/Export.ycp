@@ -75,7 +75,8 @@
 	"target": $[
 	    "bash": 0,
 	    "bash_output": $[
-		"stdout"	: "",
+		// for Pam::Enabled ("mkhomedir") call
+		"stdout"	: "something:",
 	    ]
 	],
 	"passwd": $[

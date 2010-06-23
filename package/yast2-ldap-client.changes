@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Jun 23 12:45:32 CEST 2010 - jsuchome@suse.cz
+
+- include "Create Home Directory on Login" option in Import/Export
+  (bnc#616303)
+- 2.17.22
+
+-------------------------------------------------------------------
 Mon Jun  8 14:45:51 CEST 2009 - jsuchome@suse.cz
 
 - fixed handling of uniqueMember option (bnc#509874)
