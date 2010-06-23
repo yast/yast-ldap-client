@@ -18,4 +18,4 @@ Execute	.passwd.init $["base_directory":"/etc"] true
 Read	.passwd.passwd.pluslines ["+"]
 Return	true
 Dump	============================================
-Return	$["base_config_dn":"", "bind_dn":"uid=manager,dc=suse,dc=cz", "create_ldap":false, "file_server":false, "ldap_domain":"dc=suse,dc=cz", "ldap_server":"localhost", "ldap_tls":false, "ldap_v2":false, "login_enabled":true, "member_attribute":"member", "nss_base_group":"ou=group,dc=suse,dc=cz", "pam_password":"crypt", "start_autofs":false, "start_ldap":true, "tls_cacertdir":"/etc/openldap/cacerts/"]
+Return	$["base_config_dn":"", "bind_dn":"uid=manager,dc=suse,dc=cz", "create_ldap":false, "file_server":false, "ldap_domain":"dc=suse,dc=cz", "ldap_server":"localhost", "ldap_tls":false, "ldap_v2":false, "login_enabled":true, "member_attribute":"member", "mkhomedir":true, "nss_base_group":"ou=group,dc=suse,dc=cz", "pam_password":"crypt", "start_autofs":false, "start_ldap":true, "tls_cacertdir":"/etc/openldap/cacerts/"]

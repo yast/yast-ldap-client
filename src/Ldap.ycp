@@ -399,6 +399,7 @@
 	tls_cacertdir	= settings ["tls_cacertdir"]:"";
 	tls_cacertfile	= settings ["tls_cacertfile"]:"";
 	tls_checkpeer	= settings ["tls_checkpeer"]:"yes";
+	mkhomedir	= settings ["mkhomedir"]:mkhomedir;
 	if (_start_autofs)
 	    required_packages = (list<string>) union (required_packages, ["autofs"]);
 
@@ -439,7 +440,8 @@
 	    "pam_password"	: pam_password,
 	    "member_attribute"	: member_attribute,
 	    "create_ldap"	: create_ldap,
-	    "login_enabled"	: login_enabled
+	    "login_enabled"	: login_enabled,
+	    "mkhomedir"		: mkhomedir
 	];
 	if (tls_checkpeer != "yes")
 	    e["tls_checkpeer"]	= tls_checkpeer;
