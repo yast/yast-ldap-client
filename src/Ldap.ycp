@@ -1889,6 +1889,12 @@ Select another one.
 		[server]);
 	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base,
 		[base_dn]);
+
+	    SCR::Write (.etc.ldap_conf.v."/etc/openldap/ldap.conf".TLS_CACERTDIR,
+		tls_cacertdir == "" ? nil : [tls_cacertdir]);
+	    SCR::Write (.etc.ldap_conf.v."/etc/openldap/ldap.conf".TLS_CACERT,
+		tls_cacertfile == "" ? nil : [tls_cacertfile]);
+
 	    y2milestone ("file /etc/openldap/ldap.conf was modified");
 	}
 	return write_openldap_conf;

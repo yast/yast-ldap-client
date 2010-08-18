@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Aug 18 09:37:58 CEST 2010 - jsuchome@suse.cz
+
+- save certificate info to  /etc/openldap/ldap.conf (bnc#629549)
+- 2.20.0 
+
+-------------------------------------------------------------------
 Wed Jun 23 13:22:18 CEST 2010 - jsuchome@suse.cz
 
 - include "Create Home Directory on Login" option in Import/Export
