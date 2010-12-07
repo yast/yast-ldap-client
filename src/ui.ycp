@@ -226,11 +226,11 @@ automatically.</p>
 
 	string base_dn		= Ldap::GetBaseDN ();
 	string server		= Ldap::server;
-	boolean ldap_tls	= Ldap::ldap_tls;
+	boolean ldap_tls	= Ldap::ldap_tls || Ldap::sssd; // force TLS to true if sssd is used
 	string tls_checkpeer	= Ldap::tls_checkpeer;
 	boolean login_enabled	= Ldap::login_enabled;
 	string certTmpFile	= sformat ("%1/__LDAPcert.crt", Directory::tmpdir);
-
+	boolean sssd_cache_credentials	= Ldap::sssd_cache_credentials;
 	boolean autofs		= Ldap::_start_autofs;
 	term autofs_con		= `Empty ();
 	if (Ldap::_autofs_allowed)
@@ -248,7 +248,7 @@ automatically.</p>
 	    Ldap::_autofs_allowed ? `VSpacing (0) : `VSpacing (0.5),
 	    `Left(`CheckBox(`id(`mkhomedir),
 		// checkbox label
-		_("Create Home Directory on Login"), mkhomedir
+		_("C&reate Home Directory on Login"), mkhomedir
 	    ))
 	);
 
@@ -261,7 +261,7 @@ automatically.</p>
 		    `Left(`HVSquash(`VBox (
 			`Left (`RadioButton(`id(`ldapno), `opt (`notify),
 			    // radio button label
-			    _("Do N&ot Use LDAP"), !start)),
+			    _("Do &Not Use LDAP"), !start)),
 			`Left(`RadioButton(`id(`ldapyes), `opt (`notify),
 			    // radio button label
 			    _("&Use LDAP"), start)),
@@ -304,12 +304,14 @@ automatically.</p>
 		    // check box label
 		    `Left (`CheckBox (`id(`ldaps), `opt (`notify), _("LDAP &TLS/SSL"), ldap_tls)),
 		    // push button label
-		    `PushButton (`id(`import_cert), _("Download CA Certificate"))
+		    `PushButton (`id(`import_cert), _("Do&wnload CA Certificate"))
 		),
 		`VSpacing (0.2)
 	    ), `HSpacing (0.5))),
 	    autofs_con,
 	    mkhomedir_term,
+	    // check box label
+	    `Left (`CheckBox (`id (`sssd_cache_credentials), _("SSSD O&ffline Authentication"), sssd_cache_credentials)),
 	    `VSpacing(0.4),
 	    // pushbutton label
 	    `PushButton (`id(`advanced), _("&Advanced Configuration..."))
@@ -329,6 +331,7 @@ automatically.</p>
 
 	UI::ChangeWidget (`id(`server),`ValidChars, Address::ValidChars + " ");
 	UI::ChangeWidget (`id(`import_cert),`Enabled, ldap_tls);
+	UI::ChangeWidget (`id(`sssd_cache_credentials),`Enabled, Ldap::sssd);
 
 	symbol result = `not_next;
 	do {
@@ -341,7 +344,8 @@ automatically.</p>
 	    server	= (string) UI::QueryWidget(`id(`server), `Value);
 	    ldap_tls	= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
 	    mkhomedir	= (boolean) UI::QueryWidget (`id(`mkhomedir),`Value);
-
+	    sssd_cache_credentials	=
+			  (boolean) UI::QueryWidget (`id(`sssd_cache_credentials), `Value);
 	    UI::ChangeWidget (`id(`import_cert), `Enabled, ldap_tls);
 
 	    if (result == `slp)
@@ -501,7 +505,7 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 		    }
 		}
 
-		list<string> needed_packages = ["pam_ldap", "nss_ldap"];
+		list<string> needed_packages = Ldap::sssd ? Ldap::sssd_packages : Ldap::pam_nss_packages;
 
 		if (start && !Package::InstalledAll (needed_packages))
 		{
@@ -542,7 +546,8 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 		Ldap::server != server ||
 		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs ||
 		Ldap::login_enabled != login_enabled ||
-		Ldap::mkhomedir != mkhomedir)
+		Ldap::mkhomedir != mkhomedir ||
+		Ldap::sssd_cache_credentials != sssd_cache_credentials)
 	    {
 		if (result == `next)
 		{
@@ -597,6 +602,7 @@ Enable certificate checks now?")))
 		Ldap::_start_autofs = autofs;
 		Ldap::login_enabled = login_enabled;
 		Ldap::mkhomedir = mkhomedir;
+		Ldap::sssd_cache_credentials	= sssd_cache_credentials;
 		Ldap::modified = true;
 	    }
 	}
@@ -698,6 +704,7 @@ user home directories.</p>
     boolean ldap_v2		= Ldap::ldap_v2;
     string tls_cacertdir	= Ldap::tls_cacertdir;
     string tls_cacertfile	= Ldap::tls_cacertfile;
+    boolean sssd		= Ldap::sssd;
 
     list<term>member_attributes	= [
 	`item (`id("member"), "member", member_attribute == "member"),
@@ -818,6 +825,8 @@ user home directories.</p>
 
 	term cont = `Top (`HBox(`HSpacing (5), `VBox(
 	    `VSpacing(0.4),
+	    `Left (`CheckBox (`id (`sssd), `opt (`notify), _("Use S&ystem Security Services Daemon (SSSD)"), sssd)),
+	    `VSpacing(0.4),
 	    // frame label
 	    `Frame (_("Naming Contexts"), `HBox(
 	    `HSpacing (1), `VBox(
@@ -868,7 +877,7 @@ user home directories.</p>
 	    `VSpacing(0.4),
 	    `HBox (
 	      `HWeight (1, `HBox (
-		`InputField (`id (`tls_cacertdir), `opt (`hstretch), _("Certificate Directory"),
+		`InputField (`id (`tls_cacertdir), `opt (`hstretch), _("Cer&tificate Directory"),
 		    tls_cacertdir
 		),
 		`VBox (
@@ -877,7 +886,7 @@ user home directories.</p>
 		    `PushButton (`id(`br_tls_cacertdir), _("B&rowse"))
 		)
 	      )), `HWeight (1, `HBox (
-		`InputField (`id (`tls_cacertfile), `opt (`hstretch), _("CA Certificate File"),
+		`InputField (`id (`tls_cacertfile), `opt (`hstretch), _("CA Cert&ificate File"),
 		    tls_cacertfile
 		),
 		`VBox (
@@ -894,6 +903,10 @@ user home directories.</p>
 	UI::ReplaceWidget (`tabContents, cont);
 	if (has_tabs)
 	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `client);
+
+	foreach (symbol ui, [ `nss_base_passwd, `nss_base_group, `nss_base_shadow, `br_passwd, `br_shadow, `br_group ], {
+	    UI::ChangeWidget (`id (ui), `Enabled, UI::QueryWidget (`id (`sssd), `Value) == false);
+	});
     }
 
     define void set_admin_term () {
@@ -1048,6 +1061,13 @@ user home directories.</p>
 		];
 		UI::ChangeWidget (`id(br2entry[result]:nil), `Value, dn);
 	    }
+	}
+	if (result == `sssd)
+	{
+	    sssd	= (boolean) UI::QueryWidget (`id (`sssd), `Value);
+	    foreach (symbol ui, [ `nss_base_passwd, `nss_base_group, `nss_base_shadow, `br_passwd, `br_shadow, `br_group ], {
+		UI::ChangeWidget (`id (ui), `Enabled, !sssd);
+	    });
 	}
 	if (result == `br_tls_cacertdir)
 	{
@@ -1233,7 +1253,8 @@ Please select another one."), new_dn));
 		Ldap::nss_base_shadow != nss_base_shadow	||
 		Ldap::ldap_v2 != ldap_v2 ||
 		Ldap::tls_cacertdir != tls_cacertdir ||
-		Ldap::tls_cacertfile != tls_cacertfile
+		Ldap::tls_cacertfile != tls_cacertfile		||
+		Ldap::sssd != sssd
 	    )
 	    {
 		Ldap::bind_dn		= bind_dn;
@@ -1248,6 +1269,7 @@ Please select another one."), new_dn));
 		Ldap::ldap_v2		= ldap_v2;
 		Ldap::tls_cacertdir	= tls_cacertdir;
 		Ldap::tls_cacertfile	= tls_cacertfile;
+		Ldap::sssd		= sssd;
 		Ldap::modified		= true;
 	    }
 	    break;

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Nov 29 15:54:01 CET 2010 - jsuchome@suse.cz
+
+- added support for SSSD (fate#308902)
+- 2.20.1 
+
+-------------------------------------------------------------------
 Wed Aug 18 09:37:58 CEST 2010 - jsuchome@suse.cz
 
 - save certificate info to  /etc/openldap/ldap.conf (bnc#629549)

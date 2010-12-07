@@ -1,0 +1,26 @@
+#
+
+.etc.sssd_conf
+
+`ag_ini(
+//    `IniAgent("/etc/sssd/sssd.conf", $[ FIXME
+    `IniAgent("/tmp/sssd.conf", $[
+	"options" : [ "ignore_case_regexps", "line_can_continue"],
+	"comments": [
+	    "^[ \t]*$",	// empty line
+	    "^[ \t]*[;#].*"
+	],
+	"sections" : [
+	    $[
+		"begin" : [ "^[ \t]*\\[[ \t]*(.*[^ \t])[ \t]*\\][ \t]*", "[%s]" ],
+	    ]
+	],
+	"params" : [
+	    $[
+		"match" : [ "^[ \t]*([a-z0-9:_ ]*[a-z])[ \t]*=[ \t]*(.*[^ \t])[ \t]*$" , "%s = %s"],
+	    ]
+	]
+    ]
+  )
+)
+

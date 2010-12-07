@@ -30,6 +30,7 @@
     import "Report";
     import "Service";
     import "Stage";
+    import "String";
     import "Summary";
 
     /**
@@ -292,6 +293,18 @@
     // map with modifications of Password Policies objects
     global map<string,map> ppolicies	= $[];
 
+    // packages needed for pam_ldap/nss_ldap configuration
+    global list<string> pam_nss_packages	= ["pam_ldap", "nss_ldap"];
+
+    // packages needed for sssd configuration
+    global list<string> sssd_packages		= [ "sssd" ];
+
+    // if sssd is used instead of pam_ldap/nss_ldap (fate#308902)
+    global boolean sssd				= true;
+
+    // enable/disable offline authentication ('cache_credentials' key)
+    global boolean sssd_cache_credentials	= false;
+
     //----------------------------------------------------------------
 
     /**
@@ -367,7 +380,7 @@
 
       if (start)
 	required_packages = (list<string>)
-	    union (required_packages, ["pam_ldap", "nss_ldap"]);
+	    union (required_packages, sssd ? sssd_packages : pam_nss_packages);
       return ($["install": required_packages, "remove": []]);
     }
 
@@ -400,6 +413,7 @@
 	tls_cacertfile	= settings ["tls_cacertfile"]:"";
 	tls_checkpeer	= settings ["tls_checkpeer"]:"yes";
 	mkhomedir	= settings ["mkhomedir"]:mkhomedir;
+	sssd		= settings ["sssd"]:sssd;
 	if (_start_autofs)
 	    required_packages = (list<string>) union (required_packages, ["autofs"]);
 
@@ -441,7 +455,8 @@
 	    "member_attribute"	: member_attribute,
 	    "create_ldap"	: create_ldap,
 	    "login_enabled"	: login_enabled,
-	    "mkhomedir"		: mkhomedir
+	    "mkhomedir"		: mkhomedir,
+	    "sssd"		: sssd
 	];
 	if (tls_checkpeer != "yes")
 	    e["tls_checkpeer"]	= tls_checkpeer;
@@ -479,13 +494,14 @@
 	summary = Summary::AddHeader(summary, _("LDAP Server"));
 	summary = Summary::AddLine(summary,( server!="") ? server : Summary::NotConfigured());
 	// summary item
-	summary = Summary::AddHeader(summary, _("LDAP Version 2"));
-	// summary (LDAP version 2?)
-	summary = Summary::AddLine(summary, (ldap_v2) ? _("Yes") : Summary::NotConfigured());
-	// summary item
 	summary = Summary::AddHeader(summary, _("LDAP TLS/SSL"));
 	// summary (use TLS?)
 	summary = Summary::AddLine(summary, (ldap_tls) ? _("Yes") : Summary::NotConfigured());
+
+	// summary item
+	summary = Summary::AddHeader(summary, _("System Security Services Daemon (SSSD) Set"));
+	// summary (LDAP version 2?)
+	summary = Summary::AddLine(summary, (sssd && start) ? _("Yes") : Summary::NotConfigured());
 
 	return summary;
     }
@@ -514,6 +530,11 @@
 	{
 	    // summary
 	    summary	= summary + "<br>" + _("LDAP TLS/SSL Configured");
+	}
+	if (start && sssd)
+	{
+	    // summary
+	    summary	= summary + "<br>" + _("System Security Services Daemon (SSSD) Set");
 	}
 	return summary;
     }
@@ -637,10 +658,28 @@
 	    nsswitch[db]	= Nsswitch::ReadDb (db);
 	});
 
+	// 'start' means that LDAP is present in nsswitch somehow... either as 'compat'/'ldap'...
 	start = contains (nsswitch["passwd"]:[], "ldap")		||
 		(contains (nsswitch["passwd"]:[], "compat") &&
 		 contains (nsswitch["passwd_compat"]:[], "ldap"))	||
 		(oes && contains (nsswitch["passwd"]:[], "nam"));
+
+	if (start)
+	{
+	    // nss_ldap is used
+	    sssd	= false;
+	}
+	else
+	{
+	    // ... or as 'sssd'
+	    start = contains (nsswitch["passwd"]:[], "sssd");
+	}
+
+	// nothing is configured, but some packages are installed
+	if (!start && Package::InstalledAll (pam_nss_packages) && !Package::InstalledAll (sssd_packages))
+	{
+	    sssd        = false;
+	}
 
 	old_start	= start;
 
@@ -773,6 +812,7 @@
 	mkhomedir	= Pam::Enabled ("mkhomedir");
 
 	Autologin::Read ();
+
 
 	// Now check if previous configuration of LDAP server didn't proposed
 	// some better values:
@@ -1900,6 +1940,83 @@ Select another one.
 	return write_openldap_conf;
     }
 
+    /**
+     * Write updated /etc/sssd/sssd.conf file
+     */
+    global boolean WriteSSSDConfig () {
+
+	list<string> sections =	SCR::Dir (.etc.sssd_conf.section);
+
+	SCR::Write (.etc.sssd_conf.v.sssd.domains, "default");
+
+
+	// "The "services" setting should have the value "nss, pam"
+	SCR::Write (.etc.sssd_conf.v.sssd.services, "nss,pam");
+
+	// " Make sure that "filter_groups" and "filter_users" in the "[nss]" section contains "root".
+	string f_g	= (string) SCR::Read (.etc.sssd_conf.v.nss.filter_groups);
+	list<string> l	= (list<string>) union (splitstring (f_g, ","), ["root"]);
+	SCR::Write (.etc.sssd_conf.v.nss.filter_groups, mergestring (l, ","));
+
+	string f_u	= (string) SCR::Read (.etc.sssd_conf.v.nss.filter_users);
+	l		= (list<string>) union (splitstring (f_u, ","), ["root"]);
+	SCR::Write (.etc.sssd_conf.v.nss.filter_users, mergestring (l, ","));
+
+	path domain	= add (.etc.sssd_conf.v, "domain/default");
+
+	string uri	= sformat ("ldap%1://%2", ldap_tls ? "s" : "", String::FirstChunk (server, " \t"));
+	SCR::Write (add (domain, "ldap_uri"), uri);
+	SCR::Write (add (domain, "ldap_search_base"), base_dn);
+	SCR::Write (add (domain, "ldap_schema"), "rfc2307bis");
+	SCR::Write (add (domain, "id_provider"), "ldap");
+	SCR::Write (add (domain, "ldap_user_uuid"), "entryuuid");
+	SCR::Write (add (domain, "ldap_group_uuid"), "entryuuid");
+
+	SCR::Write (add (domain, "ldap_id_use_start_tls"), ldap_tls ? "True" : "False");
+	SCR::Write (add (domain, "cache_credentials"), sssd_cache_credentials ? "True" : "False");
+	SCR::Write (add (domain, "ldap_tls_cacertdir"), tls_cacertdir == "" ? nil : tls_cacertdir);
+	SCR::Write (add (domain, "ldap_tls_cacert"), tls_cacertfile == "" ? nil : tls_cacertfile);
+
+	if (!contains (sections, "domain/default"))
+	{
+	    SCR::Write (add (.etc.sssd_conf.section_comment, "domain/default"), "\n# Section created by YaST\n");
+	}
+
+	// In a mixed Kerberos/LDAP setup the following changes are needed in the [domain/default] section:
+	if (Pam::Enabled("krb5"))
+	{
+	    SCR::Write (add (domain, "auth_provider"), "krb5");
+	    SCR::Write (add (domain, "chpass_provider"), "krb5");
+	    /*
+		FIXME how to read krb settings:
+		a) use agent directly (moved out from yast2-kerberos-client)
+		b) use Read + Export of Kerberos.ycp
+
+	    * Set "krb5_kdcip" to the hostname of the kerberos kdc
+	    * Set "krb5_realm" to kerberos realm
+	    */
+	    if (Package::Installed ("yast2-kerberos-client"))
+	    {
+		WFM::CallFunction ("kerberos-client_auto", ["Read"]);
+		any e = WFM::CallFunction ("kerberos-client_auto",["Export"]);
+		if (is (e,map) && e != $[])
+		{
+		    map kerberos	= (map) e;
+y2internal ("kerberos export map: %1", kerberos);
+		    SCR::Write (add (domain, "krb5_realm"), kerberos["kerberos_client","default_domain"]:nil);
+		    SCR::Write (add (domain, "krb5_kdcip"), kerberos["kerberos_client","kdc_server"]:nil);
+		}
+	    }
+
+	}
+	else
+	{
+	    SCR::Write (add (domain, "chpass_provider"), "ldap");
+	    SCR::Write (add (domain, "auth_provider"), "ldap");
+	}
+
+	return true;
+    }
 
     /**
      * If a file does not + entry, add it.
@@ -2340,19 +2457,26 @@ Select another one.
 		AddLdapConfEntry ("pam_filter", "objectClass=posixAccount");
 	    }
 
-	    // save the user and group bases
-	    user_base = base_dn;
-	    group_base = base_dn;
+	    if (sssd)
+	    {
+		WriteSSSDConfig ();
+	    }
+	    else
+	    {
+		// save the user and group bases
+		user_base = base_dn;
+		group_base = base_dn;
 
-	    WriteLdapConfEntry ("nss_base_passwd",
-		(nss_base_passwd != base_dn && nss_base_passwd != "") ?
-		nss_base_passwd : nil);
-	    WriteLdapConfEntry ("nss_base_shadow",
-		(nss_base_shadow != base_dn && nss_base_shadow != "") ?
-		nss_base_shadow : nil);
-	    WriteLdapConfEntry ("nss_base_group",
-		(nss_base_group != base_dn && nss_base_group != "") ?
-		nss_base_group : nil);
+		WriteLdapConfEntry ("nss_base_passwd",
+		    (nss_base_passwd != base_dn && nss_base_passwd != "") ?
+		    nss_base_passwd : nil);
+		WriteLdapConfEntry ("nss_base_shadow",
+		    (nss_base_shadow != base_dn && nss_base_shadow != "") ?
+		    nss_base_shadow : nil);
+		WriteLdapConfEntry ("nss_base_group",
+		    (nss_base_group != base_dn && nss_base_group != "") ?
+		    nss_base_group : nil);
+	    }
 
 	    // default value is 'yes'
 	    WriteLdapConfEntry ("tls_checkpeer", tls_checkpeer == "yes" ? nil : tls_checkpeer);
@@ -2376,38 +2500,52 @@ Select another one.
 
 	    if (!oes)
 	    {
-		// pam settigs
-		if (Pam::Enabled("krb5"))
+		if (sssd)
 		{
-		    // If kerberos is used for authentication we configure
-		    // pam_ldap in a way that we use only the account checking.
-		    // Other configuration would mess up password changing
-		    Pam::Add ("ldap-account_only");
+		    Pam::Add ("sss");
+		    // Add "sss" to the passwd and group databases in nsswitch.conf
+		    Nsswitch::WriteDb ("passwd", (list<string>)
+			union (nsswitch["passwd"]:[], ["sss"]));
+		    Nsswitch::WriteDb ("group", (list<string>)
+			union (nsswitch["group"]:[], ["sss"]));
 		}
 		else
 		{
-		    Pam::Add ("ldap");
-		}
-		// modify sources in /etc/nsswitch.conf
-		Nsswitch::WriteDb ("passwd", ["compat"]);
-		Nsswitch::WriteDb ("passwd_compat", (list<string>)
-		    union (nsswitch["passwd_compat"]:[], ["ldap"]));
+		    // pam settigs
+		    if (Pam::Enabled("krb5"))
+		    {
+			// If kerberos is used for authentication we configure
+			// pam_ldap in a way that we use only the account checking.
+			// Other configuration would mess up password changing
+			Pam::Add ("ldap-account_only");
+		    }
+		    else
+		    {
+			Pam::Add ("ldap");
+		    }
 
-		foreach (string db, ["services","netgroup","aliases"], {
-		    Nsswitch::WriteDb (db, ["files", "ldap"]);
-		});
+		    // modify sources in /etc/nsswitch.conf
+		    Nsswitch::WriteDb ("passwd", ["compat"]);
+		    Nsswitch::WriteDb ("passwd_compat", (list<string>)
+			union (nsswitch["passwd_compat"]:[], ["ldap"]));
 
-		if (contains (nsswitch["group"]:[], "compat") &&
-		    contains (nsswitch["group_compat"]:[], "ldap"))
-		{
-		    y2milestone ("group_compat present, not changing");
-		}
-		else
-		{
-		    Nsswitch::WriteDb ("group", ["files", "ldap"]);
+		    foreach (string db, ["services","netgroup","aliases"], {
+			Nsswitch::WriteDb (db, ["files", "ldap"]);
+		    });
+
+		    if (contains (nsswitch["group"]:[], "compat") &&
+			contains (nsswitch["group_compat"]:[], "ldap"))
+		    {
+			y2milestone ("group_compat present, not changing");
+		    }
+		    else
+		    {
+			Nsswitch::WriteDb ("group", ["files", "ldap"]);
+		    }
 		}
 
 		Nsswitch::Write ();
+
 	    }
 	    Autologin::Write (write_only);
 	}
@@ -2417,18 +2555,17 @@ Select another one.
 	    foreach (string db, [ "passwd", "group" ], ``{
 		string new_db		= db+"_compat";
 		nsswitch [db]	= filter (
-		    string v, nsswitch[db]:[], ``(v != "ldap"));
+		    string v, nsswitch[db]:[], ``(v != "ldap" && v != "sss"));
 		if (nsswitch[db]:[] == [] || nsswitch[db]:[] == ["files"])
 		    nsswitch [db]	= ["compat"];
 		nsswitch [new_db]	= filter (
-		    string v, nsswitch[new_db]:[], ``(v != "ldap"));
+		    string v, nsswitch[new_db]:[], ``(v != "ldap" && v != "sss"));
 		Nsswitch::WriteDb (db, nsswitch[db]:["compat"]);
 		Nsswitch::WriteDb (new_db, nsswitch[new_db]:[]);
 	    });
-
 	    foreach (string db, ["services" ,"netgroup", "aliases" ], {
 		list<string> db_l	= (list<string>) filter (
-		    string v, Nsswitch::ReadDb (db), ``(v != "ldap"));
+		    string v, Nsswitch::ReadDb (db), ``(v != "ldap" && v != "sss"));
 		if (db_l == [])
 		    db_l	= ["files"];
 		Nsswitch::WriteDb (db, db_l);
@@ -2443,6 +2580,10 @@ Select another one.
 	    else if(Pam::Enabled("ldap-account_only"))
 	    {
 		Pam::Remove ("ldap-account_only");
+	    }
+	    if (Pam::Enabled ("sss"))
+	    {
+		Pam::Remove ("sss");
 	    }
 	}
 
@@ -2495,6 +2636,20 @@ Select another one.
 
 	if (!write_only)
 	{
+	    if (sssd && start)
+	    {
+		// enable the sssd daemon to be started at bootup
+		Service::Adjust ("sssd", "enable");
+		if (Service::Status ("sssd") == 0)
+		{
+		    Service::Restart ("sssd");
+		}
+		else
+		{
+		    Service::Start ("sssd");
+		}
+	    }
+
 	    if (Package::Installed ("nscd") && modified)
 	    {
 		SCR::Execute (.target.bash, "/usr/sbin/nscd -i passwd");
@@ -2617,7 +2772,7 @@ Select another one.
 
 	block<boolean> abort = ``{ return false; };
 
-	list<string> needed_packages = ["pam_ldap", "nss_ldap"];
+	list<string> needed_packages = sssd ? sssd_packages : pam_nss_packages;
 
 	if (_start_autofs && !Package::Installed("autofs"))
 	{
