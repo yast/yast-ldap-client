@@ -2015,6 +2015,10 @@ y2internal ("kerberos export map: %1", kerberos);
 	    SCR::Write (add (domain, "auth_provider"), "ldap");
 	}
 
+	if (!SCR::Write(.etc.sssd_conf, nil))
+	{
+	    y2error ("error writing ldap.conf file");
+	}
 	return true;
     }
 
