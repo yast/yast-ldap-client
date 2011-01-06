@@ -3,8 +3,7 @@
 .etc.sssd_conf
 
 `ag_ini(
-//    `IniAgent("/etc/sssd/sssd.conf", $[ FIXME
-    `IniAgent("/tmp/sssd.conf", $[
+    `IniAgent("/etc/sssd/sssd.conf", $[
 	"options" : [ "ignore_case_regexps", "line_can_continue"],
 	"comments": [
 	    "^[ \t]*$",	// empty line
