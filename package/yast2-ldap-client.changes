@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Jan  7 12:11:38 CET 2011 - jsuchome@suse.cz
+
+- call c_rehash after downloading certificate (bnc#662937)
+- do not write into sssd.conf when it does not exist (bnc#662963)
+- 2.20.4
+
+-------------------------------------------------------------------
 Thu Jan  6 15:17:13 CET 2011 - jsuchome@suse.cz
 
 - ensure that sssd config file is written before starting service
