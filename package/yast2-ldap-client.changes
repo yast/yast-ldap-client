@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Jan 12 12:58:31 CET 2011 - jsuchome@suse.cz
+
+- write uri instead of just host name to ldap.conf and sssd.conf
+  (bnc#663012)
+- 2.20.5 
+
+-------------------------------------------------------------------
 Fri Jan  7 12:11:38 CET 2011 - jsuchome@suse.cz
 
 - call c_rehash after downloading certificate (bnc#662937)

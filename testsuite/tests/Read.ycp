@@ -31,7 +31,8 @@
 			"pam_password": "crypt",
 			"tls_cacertdir"	: "/etc/openldap/cacerts/",
 			"tls_cacertfile": nil,
-			"tls_checkpeer" : "no"
+			"tls_checkpeer" : "no",
+			"uri"	: "ldap://localhost:333"
 		    ]
 		]
 	    ],
@@ -102,4 +103,6 @@
     DUMP ( sformat ("base config DN: -%1-", Ldap::base_config_dn) );
 
     DUMP ( sformat ("bind DN: -%1-", Ldap::bind_dn) );
+
+    DUMP ( sformat ("server: -%1-", Ldap::server) );
 }

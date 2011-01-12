@@ -1,4 +1,5 @@
 Dump	==== reading... ============================
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."uri" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."host" "localhost"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."base" "dc=suse,dc=cz"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."ldap_version" nil

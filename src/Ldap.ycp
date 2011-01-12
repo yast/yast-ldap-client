@@ -32,6 +32,7 @@
     import "Stage";
     import "String";
     import "Summary";
+    import "URL";
 
     /**
      * show popups with error messages?
@@ -643,6 +644,35 @@
 	return oes;
     }
 
+    // convert list of uri's to list of hosts
+    string uri2servers (string uri) {
+	return mergestring (maplist (string u, splitstring (uri, " \t"), {
+		map url     = URL::Parse (u);
+		string h    = url["host"]:"";
+		if (url["port"]:"" != "")
+		    h       = sformat ("%1:%2", h, url["port"]:"");
+		return h;
+	}), " ");
+    }
+
+    /**
+     * Read values of LDAP hosts from ldap.conf
+     * get them from 'uri' or 'host' values
+     */
+    global string ReadLdapHosts () {
+	string ret	= "";
+	string uri	= ReadLdapConfEntry ("uri", "");
+	if (uri == "")
+	{
+	    ret = ReadLdapConfEntry ("host", "");
+	}
+	else
+	{
+	    ret = uri2servers (uri);
+	}
+	return ret;
+    }
+
     /**
      * Reads LDAP settings from the SCR
      * @return success
@@ -689,7 +719,8 @@
 	     size (nsswitch["passwd_compat"]:[]) == 0));
 	nis_available	= nis_available && (Service::Status ("ypbind") == 0);
 
-	server = ReadLdapConfEntry ("host", "");
+	server	= ReadLdapHosts ();
+
 	base_dn  = ReadLdapConfEntry ("base", "");
 
 	old_base_dn = base_dn;
@@ -975,7 +1006,7 @@
 	if (bind_pass == nil && servers == "")
 	{
 	    y2milestone ("--- server not read yet or empty, reading now");
-	    servers	= ReadLdapConfEntry ("host", "");
+	    servers	= ReadLdapHosts ();
 	}
 
 	list l_servers = splitstring (servers, " \t");
@@ -989,7 +1020,7 @@
 	if (bind_pass == nil && servers == "")
 	{
 	    y2milestone ("--- server not read yet or empty, reading now");
-	    servers	= ReadLdapConfEntry ("host", "");
+	    servers	= ReadLdapHosts ();
 	}
 
 	list l_servers = splitstring (servers, " \t");
@@ -1908,8 +1939,23 @@ Select another one.
 	map out = (map)SCR::Execute(.target.bash_output,
 	    "/bin/rpm -V openldap2-client");
 
-	list open_host	= (list) SCR::Read
-	    (.etc.ldap_conf.v."/etc/openldap/ldap.conf".host);
+	list open_host	= [];
+	list open_uri	= (list) SCR::Read
+	    (.etc.ldap_conf.v."/etc/openldap/ldap.conf".uri);
+	if (open_uri == [])
+	{
+	    open_uri	= (list) SCR::Read
+	    (.etc.ldap_conf.v."/etc/openldap/ldap.conf".URI);
+	}
+	if (open_uri == [])
+	{
+	    open_host	= (list) SCR::Read
+		(.etc.ldap_conf.v."/etc/openldap/ldap.conf".host);
+	}
+	else
+	{
+	    open_host	= [ uri2servers (open_uri[0]:"")];
+	}
 	list open_base	= (list) SCR::Read
 	    (.etc.ldap_conf.v."/etc/openldap/ldap.conf".base);
 
@@ -1925,8 +1971,16 @@ Select another one.
 	if (write_openldap_conf)
 	{
 	    // update ldap.conf
-	    SCR::Write (.etc.ldap_conf.v."/etc/openldap/ldap.conf".host,
-		[server]);
+	    SCR::Write (.etc.ldap_conf.v."/etc/openldap/ldap.conf".host, nil);
+
+	    string uri	= mergestring (
+		maplist (string u, splitstring (server, " \t"), {
+		    return "ldap://" + u;
+		}), " ");
+
+	    SCR::Write (.etc.ldap_conf.v."/etc/openldap/ldap.conf".uri,
+		[uri]);
+
 	    SCR::Write(.etc.ldap_conf.v."/etc/openldap/ldap.conf".base,
 		[base_dn]);
 
@@ -1970,7 +2024,7 @@ Select another one.
 
 	path domain	= add (.etc.sssd_conf.v, "domain/default");
 
-	string uri	= sformat ("ldap%1://%2", ldap_tls ? "s" : "", String::FirstChunk (server, " \t"));
+	string uri	= sformat ("ldap://%1", String::FirstChunk (server, " \t"));
 	SCR::Write (add (domain, "ldap_uri"), uri);
 	SCR::Write (add (domain, "ldap_search_base"), base_dn);
 	SCR::Write (add (domain, "ldap_schema"), "rfc2307bis");
@@ -2433,7 +2487,12 @@ y2internal ("kerberos export map: %1", kerberos);
 	if (modified)
 	{
 	    // update ldap.conf
-	    WriteLdapConfEntry ("host", server);
+	    WriteLdapConfEntry ("host", nil);
+	    string uri	= mergestring (
+		maplist (string u, splitstring (server, " \t"), {
+		    return "ldap://" + u;
+		}), " ");
+	    WriteLdapConfEntry ("uri", uri);
 	    WriteLdapConfEntry ("base", base_dn);
 
 	    if (member_attribute != old_member_attribute)
