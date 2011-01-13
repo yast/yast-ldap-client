@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jan 13 11:37:48 CET 2011 - jsuchome@suse.cz
+
+- pass certificate data to .ldap agent (bnc#662949)
+- 2.20.6 
+
+-------------------------------------------------------------------
 Wed Jan 12 12:58:31 CET 2011 - jsuchome@suse.cz
 
 - write uri instead of just host name to ldap.conf and sssd.conf

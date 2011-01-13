@@ -1044,7 +1044,9 @@
 	    "hostname":	GetFirstServer (server),
 	    "port":	GetFirstPort (server),
 	    "version":	ldap_v2 ? 2 : 3,
-	    "use_tls":	ldap_tls ? "yes" : "no"
+	    "use_tls":	ldap_tls ? "yes" : "no",
+	    "cacertdir"	: Ldap::tls_cacertdir,
+	    "cacertfile": Ldap::tls_cacertfile
 	];
 	boolean init = (boolean) SCR::Execute (.ldap, args);
 	if (init == nil)
@@ -1126,7 +1128,9 @@ Retry connection without TLS/SSL?
 		"hostname"	: GetFirstServer (server),
 		"port"		: GetFirstPort (server),
 		"version"	: ldap_v2 ? 2 : 3,
-		"use_tls"	: ldap_tls ? "yes" : "no"
+		"use_tls"	: ldap_tls ? "yes" : "no",
+		"cacertdir"	: Ldap::tls_cacertdir,
+		"cacertfile"	: Ldap::tls_cacertfile
 	    ];
 	boolean init = (boolean) SCR::Execute (.ldap, args);
 	// error message
@@ -1143,7 +1147,7 @@ Retry connection without TLS/SSL?
 		if (args["use_tls"]:"" == "yes" &&
 		    errmap["tls_error"]:false && ConnectWithoutTLS (errmap))
 		{
-		    args["use_tls"]	= false;
+		    args["use_tls"]	= "no";
 		    init = (boolean) SCR::Execute (.ldap, args);
 		    if (init == nil)
 			ret	= unknown;
