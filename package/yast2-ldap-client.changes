@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jan 20 16:18:04 CET 2011 - jsuchome@suse.cz
+
+- remove pam_krb5 when sssd is configured (fate#308902)
+- 2.20.7
+
+-------------------------------------------------------------------
 Thu Jan 13 11:37:48 CET 2011 - jsuchome@suse.cz
 
 - pass certificate data to .ldap agent (bnc#662949)
