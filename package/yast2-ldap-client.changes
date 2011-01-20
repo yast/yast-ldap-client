@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jan 20 16:41:00 CET 2011 - jsuchome@suse.cz
+
+- write default_realm as realm
+- 2.20.8 
+
+-------------------------------------------------------------------
 Thu Jan 20 16:18:04 CET 2011 - jsuchome@suse.cz
 
 - remove pam_krb5 when sssd is configured (fate#308902)
