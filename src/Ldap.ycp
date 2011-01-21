@@ -306,6 +306,12 @@
     // enable/disable offline authentication ('cache_credentials' key)
     global boolean sssd_cache_credentials	= false;
 
+    // Kerberos default realm (for sssd)
+    global string krb5_realm			= "";
+
+    // adress of KDC (key distribution centre) server for default realm
+    global string krb5_kdcip			= "";
+
     //----------------------------------------------------------------
 
     /**
@@ -415,6 +421,8 @@
 	tls_checkpeer	= settings ["tls_checkpeer"]:"yes";
 	mkhomedir	= settings ["mkhomedir"]:mkhomedir;
 	sssd		= settings ["sssd"]:sssd;
+	krb5_realm	= settings ["krb5_realm"]:krb5_realm;
+	krb5_kdcip	= settings ["krb5_kdcip"]:krb5_kdcip;
 	if (_start_autofs)
 	    required_packages = (list<string>) union (required_packages, ["autofs"]);
 
@@ -457,7 +465,7 @@
 	    "create_ldap"	: create_ldap,
 	    "login_enabled"	: login_enabled,
 	    "mkhomedir"		: mkhomedir,
-	    "sssd"		: sssd
+	    "sssd"		: sssd,
 	];
 	if (tls_checkpeer != "yes")
 	    e["tls_checkpeer"]	= tls_checkpeer;
@@ -473,6 +481,10 @@
 	    e["nss_base_group"]     = nss_base_group;
 	if (_autofs_allowed)
 	    e["start_autofs"]	= _start_autofs;
+	if (krb5_realm != "")
+	    e["krb5_realm"]	= krb5_realm;
+	if (krb5_kdcip != "")
+	    e["krb5_kdcip"]	= krb5_kdcip;
 	return e;
     }
 
@@ -541,6 +553,26 @@
     }
 
     /* ------------- read/write functions ------------------------------- */
+
+    /**
+     * For sssd, some kerberos values are needed
+     */
+    global boolean ReadKrb5Conf ()
+    {
+
+	list<string> realm = (list<string>) SCR::Read (.etc.krb5_conf.v.libdefaults.default_realm);
+	if (realm == nil)
+	    realm = [];
+	krb5_realm	= realm[0]:"";
+
+	list<string> kdcs = (list<string>) SCR::Read (add (add (.etc.krb5_conf.v, krb5_realm), "kdc"));
+	if (kdcs == nil)
+	    kdcs	= [];
+	krb5_kdcip	= mergestring (kdcs, " ");
+
+	return true;
+    }
+
 
     /**
      * Read single entry from /etc/ldap.conf file
@@ -844,6 +876,21 @@
 
 	Autologin::Read ();
 
+	if (true || Pam::Enabled("krb5"))
+	{
+	    ReadKrb5Conf ();
+	}
+	if (FileUtils::Exists ("/etc/sssd/sssd.conf"))
+	{
+	    // read realm and kdc from sssd.conf if available
+	    path domain     = add (.etc.sssd_conf.v, "domain/default");
+	    string realm	= (string) SCR::Read (add (domain, "krb5_realm"));
+	    if (realm != nil)
+		krb5_realm	= realm;
+	    string kdc		= (string) SCR::Read (add (domain, "krb5_kdcip"));
+	    if (kdc != nil)
+		krb5_kdcip	= kdc;
+	}
 
 	// Now check if previous configuration of LDAP server didn't proposed
 	// some better values:
@@ -2047,31 +2094,13 @@ Select another one.
 	}
 
 	// In a mixed Kerberos/LDAP setup the following changes are needed in the [domain/default] section:
-	if (Pam::Enabled("krb5"))
+	if (krb5_realm != "" && krb5_kdcip != "")
 	{
-// FIXME: do not test for pam, it may be already off...
 	    SCR::Write (add (domain, "auth_provider"), "krb5");
 	    SCR::Write (add (domain, "chpass_provider"), "krb5");
-	    /*
-		FIXME how to read krb settings:
-		a) use agent directly (moved out from yast2-kerberos-client)
-		b) use Read + Export of Kerberos.ycp
 
-	    * Set "krb5_kdcip" to the hostname of the kerberos kdc
-	    * Set "krb5_realm" to kerberos realm
-	    */
-	    if (Package::Installed ("yast2-kerberos-client"))
-	    {
-		WFM::CallFunction ("kerberos-client_auto", ["Read"]);
-		any e = WFM::CallFunction ("kerberos-client_auto",["Export"]);
-		if (is (e,map) && e != $[])
-		{
-		    map kerberos	= (map) e;
-		    SCR::Write (add (domain, "krb5_realm"), kerberos["kerberos_client","default_realm"]:nil);
-		    SCR::Write (add (domain, "krb5_kdcip"), kerberos["kerberos_client","kdc_server"]:nil);
-		}
-	    }
-
+	    SCR::Write (add (domain, "krb5_realm"), krb5_realm);
+	    SCR::Write (add (domain, "krb5_kdcip"), krb5_kdcip);
 	}
 	else
 	{

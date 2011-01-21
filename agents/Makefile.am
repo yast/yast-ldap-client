@@ -5,8 +5,7 @@
 #
 
 scrconf_DATA = ldap_conf.scr    \
-	       cfg_ldap.scr	\
-	       etc_sssd_conf.scr
+	       cfg_ldap.scr
 
 fillup_DATA = sysconfig.ldap
 

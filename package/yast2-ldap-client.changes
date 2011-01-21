@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Jan 21 14:40:48 CET 2011 - jsuchome@suse.cz
+
+- if sssd is active, ask for basic Kerberos settings (fate#308902)
+- 2.20.9 
+
+-------------------------------------------------------------------
 Fri Jan 21 12:27:22 CET 2011 - jsuchome@suse.cz
 
 - agent for sssd.conf moved to yast2-pam to be accessible for

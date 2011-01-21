@@ -36,6 +36,16 @@
 		    ]
 		]
 	    ],
+	    "krb5_conf" : $[
+		"v" : $[
+		    "libdefaults": $[
+			"default_realm": ["SUSE.CZ"],
+		    ],
+		    "SUSE.CZ": $[
+			"kdc": ["kdc.suse.cz"],
+		    ],
+		],
+	    ],
 	    // /etc/security/pam_*
 	    "security": $[
 		"section": $[

@@ -715,6 +715,8 @@ user home directories.</p>
     string tls_cacertdir	= Ldap::tls_cacertdir;
     string tls_cacertfile	= Ldap::tls_cacertfile;
     boolean sssd		= Ldap::sssd;
+    string krb5_realm		= Ldap::krb5_realm;
+    string krb5_kdcip		= Ldap::krb5_kdcip;
 
     list<term>member_attributes	= [
 	`item (`id("member"), "member", member_attribute == "member"),
@@ -833,12 +835,8 @@ user home directories.</p>
 	);
     }
 
-    define void set_client_term () {
-
-	term cont = `Top (`HBox(`HSpacing (5), `VBox(
-	    `VSpacing(0.4),
-	    `Left (`CheckBox (`id (`sssd), `opt (`notify), _("Use S&ystem Security Services Daemon (SSSD)"), sssd)),
-	    `VSpacing(0.4),
+    term get_frame_nss () {
+	return
 	    // frame label
 	    `Frame (_("Naming Contexts"), `HBox(
 	    `HSpacing (1), `VBox(
@@ -876,7 +874,28 @@ user home directories.</p>
 		`VSpacing(0.4)
 	    ),
 	    `HSpacing (1)
-	    )),
+	    ));
+    }
+
+    term get_frame_krb () {
+	return
+	    // frame label
+	    `Frame (_("Basic Kerberos Settings"), `HBox (`HSpacing (1), `VBox (
+		// textentry label
+		`TextEntry (`id (`krb5_realm), _("Default Real&m"), krb5_realm),
+		// textentry label
+		`TextEntry (`id (`krb5_kdcip), _("&KDC Server Address"), krb5_kdcip),
+		`VSpacing (0.4)
+	    ), `HSpacing (1)));
+    }
+
+    define void set_client_term () {
+
+	term cont = `Top (`HBox(`HSpacing (5), `VBox(
+	    `VSpacing(0.4),
+	    `Left (`CheckBox (`id (`sssd), `opt (`notify), _("Use S&ystem Security Services Daemon (SSSD)"), sssd)),
+	    `VSpacing(0.4),
+	    `ReplacePoint (`id (`rp_frame), `VBox (sssd ? get_frame_krb () : get_frame_nss ())),
 	    `VSpacing (0.4),
 	    `ComboBox (`id (`pam_password), `opt(`notify,`hstretch,`editable),
 		// combobox label
@@ -915,10 +934,6 @@ user home directories.</p>
 	UI::ReplaceWidget (`tabContents, cont);
 	if (has_tabs)
 	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `client);
-
-	foreach (symbol ui, [ `nss_base_passwd, `nss_base_group, `nss_base_shadow, `br_passwd, `br_shadow, `br_group ], {
-	    UI::ChangeWidget (`id (ui), `Enabled, UI::QueryWidget (`id (`sssd), `Value) == false);
-	});
     }
 
     define void set_admin_term () {
@@ -1014,12 +1029,23 @@ user home directories.</p>
 	if (current == `client)
 	{
 	    member_attribute =(string)UI::QueryWidget(`id(`group_style),`Value);
-	    nss_base_passwd	= (string)
-		UI::QueryWidget(`id(`nss_base_passwd),`Value);
-	    nss_base_shadow	= (string)
-		UI::QueryWidget(`id(`nss_base_shadow),`Value);
-	    nss_base_group	= (string)
-		UI::QueryWidget(`id(`nss_base_group),`Value);
+
+	    if (sssd)
+	    {
+		krb5_realm	= (string)
+		    UI::QueryWidget (`id (`krb5_realm), `Value);
+		krb5_kdcip	= (string)
+		    UI::QueryWidget (`id (`krb5_kdcip), `Value);
+	    }
+	    else
+	    {
+		nss_base_passwd	= (string)
+		    UI::QueryWidget(`id(`nss_base_passwd),`Value);
+		nss_base_shadow	= (string)
+		    UI::QueryWidget(`id(`nss_base_shadow),`Value);
+		nss_base_group	= (string)
+		    UI::QueryWidget(`id(`nss_base_group),`Value);
+	    }
 	    pam_password = (string) UI::QueryWidget(`id(`pam_password), `Value);
 
 	    tls_cacertfile	= (string) UI::QueryWidget(`id(`tls_cacertfile), `Value);
@@ -1079,9 +1105,7 @@ user home directories.</p>
 	if (result == `sssd)
 	{
 	    sssd	= (boolean) UI::QueryWidget (`id (`sssd), `Value);
-	    foreach (symbol ui, [ `nss_base_passwd, `nss_base_group, `nss_base_shadow, `br_passwd, `br_shadow, `br_group ], {
-		UI::ChangeWidget (`id (ui), `Enabled, !sssd);
-	    });
+	    UI::ReplaceWidget (`id (`rp_frame), sssd ? get_frame_krb () : get_frame_nss ());
 	}
 	if (result == `br_tls_cacertdir)
 	{
@@ -1270,7 +1294,9 @@ Please select another one."), new_dn));
 		Ldap::ldap_v2 != ldap_v2 ||
 		Ldap::tls_cacertdir != tls_cacertdir ||
 		Ldap::tls_cacertfile != tls_cacertfile		||
-		Ldap::sssd != sssd
+		Ldap::sssd != sssd				||
+		Ldap::krb5_realm != krb5_realm			||
+		Ldap::krb5_kdcip != krb5_kdcip
 	    )
 	    {
 		Ldap::bind_dn		= bind_dn;
@@ -1286,6 +1312,8 @@ Please select another one."), new_dn));
 		Ldap::tls_cacertdir	= tls_cacertdir;
 		Ldap::tls_cacertfile	= tls_cacertfile;
 		Ldap::sssd		= sssd;
+		Ldap::krb5_realm	= krb5_realm;
+		Ldap::krb5_kdcip	= krb5_kdcip;
 		Ldap::modified		= true;
 	    }
 	    break;
