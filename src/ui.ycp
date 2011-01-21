@@ -516,6 +516,8 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 		}
 
 		list<string> needed_packages = Ldap::sssd ? Ldap::sssd_packages : Ldap::pam_nss_packages;
+		if (Ldap::sssd_with_krb)
+		    needed_packages	= (list<string>) union (needed_packages, Ldap::kerberos_packages);
 
 		if (start && !Package::InstalledAll (needed_packages))
 		{
@@ -717,6 +719,7 @@ user home directories.</p>
     boolean sssd		= Ldap::sssd;
     string krb5_realm		= Ldap::krb5_realm;
     string krb5_kdcip		= Ldap::krb5_kdcip;
+    boolean sssd_with_krb	= Ldap::sssd_with_krb;
 
     list<term>member_attributes	= [
 	`item (`id("member"), "member", member_attribute == "member"),
@@ -881,6 +884,9 @@ user home directories.</p>
 	return
 	    // frame label
 	    `Frame (_("Basic Kerberos Settings"), `HBox (`HSpacing (1), `VBox (
+		// checkbox label
+		`Left (`CheckBox (`id (`sssd_with_krb), `opt (`notify), _("&Use Kerberos"), sssd_with_krb)),
+		`VSpacing(0.4),
 		// textentry label
 		`TextEntry (`id (`krb5_realm), _("Default Real&m"), krb5_realm),
 		// textentry label
@@ -934,6 +940,11 @@ user home directories.</p>
 	UI::ReplaceWidget (`tabContents, cont);
 	if (has_tabs)
 	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `client);
+	if (sssd)
+	{
+	    UI::ChangeWidget (`id (`krb5_realm), `Enabled, sssd_with_krb);
+	    UI::ChangeWidget (`id (`krb5_kdcip), `Enabled, sssd_with_krb);
+	}
     }
 
     define void set_admin_term () {
@@ -1106,6 +1117,12 @@ user home directories.</p>
 	{
 	    sssd	= (boolean) UI::QueryWidget (`id (`sssd), `Value);
 	    UI::ReplaceWidget (`id (`rp_frame), sssd ? get_frame_krb () : get_frame_nss ());
+	}
+	if (result == `sssd_with_krb)
+	{
+	    sssd_with_krb	= (boolean) UI::QueryWidget (`id (`sssd_with_krb), `Value);
+	    UI::ChangeWidget (`id (`krb5_realm), `Enabled, sssd_with_krb);
+	    UI::ChangeWidget (`id (`krb5_kdcip), `Enabled, sssd_with_krb);
 	}
 	if (result == `br_tls_cacertdir)
 	{
@@ -1281,6 +1298,8 @@ Please select another one."), new_dn));
 		    Ldap::ppolicies[dn]	= pp;
 		}
 	    });
+	    if (krb5_realm == "" || krb5_kdcip == "" || !sssd)
+		sssd_with_krb	= false;
 
 	    if (Ldap::GetMainConfigDN() != base_config_dn	||
 		Ldap::bind_dn != bind_dn			||
@@ -1314,6 +1333,7 @@ Please select another one."), new_dn));
 		Ldap::sssd		= sssd;
 		Ldap::krb5_realm	= krb5_realm;
 		Ldap::krb5_kdcip	= krb5_kdcip;
+		Ldap::sssd_with_krb	= sssd_with_krb;
 		Ldap::modified		= true;
 	    }
 	    break;
