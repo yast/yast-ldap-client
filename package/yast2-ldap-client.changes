@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Jan 21 12:27:22 CET 2011 - jsuchome@suse.cz
+
+- agent for sssd.conf moved to yast2-pam to be accessible for
+  kerberos-client
+
+-------------------------------------------------------------------
 Thu Jan 20 16:41:00 CET 2011 - jsuchome@suse.cz
 
 - write default_realm as realm

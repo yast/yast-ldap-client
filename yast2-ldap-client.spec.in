@@ -16,8 +16,9 @@ Requires:	yast2-network
 # removed lowercasing of LDAP object names
 Requires:	yast2-ldap >= 2.17.1
 
-# new API of Pam.ycp
-Requires:	yast2-pam >= 2.14.0
+# etc_sssd_conf.scr
+Requires:	yast2-pam >= 2.20.0
+
 Provides:	yast2-config-ldap_client
 Obsoletes:	yast2-config-ldap_client
 Provides:	yast2-trans-ldap_client
