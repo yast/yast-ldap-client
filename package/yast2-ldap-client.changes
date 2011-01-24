@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Jan 24 15:12:08 CET 2011 - jsuchome@suse.cz
+
+- look for 'sss' in nsswitch.conf, not for 'sssd' (bnc#666184)
+- 2.20.11
+
+-------------------------------------------------------------------
 Fri Jan 21 17:01:21 CET 2011 - jsuchome@suse.cz
 
 - explicitely ask for kerberos+sssd enablement

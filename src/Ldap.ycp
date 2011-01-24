@@ -744,7 +744,7 @@
 	else
 	{
 	    // ... or as 'sssd'
-	    start = contains (nsswitch["passwd"]:[], "sssd");
+	    start = contains (nsswitch["passwd"]:[], "sss");
 	}
 
 	// nothing is configured, but some packages are installed
