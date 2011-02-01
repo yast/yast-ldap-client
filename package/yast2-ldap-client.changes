@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Feb  1 10:36:03 CET 2011 - jsuchome@suse.cz
+
+- install correct package for Kerberos (krb5-client)
+- read cache_credentials value from sssd.conf
+- 2.20.12
+
+-------------------------------------------------------------------
 Mon Jan 24 15:12:08 CET 2011 - jsuchome@suse.cz
 
 - look for 'sss' in nsswitch.conf, not for 'sssd' (bnc#666184)
