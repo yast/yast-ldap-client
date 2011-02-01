@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Feb  1 11:32:25 CET 2011 - jsuchome@suse.cz
+
+- do not add +-lines when configuring sssd (bnc#668565)
+- 2.20.13
+
+-------------------------------------------------------------------
 Tue Feb  1 10:36:03 CET 2011 - jsuchome@suse.cz
 
 - install correct package for Kerberos (krb5-client)
