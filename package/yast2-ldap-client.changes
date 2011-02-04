@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Feb  4 08:57:50 CET 2011 - jsuchome@suse.cz
+
+- reset connection when TLS status has been changed (bnc#662949)
+- 2.20.14 
+
+-------------------------------------------------------------------
 Tue Feb  1 11:32:25 CET 2011 - jsuchome@suse.cz
 
 - do not add +-lines when configuring sssd (bnc#668565)

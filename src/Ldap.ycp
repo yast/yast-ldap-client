@@ -272,6 +272,9 @@
 
     global boolean ldap_initialized	= false;
 
+    // was LDAP connection initialized with TLS?
+    global boolean tls_when_initialized	= false;
+
     /**
      * If false, do not read settings already set from outside
      * used e.g. for Users YaPI. see bug #60898
@@ -1097,6 +1100,14 @@
     }
 
     /**
+     * Shut down existing LDAP connection
+     */
+    global define boolean LDAPClose () {
+	ldap_initialized	= false;
+	return (boolean) SCR::Execute (.ldap.close);
+    }
+
+    /**
      * Initializes LDAP agent
      */
     global define string LDAPInit () ``{
@@ -1120,6 +1131,7 @@
 	else
 	{
 	    ldap_initialized	= init;
+	    tls_when_initialized= ldap_tls;
 	    if (!init)
 	    {
 		ret = LDAPError();
@@ -1133,6 +1145,10 @@
      * @return true if user wants to retry without TLS
      */
     global define boolean ConnectWithoutTLS (map errmap) {
+
+	string details	= errmap["msg"]:"";
+	if (errmap["server_msg"]:"" != "")
+	    details = sformat ("%1\n%2", details, errmap["server_msg"]:"");
 
 	UI::OpenDialog (`HBox(`HSpacing (0.5),
 	    `VBox(
@@ -1168,8 +1184,10 @@ Retry connection without TLS/SSL?
 	    if (ret == `details)
 	    {
 		if ((boolean)UI::QueryWidget (`id(`details), `Value))
-		    UI::ReplaceWidget (`id(`rp), `VBox (
-			`Label (errmap["msg"]:"")));
+		{
+
+		    UI::ReplaceWidget (`id(`rp), `VBox (`Label (details)));
+		}
 		else
 		    UI::ReplaceWidget (`id(`rp), `Empty());
 	    }
@@ -1230,6 +1248,7 @@ Retry connection without TLS/SSL?
 		}
 	    }
 	    ldap_initialized	= init;
+	    tls_when_initialized= args["use_tls"]:"no" == "yes";
 	}
 	return ret;
     }
