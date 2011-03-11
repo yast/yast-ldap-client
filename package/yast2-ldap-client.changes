@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Mar  8 14:58:01 CET 2011 - jsuchome@suse.cz
+
+- check if OES is there during autoinstallation (bnc#670288)
+- 2.17.23
+
+-------------------------------------------------------------------
 Wed Jun 23 12:45:32 CEST 2010 - jsuchome@suse.cz
 
 - include "Create Home Directory on Login" option in Import/Export
