@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Mar 11 15:02:00 CET 2011 - jsuchome@suse.cz
+
+- check if OES is there during autoinstallation (bnc#670288)
+- 2.21.0 
+
+-------------------------------------------------------------------
 Fri Feb  4 08:57:50 CET 2011 - jsuchome@suse.cz
 
 - reset connection when TLS status has been changed (bnc#662949)

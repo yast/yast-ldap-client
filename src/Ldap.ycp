@@ -2531,6 +2531,13 @@ Select another one.
 	if (eval (abort))
 	    return `abort;
 
+
+	// initialize 'oes' value when Read was not called (bnc#670288)
+	if (Mode::autoinst ())
+	{
+	    CheckOES ();
+	}
+
 	boolean ypbind_running = false;
 
 	if (!write_only)
