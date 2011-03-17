@@ -2672,6 +2672,11 @@ Select another one.
 		    {
 			Pam::Add ("ldap");
 		    }
+		    // sss was removed, using pam_ldap (bnc#680184)
+		    if (Pam::Enabled ("sss"))
+		    {
+			Pam::Remove ("sss");
+		    }
 
 		    // modify sources in /etc/nsswitch.conf
 		    Nsswitch::WriteDb ("passwd", ["compat"]);

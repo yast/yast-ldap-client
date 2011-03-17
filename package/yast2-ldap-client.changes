@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Mar 17 09:12:33 CET 2011 - jsuchome@suse.cz
+
+- if sssd is removed in GUI, remove also the pam module (bnc#680184)
+- 2.21.1 
+
+-------------------------------------------------------------------
 Fri Mar 11 15:02:00 CET 2011 - jsuchome@suse.cz
 
 - check if OES is there during autoinstallation (bnc#670288)
