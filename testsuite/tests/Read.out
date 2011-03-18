@@ -16,8 +16,6 @@ Read	.sysconfig.ldap.BIND_DN "uid=manager,dc=suse,dc=cz"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_map_attribute" 0
 Execute	.passwd.init $["base_directory":"/etc"] true
 Read	.passwd.passwd.pluslines ["+"]
-Read	.etc.krb5_conf.v.libdefaults.default_realm ["SUSE.CZ"]
-Read	.etc.krb5_conf.v."SUSE.CZ"."kdc" ["kdc.suse.cz"]
 Return	true
 Dump	============================================
 Dump	ldap used: -true-

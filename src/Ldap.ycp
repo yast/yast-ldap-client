@@ -318,11 +318,17 @@
     // packages needed for sssd configuration
     global list<string> sssd_packages		= [ "sssd" ];
 
+    // packages needed for sssd + kerberos configuration
+    global list<string> kerberos_packages	= [ "kerberos-client" ];
+
     // if sssd is used instead of pam_ldap/nss_ldap (fate#308902)
     global boolean sssd				= true;
 
     // enable/disable offline authentication ('cache_credentials' key)
     global boolean sssd_cache_credentials	= false;
+
+    // if kerberos should be set up for sssd
+    global boolean sssd_with_krb		= false;
 
     // Kerberos default realm (for sssd)
     global string krb5_realm			= "";
@@ -418,8 +424,12 @@
     global  define map AutoPackages() ``{
 
       if (start)
+      {
 	required_packages = (list<string>)
 	    union (required_packages, sssd ? sssd_packages : pam_nss_packages);
+	if (sssd_with_krb)
+	    required_packages = (list<string>) union (required_packages, kerberos_packages);
+      }
 
       list<string> install_pkgs = UpdatedArchPackages (required_packages);
       list remove_pkgs = [];
@@ -911,7 +921,7 @@
 
 	Autologin::Read ();
 
-	if (true || Pam::Enabled("krb5"))
+	if (Pam::Enabled ("krb5"))
 	{
 	    ReadKrb5Conf ();
 	}
@@ -925,6 +935,10 @@
 	    string kdc		= (string) SCR::Read (add (domain, "krb5_kdcip"));
 	    if (kdc != nil)
 		krb5_kdcip	= kdc;
+	}
+	if (krb5_realm != "" && krb5_kdcip != "")
+	{
+	    sssd_with_krb	= true;
 	}
 
 	// Now check if previous configuration of LDAP server didn't proposed
@@ -2121,7 +2135,7 @@ Select another one.
 	}
 
 	// In a mixed Kerberos/LDAP setup the following changes are needed in the [domain/default] section:
-	if (krb5_realm != "" && krb5_kdcip != "")
+	if (sssd_with_krb)
 	{
 	    SCR::Write (add (domain, "auth_provider"), "krb5");
 	    SCR::Write (add (domain, "chpass_provider"), "krb5");
@@ -2913,6 +2927,9 @@ Select another one.
 	list<string> needed_packages = sssd?
 		UpdatedArchPackages (sssd_packages) :
 		UpdatedArchPackages (pam_nss_packages);
+	if (sssd_with_krb)
+	    needed_packages = (list<string>) union (
+		needed_packages, UpdatedArchPackages (kerberos_packages));
 
 	if (_start_autofs && !Package::Installed("autofs"))
 	{
