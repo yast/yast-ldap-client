@@ -2094,7 +2094,7 @@ Select another one.
 		if (is (e,map) && e != $[])
 		{
 		    map kerberos	= (map) e;
-		    SCR::Write (add (domain, "krb5_realm"), kerberos["kerberos_client","default_domain"]:nil);
+		    SCR::Write (add (domain, "krb5_realm"), kerberos["kerberos_client","default_realm"]:nil);
 		    SCR::Write (add (domain, "krb5_kdcip"), kerberos["kerberos_client","kdc_server"]:nil);
 		}
 	    }
