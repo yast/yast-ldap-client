@@ -509,7 +509,7 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 
 		list<string> needed_packages = Ldap::sssd ?
 		    Ldap::UpdatedArchPackages (Ldap::sssd_packages) :
-		    Ldap::UpdatedArchPackages (Ldap::pam_nss_packages) :
+		    Ldap::UpdatedArchPackages (Ldap::pam_nss_packages);
 
 		if (start && !Package::InstalledAll (needed_packages))
 		{
