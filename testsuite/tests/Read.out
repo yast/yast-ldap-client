@@ -1,5 +1,5 @@
 Dump	==== reading... ============================
-Read	.etc.ldap_conf.v."/etc/ldap.conf"."host" "localhost"
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."uri" "ldap://localhost:333"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."base" "dc=suse,dc=cz"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."ldap_version" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."ssl" nil
@@ -22,3 +22,4 @@ Dump	ldap used: -true-
 Dump	nsswitch: -$["group":["compat"], "group_compat":["ldap"], "passwd":["compat"], "passwd_compat":["ldap"]]-
 Dump	base config DN: --
 Dump	bind DN: -uid=manager,dc=suse,dc=cz-
+Dump	server: -localhost:333-

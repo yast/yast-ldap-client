@@ -31,7 +31,8 @@
 			"pam_password": "crypt",
 			"tls_cacertdir"	: "/etc/openldap/cacerts/",
 			"tls_cacertfile": nil,
-			"tls_checkpeer" : nil
+			"tls_checkpeer" : nil,
+			"uri"		: nil
 		    ]
 		]
 	    ],
