@@ -1,4 +1,36 @@
 -------------------------------------------------------------------
+Fri Mar 18 17:33:17 CET 2011 - jsuchome@suse.cz
+
+- architecture dependent packages for sssd
+- 2.17.24
+
+-------------------------------------------------------------------
+Fri Mar 18 15:58:31 CET 2011 - jsuchome@suse.cz
+
+- added command line options for SSSD (bnc#680848)
+- if sssd is removed in GUI, remove also the pam module (bnc#680184)
+- reset connection when TLS status has been changed (bnc#662949)
+- do not add +-lines when configuring sssd (bnc#668565)
+- install correct package for Kerberos (krb5-client)
+- read cache_credentials value from sssd.conf
+- look for 'sss' in nsswitch.conf, not for 'sssd' (bnc#666184)
+- explicitely ask for kerberos+sssd enablement
+- if sssd is active, ask for basic Kerberos settings (fate#308902)
+- write default_realm as realm
+- remove pam_krb5 when sssd is configured (fate#308902)
+- pass certificate data to .ldap agent (bnc#662949)
+- write uri instead of just host name to ldap.conf and sssd.conf
+  (bnc#663012)
+- call c_rehash after downloading certificate (bnc#662937)
+- do not write into sssd.conf when it does not exist (bnc#662963)
+- ensure that sssd config file is written before starting service
+- added support for SSSD (fate#308902)
+- save certificate info to  /etc/openldap/ldap.conf (bnc#629549)
+- added UI for downloading CA certificates, enable editing of
+  certificate directory (bnc#574704)
+- use crypt for pam_password if exop is not supported (bnc#546398)
+
+-------------------------------------------------------------------
 Tue Mar  8 14:58:01 CET 2011 - jsuchome@suse.cz
 
 - check if OES is there during autoinstallation (bnc#670288)

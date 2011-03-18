@@ -303,8 +303,13 @@
 	    "ppc64"	: [ "nss_ldap-32bit" ],
 	    "s390_64"	: [ "nss_ldap-32bit" ],
 	    "x86_64"	: [ "nss_ldap-32bit" ],
-
-	]
+	],
+	"sssd"	: $[
+	    "ia64"	: [ "sssd-x86" ],
+	    "ppc64"	: [ "sssd-32bit" ],
+	    "s390_64"	: [ "sssd-32bit" ],
+	    "x86_64"	: [ "sssd-32bit" ],
+	],
     ];
 
     /**
