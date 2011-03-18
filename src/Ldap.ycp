@@ -319,7 +319,7 @@
     global list<string> sssd_packages		= [ "sssd" ];
 
     // packages needed for sssd + kerberos configuration
-    global list<string> kerberos_packages	= [ "kerberos-client" ];
+    global list<string> kerberos_packages	= [ "krb5-client" ];
 
     // if sssd is used instead of pam_ldap/nss_ldap (fate#308902)
     global boolean sssd				= true;
@@ -935,6 +935,8 @@
 	    string kdc		= (string) SCR::Read (add (domain, "krb5_kdcip"));
 	    if (kdc != nil)
 		krb5_kdcip	= kdc;
+
+	    sssd_cache_credentials	= SCR::Read (add (domain, "cache_credentials")) == "True";
 	}
 	if (krb5_realm != "" && krb5_kdcip != "")
 	{
