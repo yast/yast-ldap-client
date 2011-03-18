@@ -332,6 +332,8 @@ automatically.</p>
 	UI::ChangeWidget (`id(`server),`ValidChars, Address::ValidChars + " ");
 	UI::ChangeWidget (`id(`import_cert),`Enabled, ldap_tls);
 	UI::ChangeWidget (`id(`sssd_cache_credentials),`Enabled, Ldap::sssd);
+	// do not alow to turn off TLS when SSSD is used
+	UI::ChangeWidget (`id (`ldaps), `Enabled, !Ldap::sssd);
 
 	symbol result = `not_next;
 	do {
