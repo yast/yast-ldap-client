@@ -2782,7 +2782,7 @@ Select another one.
 	    }
 	}
 
-	if (start)
+	if (start && !sssd)
 	    WritePlusLine (login_enabled);
 
 	// -------------------- start services
