@@ -374,7 +374,9 @@ automatically.</p>
 			"hostname"	: Ldap::GetFirstServer (server),
 			"port"		: Ldap::GetFirstPort (server),
 			"version"	: Ldap::ldap_v2 ? 2 : 3,
-			"use_tls"	: ldap_tls ? "yes" : "no"
+			"use_tls"	: ldap_tls ? "yes" : "no",
+			"cacertdir"	: Ldap::tls_cacertdir,
+			"cacertfile"	: Ldap::tls_cacertfile
 		    ]);
 		if (dn != "")
 		    UI::ChangeWidget (`id(`ldapbasedn), `Value, dn);
@@ -759,7 +761,9 @@ user home directories.</p>
 	    "hostname"	: Ldap::GetFirstServer (Ldap::server),
 	    "port"	: Ldap::GetFirstPort (Ldap::server),
 	    "version"	: Ldap::ldap_v2 ? 2 : 3,
-	    "use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+	    "use_tls"	: Ldap::ldap_tls ? "yes" : "no",
+	    "cacertdir"	: Ldap::tls_cacertdir,
+	    "cacertfile": Ldap::tls_cacertfile
 	    ])
 	)
 	{
@@ -1055,7 +1059,9 @@ user home directories.</p>
 		    "hostname"	: Ldap::GetFirstServer (Ldap::server),
 		    "port"	: Ldap::GetFirstPort (Ldap::server),
 		    "version"	: Ldap::ldap_v2 ? 2 : 3,
-		    "use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+		    "use_tls"	: Ldap::ldap_tls ? "yes" : "no",
+		    "cacertdir"	: Ldap::tls_cacertdir,
+		    "cacertfile": Ldap::tls_cacertfile
 		]);
 	    if (dn != "")
 	    {
@@ -1130,7 +1136,9 @@ user home directories.</p>
 			"hostname"	: Ldap::GetFirstServer (Ldap::server),
 			"port"		: Ldap::GetFirstPort (Ldap::server),
 			"version"	: Ldap::ldap_v2 ? 2 : 3,
-			"use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+			"use_tls"	: Ldap::ldap_tls ? "yes" : "no",
+			"cacertdir"	: Ldap::tls_cacertdir,
+			"cacertfile"	: Ldap::tls_cacertfile
 		    ]);
 		    if (suf != "")
 			UI::ReplaceWidget (`id (`rp_suf), `HBox (

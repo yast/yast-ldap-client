@@ -189,7 +189,9 @@ import "Wizard";
 	    "hostname"	: Ldap::GetFirstServer (Ldap::server),
 	    "port"	: Ldap::GetFirstPort (Ldap::server),
 	    "version"	: Ldap::ldap_v2 ? 2 : 3,
-	    "use_tls"	: Ldap::ldap_tls ? "yes" : "no"
+	    "use_tls"	: Ldap::ldap_tls ? "yes" : "no",
+	    "cacertdir"	: Ldap::tls_cacertdir,
+	    "cacertfile": Ldap::tls_cacertfile
 	];
 	string error	= Ldap::LDAPInitWithTLSCheck (args);
 	if (error != "")
