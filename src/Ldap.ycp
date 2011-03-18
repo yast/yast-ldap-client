@@ -2076,6 +2076,7 @@ Select another one.
 	// In a mixed Kerberos/LDAP setup the following changes are needed in the [domain/default] section:
 	if (Pam::Enabled("krb5"))
 	{
+// FIXME: do not test for pam, it may be already off...
 	    SCR::Write (add (domain, "auth_provider"), "krb5");
 	    SCR::Write (add (domain, "chpass_provider"), "krb5");
 	    /*
@@ -2093,7 +2094,6 @@ Select another one.
 		if (is (e,map) && e != $[])
 		{
 		    map kerberos	= (map) e;
-y2internal ("kerberos export map: %1", kerberos);
 		    SCR::Write (add (domain, "krb5_realm"), kerberos["kerberos_client","default_domain"]:nil);
 		    SCR::Write (add (domain, "krb5_kdcip"), kerberos["kerberos_client","kdc_server"]:nil);
 		}
@@ -2614,6 +2614,11 @@ y2internal ("kerberos export map: %1", kerberos);
 			union (nsswitch["passwd"]:[], ["sss"]));
 		    Nsswitch::WriteDb ("group", (list<string>)
 			union (nsswitch["group"]:[], ["sss"]));
+		    if (Pam::Enabled("krb5"))
+		    {
+			y2milestone ("configuring 'sss', so 'krb5' will be removed");
+			Pam::Remove ("krb5");
+		    }
 		}
 		else
 		{
