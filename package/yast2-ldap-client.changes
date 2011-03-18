@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Mar 18 15:29:33 CET 2011 - jsuchome@suse.cz
+
+- added command line options for SSSD (bnc#680848)
+- 2.21.2
+
+-------------------------------------------------------------------
 Thu Mar 17 09:12:33 CET 2011 - jsuchome@suse.cz
 
 - if sssd is removed in GUI, remove also the pam module (bnc#680184)

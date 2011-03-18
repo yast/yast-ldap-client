@@ -93,6 +93,50 @@ define boolean LdapChangeConfiguration (map<string, string> options ) ``{
 	}
     }
 
+    if (options["sssd"]:"" != "")
+    {
+	boolean sssd		= (options["sssd"]:"" == "yes");
+	if (Ldap::sssd	!= sssd)
+	{
+	    Ldap::sssd		= sssd;
+	    Ldap::modified	= true;
+	}
+    }
+
+    if (options["cache_credentials"]:"" != "")
+    {
+	boolean cache_credentials	= (options["cache_credentials"]:"" == "yes");
+	if (Ldap::sssd_cache_credentials!= cache_credentials)
+	{
+	    Ldap::sssd_cache_credentials= cache_credentials;
+	    Ldap::modified	= true;
+	}
+    }
+
+    if (options["realm"]:"" != "")
+    {
+	string realm		= options["realm"]:"";
+	if (Ldap::krb5_realm	!= realm)
+	{
+	    Ldap::krb5_realm	= realm;
+	    Ldap::modified	= true;
+	}
+    }
+    if (options["kdc"]:"" != "")
+    {
+	string kdc		= options["kdc"]:"";
+	if (Ldap::krb5_kdcip	!= kdc)
+	{
+	    Ldap::krb5_kdcip	= kdc;
+	    Ldap::modified	= true;
+	}
+    }
+
+    if (Ldap::krb5_kdcip != "" && Ldap::krb5_realm != "")
+    {
+	Ldap::sssd_with_krb	= true;
+    }
+
     if (haskey (options, "createconfig"))
     {
 	if (Ldap::bind_pass == nil)
@@ -202,14 +246,38 @@ map cmdline = $[
 	    "type"	: "enum",
 	    "typespec"  : [ "yes", "no" ],
 	],
+	"sssd"	: $[
+	    // help text for the 'sssd' option
+	    "help"	: _("Use System Security Services Daemon (SSSD)"),
+	    "type"	: "enum",
+	    "typespec"  : [ "yes", "no" ],
+	],
+	"cache_credentials"	: $[
+	    // help text for the 'cache_credentials' option
+	    "help"	: _("SSSD Offline Authentication"),
+	    "type"	: "enum",
+	    "typespec"  : [ "yes", "no" ],
+	],
+	"realm"	:$[
+	    // command line help text for the 'realm' option
+	   "help"	: _("Kerberos Realm"),
+	   "type"       : "string"
+	],
+	"kdc"	:$[
+	    // command line help text for the 'kdc' option
+	   "help"	: _("KDC Server Address"),
+	   "type"       : "string"
+	],
     ],
     "mappings"		: $[
 	"pam"		: [ "enable", "disable", "server", "base",
-	    "createconfig", "ldappw", "automounter", "mkhomedir", "tls"
+	    "createconfig", "ldappw", "automounter", "mkhomedir", "tls",
+	    "sssd", "realm", "kdc", "cache_credentials"
 	],
 	"summary"	: [],
 	"configure"	: [ "server", "base", "createconfig", "ldappw",
-	    "automounter", "mkhomedir", "tls"
+	    "automounter", "mkhomedir", "tls",
+	    "sssd", "realm", "kdc", "cache_credentials"
 	],
     ]
 ];
