@@ -368,6 +368,10 @@ automatically.</p>
 	    if (result == `fetch)
 	    {
 		Ldap::tls_switched_off	= false;
+		if (Ldap::ldap_initialized && Ldap::tls_when_initialized != ldap_tls)
+		{
+		    Ldap::LDAPClose ();
+		}
 		string dn = Ldap::ldap_initialized ?
 		    LdapPopup::BrowseTree ("") :
 		    LdapPopup::InitAndBrowseTree ("", $[
@@ -763,15 +767,12 @@ user home directories.</p>
 
 	if (base_dn == "") return;
 
-	if (Ldap::ldap_initialized || true == SCR::Execute (.ldap, $[
-	    "hostname"	: Ldap::GetFirstServer (Ldap::server),
-	    "port"	: Ldap::GetFirstPort (Ldap::server),
-	    "version"	: Ldap::ldap_v2 ? 2 : 3,
-	    "use_tls"	: Ldap::ldap_tls ? "yes" : "no",
-	    "cacertdir"	: Ldap::tls_cacertdir,
-	    "cacertfile": Ldap::tls_cacertfile
-	    ])
-	)
+	if (Ldap::ldap_initialized && Ldap::tls_when_initialized != Ldap::ldap_tls)
+	{
+	    Ldap::LDAPClose ();
+	}
+
+	if (Ldap::ldap_initialized || Ldap::LDAPInit () == "")
 	{
 	    ppolicies_enabled	= (boolean) SCR::Execute (.ldap.ppolicy, $[
 		"hostname"	: Ldap::GetFirstServer (Ldap::server),
@@ -1091,6 +1092,10 @@ user home directories.</p>
 	if (is (result, symbol) &&
 	    contains ([`br, `br_passwd, `br_shadow, `br_group ], (symbol)result))
 	{
+	    if (Ldap::ldap_initialized && Ldap::tls_when_initialized != Ldap::ldap_tls)
+	    {
+		Ldap::LDAPClose ();
+	    }
 	    string dn = Ldap::ldap_initialized ?
 		LdapPopup::BrowseTree (base_dn) :
 		LdapPopup::InitAndBrowseTree (base_dn, $[
