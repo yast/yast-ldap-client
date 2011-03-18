@@ -428,6 +428,12 @@ automatically.</p>
 			    list <string> l = splitstring (cert_url, "/");
 			    name	= l[size(l) - 1]:"downloaded-by-yast2-ldap-client.pem";
 			    success = SCR::Execute (.target.bash, sformat ("/bin/cp -a '%1' '%2/%3'", certTmpFile, dir, name)) == 0;
+			    // rehash cert directory (bnc#662937)
+			    map out = (map)SCR::Execute (.target.bash_output, sformat ("/usr/bin/c_rehash %1", dir));
+			    if (out["stderr"]:"" != "")
+			    {
+				y2error ("something went wrong: %1", out);
+			    }
 			    break;
 			}
 		    }

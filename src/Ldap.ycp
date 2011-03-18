@@ -1972,6 +1972,12 @@ Select another one.
      */
     global boolean WriteSSSDConfig () {
 
+	if (!FileUtils::Exists ("/etc/sssd/sssd.conf"))
+	{
+	    y2warning ("file /etc/sssd/sssd.conf does not exists: not writing");
+	    return false;
+	}
+
 	list<string> sections =	SCR::Dir (.etc.sssd_conf.section);
 
 	SCR::Write (.etc.sssd_conf.v.sssd.domains, "default");
