@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Wed Mar 23 08:45:31 CET 2011 - jsuchome@suse.cz
+
+- remove 'ldap' from nsswitch.conf when sssd is configured
+  (bnc#681818)
+- remove ldap and ldap-account_only PAM modules when sssd is set
+- 2.21.3
+
+-------------------------------------------------------------------
 Fri Mar 18 15:29:33 CET 2011 - jsuchome@suse.cz
 
 - added command line options for SSSD (bnc#680848)
