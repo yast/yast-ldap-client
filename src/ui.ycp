@@ -44,15 +44,7 @@
      */
     define symbol ReallyAbort () ``{
 
-	boolean ret = true;
-	if (!Stage::cont () || contains (WFM::Args (), "from_users"))
-	{
-	    ret = Modified() ? Popup::ReallyAbort (true) : true;
-	}
-	else
-	{
-	    ret = Popup::ConfirmAbort (`incomplete);
-	}
+	boolean ret = (Modified() || Stage::cont ()) ? Popup::ReallyAbort (true) : true;
 
 	if ( ret )	return `abort;
 	else		return `back;
