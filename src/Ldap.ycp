@@ -2679,15 +2679,36 @@ Select another one.
 		{
 		    Pam::Add ("sss");
 		    // Add "sss" to the passwd and group databases in nsswitch.conf
-		    Nsswitch::WriteDb ("passwd", (list<string>)
-			union (nsswitch["passwd"]:[], ["sss"]));
-		    Nsswitch::WriteDb ("group", (list<string>)
-			union (nsswitch["group"]:[], ["sss"]));
+
+		    foreach (string db, [ "passwd", "group" ], {
+			// replace 'ldap' with sss
+			nsswitch [db]	= filter (
+			    string v, nsswitch[db]:[], ``(v != "ldap"));
+			nsswitch [db]   = union (nsswitch[db]:[], ["sss"]);
+			Nsswitch::WriteDb (db, nsswitch[db]:["sss"]);
+
+			// remove 'ldap' from _compat entries
+			string new_db		= db+"_compat";
+			nsswitch [new_db]	= filter (
+			    string v, nsswitch[new_db]:[], ``(v != "ldap"));
+			Nsswitch::WriteDb (new_db, nsswitch[new_db]:[]);
+		    });
+		    // remove ldap entries from ldap-only db's
+		    foreach (string db, ["services" ,"netgroup", "aliases" ], {
+			list<string> db_l	= (list<string>) filter (
+			    string v, Nsswitch::ReadDb (db), ``(v != "ldap"));
+			if (db_l == [])
+			    db_l	= ["files"];
+			Nsswitch::WriteDb (db, db_l);
+		    });
+
 		    if (Pam::Enabled("krb5"))
 		    {
 			y2milestone ("configuring 'sss', so 'krb5' will be removed");
+			Pam::Remove ("ldap-account_only");
 			Pam::Remove ("krb5");
 		    }
+		    Pam::Remove ("ldap");
 		}
 		else
 		{
@@ -2736,7 +2757,6 @@ Select another one.
 	}
 	else if (!oes) // ldap is not used
 	{
-	    //TODO: first check, if nss needs to be updated...
 	    foreach (string db, [ "passwd", "group" ], ``{
 		string new_db		= db+"_compat";
 		nsswitch [db]	= filter (
