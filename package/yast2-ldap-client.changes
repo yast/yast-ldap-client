@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Mon Apr 18 10:50:28 CEST 2011 - jsuchome@suse.cz
+
+- if sssd is removed in GUI, remove also the pam module (bnc#680184)
+- added command line options for SSSD (bnc#680848)
+- remove 'ldap' from nsswitch.conf when sssd is configured
+  (bnc#681818)
+- remove ldap and ldap-account_only PAM modules when sssd is set 
+- 2.20.14.1
+
+-------------------------------------------------------------------
 Fri Feb  4 08:57:50 CET 2011 - jsuchome@suse.cz
 
 - reset connection when TLS status has been changed (bnc#662949)
