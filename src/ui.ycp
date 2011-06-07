@@ -181,6 +181,9 @@ removed.</p>") +
 	// help text 3.5/9
 	_("<p>To activate LDAP but forbid users from logging in to this machine, select <b>Enable LDAP Users but Disable Logins</b>.</p>") +
 
+	// help text
+	_("<p>Check <b>Use System Security Services Daemon</b> if you want the system to use SSSD instead of nss_ldap.</p>") +
+
 	// help text 4/9
 	_("<p>Enter the LDAP server's address (such as ldap.example.com or 10.20.0.2) in <b>Addresses</b> and the distinguished name of the search base (<b>Base DN</b>, such as dc=example,dc=com). Specify multiple servers
 by separating their addresses with spaces. It must be possible to resolve the
@@ -215,14 +218,13 @@ automatically.</p>
 	boolean installation	=
 	    Stage::cont () && !contains (WFM::Args (), "from_users");
 	boolean start		= Ldap::start || installation;
-
+	boolean sssd		= Ldap::sssd;
 	string base_dn		= Ldap::GetBaseDN ();
 	string server		= Ldap::server;
 	boolean ldap_tls	= Ldap::ldap_tls || Ldap::sssd; // force TLS to true if sssd is used
 	string tls_checkpeer	= Ldap::tls_checkpeer;
 	boolean login_enabled	= Ldap::login_enabled;
 	string certTmpFile	= sformat ("%1/__LDAPcert.crt", Directory::tmpdir);
-	boolean sssd_cache_credentials	= Ldap::sssd_cache_credentials;
 	boolean autofs		= Ldap::_start_autofs;
 	term autofs_con		= `Empty ();
 	if (Ldap::_autofs_allowed)
@@ -263,6 +265,11 @@ automatically.</p>
 				start && !login_enabled))
 		    )))
 		),
+		`VSpacing (0.4),
+		`Left (`CheckBox (`id (`sssd), `opt (`notify),
+		    // checkbox label
+		    _("Use S&ystem Security Services Daemon (SSSD)"), sssd
+		)),
 		`VSpacing (0.4)
 	    ))),
 	    `VSpacing (0.4),
@@ -302,8 +309,6 @@ automatically.</p>
 	    ), `HSpacing (0.5))),
 	    autofs_con,
 	    mkhomedir_term,
-	    // check box label
-	    `Left (`CheckBox (`id (`sssd_cache_credentials), _("SSSD O&ffline Authentication"), sssd_cache_credentials)),
 	    `VSpacing(0.4),
 	    // pushbutton label
 	    `PushButton (`id(`advanced), _("&Advanced Configuration..."))
@@ -323,9 +328,8 @@ automatically.</p>
 
 	UI::ChangeWidget (`id(`server),`ValidChars, Address::ValidChars + " ");
 	UI::ChangeWidget (`id(`import_cert),`Enabled, ldap_tls);
-	UI::ChangeWidget (`id(`sssd_cache_credentials),`Enabled, Ldap::sssd);
 	// do not alow to turn off TLS when SSSD is used
-	UI::ChangeWidget (`id (`ldaps), `Enabled, !Ldap::sssd);
+	UI::ChangeWidget (`id (`ldaps), `Enabled, !sssd);
 
 	symbol result = `not_next;
 	do {
@@ -335,12 +339,16 @@ automatically.</p>
 	    start	= (rb != `ldapno);
 	    login_enabled = (rb != `ldapnologin);
 
+	    sssd	= (boolean) UI::QueryWidget (`id (`sssd), `Value);
 	    server	= (string) UI::QueryWidget(`id(`server), `Value);
 	    ldap_tls	= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
 	    mkhomedir	= (boolean) UI::QueryWidget (`id(`mkhomedir),`Value);
-	    sssd_cache_credentials	=
-			  (boolean) UI::QueryWidget (`id(`sssd_cache_credentials), `Value);
 	    UI::ChangeWidget (`id(`import_cert), `Enabled, ldap_tls);
+
+	    if (result == `sssd)
+	    {
+		UI::ChangeWidget (`id (`ldaps), `Enabled, !sssd);
+	    }
 
 	    if (result == `slp)
 	    {
@@ -555,7 +563,8 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs ||
 		Ldap::login_enabled != login_enabled ||
 		Ldap::mkhomedir != mkhomedir ||
-		Ldap::sssd_cache_credentials != sssd_cache_credentials)
+		Ldap::sssd != sssd
+	    )
 	    {
 		if (result == `next)
 		{
@@ -610,7 +619,7 @@ Enable certificate checks now?")))
 		Ldap::_start_autofs = autofs;
 		Ldap::login_enabled = login_enabled;
 		Ldap::mkhomedir = mkhomedir;
-		Ldap::sssd_cache_credentials	= sssd_cache_credentials;
+		Ldap::sssd	= sssd;
 		Ldap::modified = true;
 	    }
 	}
@@ -629,11 +638,19 @@ define symbol AdvancedConfigurationDialog () {
     // help text caption 1
     _("<p><b>Advanced LDAP Client Settings</b></p>") +
 
+    (Ldap::sssd ?
+
+    // help text 1/3
+    _("<p>If Kerberos authentication should be used, specify the <b>realm</b> and <b>KDC Address</b>.
+Determine if user credentials should be cached localy by checking <b>SSSD Offline Authentication</b>.
+For more info about SSSD settings, check the man page of <tt>sssd.conf</tt>.</p>
+") :
+
     // help text 1/3
     _("<p>Specify the search bases to use for specific maps (users, passwords, and groups) if they are different from the base DN. These values are
 set to the nss_base_passwd, nss_base_shadow, and nss_base_group attributes
 in /etc/ldap.conf file.</p>
-")	+
+"))	+
 
     // help text 2/3
     _("<p><b>Password Change Protocol</b> refers to the pam_password attribute of the <tt>/etc/ldap.conf</tt> file. See <tt>man pam_ldap</tt> for the meaning of its values.</p>")	+
@@ -712,10 +729,12 @@ user home directories.</p>
     boolean ldap_v2		= Ldap::ldap_v2;
     string tls_cacertdir	= Ldap::tls_cacertdir;
     string tls_cacertfile	= Ldap::tls_cacertfile;
-    boolean sssd		= Ldap::sssd;
     string krb5_realm		= Ldap::krb5_realm;
     string krb5_kdcip		= Ldap::krb5_kdcip;
     boolean sssd_with_krb	= Ldap::sssd_with_krb;
+    string sssd_ldap_schema	= Ldap::sssd_ldap_schema;
+    boolean sssd_enumerate	= Ldap::sssd_enumerate;
+    boolean sssd_cache_credentials	= Ldap::sssd_cache_credentials;
 
     list<term>member_attributes	= [
 	`item (`id("member"), "member", member_attribute == "member"),
@@ -747,6 +766,10 @@ user home directories.</p>
 	    `item (`id (it), it, it == pam_password)
 	))
     );
+    list<string> ldap_schemas	= [
+	"rfc2307",
+	"rfc2307bis"
+    ];
 
     list ppolicy_list	= [];
 
@@ -876,14 +899,34 @@ user home directories.</p>
     term get_frame_krb () {
 	return
 	    // frame label
-	    `Frame (_("Basic Kerberos Settings"), `HBox (`HSpacing (1), `VBox (
+	    `Frame (_("Basic SSSD Settings"), `HBox (`HSpacing (1), `VBox (
 		// checkbox label
 		`Left (`CheckBox (`id (`sssd_with_krb), `opt (`notify), _("&Use Kerberos"), sssd_with_krb)),
 		`VSpacing(0.4),
-		// textentry label
-		`TextEntry (`id (`krb5_realm), _("Default Real&m"), krb5_realm),
-		// textentry label
-		`TextEntry (`id (`krb5_kdcip), _("&KDC Server Address"), krb5_kdcip),
+		`HBox (
+		    // textentry label
+		    `TextEntry (`id (`krb5_realm), _("Default Real&m"), krb5_realm),
+		    // textentry label
+		    `TextEntry (`id (`krb5_kdcip), _("&KDC Server Address"), krb5_kdcip)
+		),
+		// combobox label
+		`ComboBox (`id (`sssd_ldap_schema), `opt (`notify, `hstretch), _("LDAP Schema"),
+			maplist (string s, ldap_schemas, ``(`item (`id (s), s, s == sssd_ldap_schema)))
+		),
+		`VSpacing (0.4),
+		`HBox (
+		    `HSpacing (0.4),
+		    // checkbox label
+		    `Left (`CheckBox (`id (`sssd_enumerate), _("Enable user and group enumeration"),
+			sssd_enumerate))
+		),
+		`VSpacing (0.4),
+		`HBox (
+		    `HSpacing (0.4),
+		    // check box label
+		    `Left (`CheckBox (`id (`sssd_cache_credentials), _("SSSD O&ffline Authentication"),
+			sssd_cache_credentials))
+		),
 		`VSpacing (0.4)
 	    ), `HSpacing (1)));
     }
@@ -892,14 +935,11 @@ user home directories.</p>
 
 	term cont = `Top (`HBox(`HSpacing (5), `VBox(
 	    `VSpacing(0.4),
-	    `Left (`CheckBox (`id (`sssd), `opt (`notify), _("Use S&ystem Security Services Daemon (SSSD)"), sssd)),
-	    `VSpacing(0.4),
-	    `ReplacePoint (`id (`rp_frame), `VBox (sssd ? get_frame_krb () : get_frame_nss ())),
+	    `VBox (Ldap::sssd ? get_frame_krb () : get_frame_nss ()),
 	    `VSpacing (0.4),
 	    `ComboBox (`id (`pam_password), `opt(`notify,`hstretch,`editable),
 		// combobox label
 		_("Passwor&d Change Protocol"), pam_password_items),
-	    `VSpacing(0.4),
 	    `ComboBox (`id (`group_style), `opt (`notify, `hstretch),
 		// combobox label
 		_("Group Member &Attribute"), member_attributes),
@@ -933,7 +973,7 @@ user home directories.</p>
 	UI::ReplaceWidget (`tabContents, cont);
 	if (has_tabs)
 	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `client);
-	if (sssd)
+	if (Ldap::sssd)
 	{
 	    UI::ChangeWidget (`id (`krb5_realm), `Enabled, sssd_with_krb);
 	    UI::ChangeWidget (`id (`krb5_kdcip), `Enabled, sssd_with_krb);
@@ -1034,12 +1074,18 @@ user home directories.</p>
 	{
 	    member_attribute =(string)UI::QueryWidget(`id(`group_style),`Value);
 
-	    if (sssd)
+	    if (Ldap::sssd)
 	    {
 		krb5_realm	= (string)
 		    UI::QueryWidget (`id (`krb5_realm), `Value);
 		krb5_kdcip	= (string)
 		    UI::QueryWidget (`id (`krb5_kdcip), `Value);
+		sssd_cache_credentials	= (boolean)
+		    UI::QueryWidget (`id (`sssd_cache_credentials), `Value);
+		sssd_enumerate	= (boolean)
+		    UI::QueryWidget (`id (`sssd_enumerate), `Value);
+		sssd_ldap_schema= (string)
+		    UI::QueryWidget (`id (`sssd_ldap_schema), `Value);
 	    }
 	    else
 	    {
@@ -1109,11 +1155,6 @@ user home directories.</p>
 		];
 		UI::ChangeWidget (`id(br2entry[result]:nil), `Value, dn);
 	    }
-	}
-	if (result == `sssd)
-	{
-	    sssd	= (boolean) UI::QueryWidget (`id (`sssd), `Value);
-	    UI::ReplaceWidget (`id (`rp_frame), sssd ? get_frame_krb () : get_frame_nss ());
 	}
 	if (result == `sssd_with_krb)
 	{
@@ -1295,7 +1336,7 @@ Please select another one."), new_dn));
 		    Ldap::ppolicies[dn]	= pp;
 		}
 	    });
-	    if (krb5_realm == "" || krb5_kdcip == "" || !sssd)
+	    if (krb5_realm == "" || krb5_kdcip == "" || !Ldap::sssd)
 		sssd_with_krb	= false;
 
 	    if (Ldap::GetMainConfigDN() != base_config_dn	||
@@ -1310,9 +1351,11 @@ Please select another one."), new_dn));
 		Ldap::ldap_v2 != ldap_v2 ||
 		Ldap::tls_cacertdir != tls_cacertdir ||
 		Ldap::tls_cacertfile != tls_cacertfile		||
-		Ldap::sssd != sssd				||
 		Ldap::krb5_realm != krb5_realm			||
-		Ldap::krb5_kdcip != krb5_kdcip
+		Ldap::krb5_kdcip != krb5_kdcip			||
+		Ldap::sssd_cache_credentials != sssd_cache_credentials ||
+		Ldap::sssd_enumerate != sssd_enumerate ||
+		Ldap::sssd_ldap_schema != sssd_ldap_schema
 	    )
 	    {
 		Ldap::bind_dn		= bind_dn;
@@ -1327,10 +1370,12 @@ Please select another one."), new_dn));
 		Ldap::ldap_v2		= ldap_v2;
 		Ldap::tls_cacertdir	= tls_cacertdir;
 		Ldap::tls_cacertfile	= tls_cacertfile;
-		Ldap::sssd		= sssd;
 		Ldap::krb5_realm	= krb5_realm;
 		Ldap::krb5_kdcip	= krb5_kdcip;
 		Ldap::sssd_with_krb	= sssd_with_krb;
+		Ldap::sssd_cache_credentials = sssd_cache_credentials;
+		Ldap::sssd_enumerate	= sssd_enumerate;
+		Ldap::sssd_ldap_schema	= sssd_ldap_schema;
 		Ldap::modified		= true;
 	    }
 	    break;

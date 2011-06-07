@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Tue Jun  7 11:55:14 CEST 2011 - jsuchome@suse.cz
+
+- make SSSD switch more prominent (fate#310820)
+- add options to set ldap_schema and enumerate in sssd.conf
+- adapted help texts
+- 2.21.5
+
+-------------------------------------------------------------------
 Wed Mar 23 12:13:16 CET 2011 - jsuchome@suse.cz
 
 - aborting in Stage::cont does not abort installation (bnc#678650)

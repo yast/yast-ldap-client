@@ -321,6 +321,12 @@
     // adress of KDC (key distribution centre) server for default realm
     global string krb5_kdcip			= "";
 
+    // ldap_schema argument of /etc/sssd/sssd.conf
+    global string sssd_ldap_schema		= "rfc2307bis";
+
+    // enumerate users/group
+    global boolean sssd_enumerate		= false;
+
     //----------------------------------------------------------------
 
     /**
@@ -434,6 +440,9 @@
 	tls_checkpeer	= settings ["tls_checkpeer"]:"yes";
 	mkhomedir	= settings ["mkhomedir"]:mkhomedir;
 	sssd		= settings ["sssd"]:sssd;
+	sssd_ldap_schema= settings ["sssd_ldap_schema"]:sssd_ldap_schema;
+	sssd_enumerate	= settings ["sssd_enumerate"]:sssd_enumerate;
+	sssd_cache_credentials	= settings ["sssd_cache_credentials"]:sssd_cache_credentials;
 	krb5_realm	= settings ["krb5_realm"]:krb5_realm;
 	krb5_kdcip	= settings ["krb5_kdcip"]:krb5_kdcip;
 	if (_start_autofs)
@@ -498,6 +507,12 @@
 	    e["krb5_realm"]	= krb5_realm;
 	if (krb5_kdcip != "")
 	    e["krb5_kdcip"]	= krb5_kdcip;
+	if (sssd_ldap_schema != "rfc2307bis")
+	    e["sssd_ldap_schema"]	= sssd_ldap_schema;
+	if (sssd_enumerate)
+	    e["sssd_enumerate"]	= sssd_enumerate;
+	if (sssd_cache_credentials)
+	    e["sssd_cache_credentials"]	= sssd_cache_credentials;
 	return e;
     }
 
@@ -903,8 +918,16 @@
 	    string kdc		= (string) SCR::Read (add (domain, "krb5_kdcip"));
 	    if (kdc != nil)
 		krb5_kdcip	= kdc;
+	    string schema	= (string) SCR::Read (add (domain, "ldap_schema"));
+	    if (schema != nil)
+	    {
+		sssd_ldap_schema= schema;
+	    }
 
-	    sssd_cache_credentials	= SCR::Read (add (domain, "cache_credentials")) == "True";
+	    string cache_credentials	= (string)SCR::Read (add (domain, "cache_credentials"));
+	    sssd_cache_credentials	= cache_credentials != nil && tolower (cache_credentials) == "true";
+	    string enumerate		= (string)SCR::Read (add (domain, "enumerate"));
+	    sssd_enumerate		= enumerate != nil && tolower (enumerate) == "true";
 	}
 	if (krb5_realm != "" && krb5_kdcip != "")
 	{
@@ -2113,12 +2136,13 @@ Select another one.
 	string uri	= sformat ("ldap://%1", String::FirstChunk (server, " \t"));
 	SCR::Write (add (domain, "ldap_uri"), uri);
 	SCR::Write (add (domain, "ldap_search_base"), base_dn);
-	SCR::Write (add (domain, "ldap_schema"), "rfc2307bis");
+	SCR::Write (add (domain, "ldap_schema"), sssd_ldap_schema);
 	SCR::Write (add (domain, "id_provider"), "ldap");
 	SCR::Write (add (domain, "ldap_user_uuid"), "entryuuid");
 	SCR::Write (add (domain, "ldap_group_uuid"), "entryuuid");
 
 	SCR::Write (add (domain, "ldap_id_use_start_tls"), ldap_tls ? "True" : "False");
+	SCR::Write (add (domain, "enumerate"), sssd_enumerate ? "True" : "False");
 	SCR::Write (add (domain, "cache_credentials"), sssd_cache_credentials ? "True" : "False");
 	SCR::Write (add (domain, "ldap_tls_cacertdir"), tls_cacertdir == "" ? nil : tls_cacertdir);
 	SCR::Write (add (domain, "ldap_tls_cacert"), tls_cacertfile == "" ? nil : tls_cacertfile);
