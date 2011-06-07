@@ -330,7 +330,7 @@
     global list<string> kerberos_packages	= [ "krb5-client" ];
 
     // if sssd is used instead of pam_ldap/nss_ldap (fate#308902)
-    global boolean sssd				= true;
+    global boolean sssd				= false;
 
     // enable/disable offline authentication ('cache_credentials' key)
     global boolean sssd_cache_credentials	= false;
@@ -803,12 +803,6 @@
 	{
 	    // ... or as 'sssd'
 	    start = contains (nsswitch["passwd"]:[], "sss");
-	}
-
-	// nothing is configured, but some packages are installed
-	if (!start && Package::InstalledAll (pam_nss_packages) && !Package::InstalledAll (sssd_packages))
-	{
-	    sssd        = false;
 	}
 
 	old_start	= start;
