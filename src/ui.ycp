@@ -337,7 +337,7 @@ automatically.</p>
 	UI::ChangeWidget (`id(`server),`ValidChars, Address::ValidChars + " ");
 	UI::ChangeWidget (`id(`import_cert),`Enabled, ldap_tls);
 	// do not alow to turn off TLS when SSSD is used
-	UI::ChangeWidget (`id (`ldaps), `Enabled, !Ldap::sssd);
+	UI::ChangeWidget (`id (`ldaps), `Enabled, !sssd);
 
 	symbol result = `not_next;
 	do {
@@ -352,6 +352,11 @@ automatically.</p>
 	    ldap_tls	= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
 	    mkhomedir	= (boolean) UI::QueryWidget (`id(`mkhomedir),`Value);
 	    UI::ChangeWidget (`id(`import_cert), `Enabled, ldap_tls);
+
+	    if (result == `sssd)
+	    {
+		UI::ChangeWidget (`id (`ldaps), `Enabled, !sssd);
+	    }
 
 	    if (result == `slp)
 	    {
