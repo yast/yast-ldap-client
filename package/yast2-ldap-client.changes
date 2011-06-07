@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Tue Jun  7 11:45:02 CEST 2011 - jsuchome@suse.cz
+
+- make SSSD switch more prominent (fate#310820)
+- add options to set ldap_schema and enumerate in sssd.conf
+- adapted help texts
+- 2.17.26 
+
+-------------------------------------------------------------------
 Wed Mar 23 08:46:38 CET 2011 - jsuchome@suse.cz
 
 - remove 'ldap' from nsswitch.conf when sssd is configured
