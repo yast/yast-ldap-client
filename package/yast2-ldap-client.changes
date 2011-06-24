@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Jun 24 10:11:46 CEST 2011 - jsuchome@suse.cz
+
+- Use ButtonBox widget when appropriate (bnc#701260)
+- 2.21.6
+
+-------------------------------------------------------------------
 Tue Jun  7 11:55:14 CEST 2011 - jsuchome@suse.cz
 
 - make SSSD switch more prominent (fate#310820)

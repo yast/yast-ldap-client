@@ -44,16 +44,17 @@ import "Wizard";
 		`ReplacePoint (`id (`reptree), `Tree (`id(`tree), root_dn, [])),
 		`HSpacing ()
 	    ),
-	    `HBox (
+	    textmode ?  `HBox (
 		`HSpacing (1.5),
 	        `PushButton (`id (`ok), `opt (`key_F10), Label::OKButton()),
-		`PushButton(`id (`cancel),`opt (`key_F9),Label::CancelButton()),
-		// pushbutton label
-		textmode ?
-		  // button label
-		  `Right (`PushButton (`id (`open), `opt (`key_F6),_("&Open"))):
-		  `Empty (),
+		`PushButton (`id (`cancel),`opt (`key_F9),Label::CancelButton()),
+		// button label
+		`Right (`PushButton (`id (`open), `opt (`key_F6),_("&Open"))),
 		`HSpacing (1.5)
+	    ) :
+	    `ButtonBox (
+	        `PushButton (`id (`ok), `opt (`key_F10), Label::OKButton()),
+		`PushButton(`id (`cancel),`opt (`key_F9),Label::CancelButton())
 	    ),
 	    `VSpacing (0.2)
 	));
@@ -308,11 +309,14 @@ it is possible to choose it from the LDAP tree using <b>Browse</b>.
 	`VBox(
 	    `HSpacing (hsize > 50 ? hsize : 50),
 	    `ReplacePoint (`id(`rp), values),
-	    `HBox(
+	    single ?  `ButtonBox (
+		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
+		`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton()),
+		`PushButton(`id(`help),`opt (`key_F2), Label::HelpButton())
+	    ) :  `ButtonBox (
 		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
 		`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton()),
 		`PushButton(`id(`help),`opt (`key_F2), Label::HelpButton()),
-		(single)? `Empty() :
 		add_button
 	    )
 	),
@@ -419,7 +423,7 @@ global define map NewModule (list available, list conflicts) ``{
 	    `InputField (`id (`cn), `opt (`hstretch),
 		// textentry label, do not translate "cn"
 		_("&Name of New Module (\"cn\" Value)")),
-	    `HBox(
+	    `ButtonBox(
 		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
 		`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton())
 	    )
@@ -507,7 +511,7 @@ as a value of \"homeDirectory\").</p>
 	    // textentry label
 	    `InputField (`id (`val), `opt (`hstretch), _("Attribute &Value")),
 	    `VSpacing(0.5),
-	    `HBox(
+	    `ButtonBox(
 		`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
 		`PushButton(`id(`cancel), `opt(`key_F9), Label::CancelButton()),
 		`PushButton(`id(`help),`opt (`key_F2), Label::HelpButton())

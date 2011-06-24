@@ -139,7 +139,7 @@
 		// multiselection box label
 		_("LDAP &Servers Provided by SLP"), items)
 	    ),
-	    `HBox (
+	    `ButtonBox (
 		`PushButton (`id(`ok), Label::OKButton()),
 		`PushButton (`id(`cancel), Label::CancelButton())
 	    )
@@ -403,7 +403,7 @@ automatically.</p>
 			// InputField label
 			`InputField (`id (`url),  `opt (`hstretch),
 			    _("CA Certificate URL for Download")),
-			`HBox (
+			`ButtonBox (
 			    `PushButton(`id(`ok),`opt(`default,`key_F10), Label::OKButton()),
 			    `PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton())
 			)
@@ -1196,7 +1196,7 @@ user home directories.</p>
 			// pushbutton label
 			`PushButton (`id (`br_suf), _("Change Suffix"))
 		    )),
-		    `HBox (
+		    `ButtonBox (
 			`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
 			`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton())
 		    )

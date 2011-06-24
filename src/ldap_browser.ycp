@@ -350,7 +350,7 @@ Discard these changes?
 	`Left (`CheckBox (`id ("ldap_tls"), `opt (`notify), _("L&DAP TLS"),
 	    configuration["ldap_tls"]:false)
 	),
-        `HBox(
+        `ButtonBox(
             `PushButton (`id(`ok),`opt(`key_F10, `default), Label::OKButton()),
             // button label
 	    `PushButton (`id(`anon), `opt(`key_F6), _("A&nonymous Access")),
@@ -403,7 +403,7 @@ Discard these changes?
 		`InputField (`id (`new),
 		    // InputField label
 		    _("Enter the name of the new LDAP connection")),
-		`HBox (
+		`ButtonBox (
 		    `PushButton (`id(`ok), `opt(`default), Label::OKButton ()),
 		    `PushButton (`id(`cancel), Label::CancelButton ())
 		)
