@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jun 30 09:52:25 CEST 2011 - jsuchome@suse.cz
+
+- fixed typo in help text (bnc#702623)
+- 2.17.28
+
+-------------------------------------------------------------------
 Tue Jun  7 15:23:38 CEST 2011 - jsuchome@suse.cz
 
 - sssd is not the default option for SP2 (fate#310820)
