@@ -642,7 +642,7 @@ define symbol AdvancedConfigurationDialog () {
 
     // help text 1/3
     _("<p>If Kerberos authentication should be used, specify the <b>realm</b> and <b>KDC Address</b>.
-Determine if user credentials should be cached localy by checking <b>SSSD Offline Authentication</b>.
+Determine if user credentials should be cached locally by checking <b>SSSD Offline Authentication</b>.
 For more info about SSSD settings, check the man page of <tt>sssd.conf</tt>.</p>
 ") :
 
