@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Jul 15 11:56:55 CEST 2011 - jsuchome@suse.cz
+
+- correctly realize that SSSD was selected (bnc#705118)
+- 2.21.7 
+
+-------------------------------------------------------------------
 Thu Jun 30 09:48:10 CEST 2011 - jsuchome@suse.cz
 
 - fixed typo in help text (bnc#702623)

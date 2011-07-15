@@ -347,6 +347,7 @@ automatically.</p>
 
 	    if (result == `sssd)
 	    {
+		UI::ChangeWidget (`id (`ldaps), `Value, true);
 		UI::ChangeWidget (`id (`ldaps), `Enabled, !sssd);
 	    }
 
@@ -519,7 +520,7 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 		    }
 		}
 
-		list<string> needed_packages = Ldap::sssd ? Ldap::sssd_packages : Ldap::pam_nss_packages;
+		list<string> needed_packages = sssd ? Ldap::sssd_packages : Ldap::pam_nss_packages;
 		if (Ldap::sssd_with_krb)
 		    needed_packages	= (list<string>) union (needed_packages, Ldap::kerberos_packages);
 
