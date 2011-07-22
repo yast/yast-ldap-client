@@ -21,5 +21,4 @@ Exec=/sbin/yast2 ldap_browser
 
 Name=LDAP Browser
 GenericName=Browse the LDAP repository
-X-KDE-SubstituteUID=true
 StartupNotify=true
