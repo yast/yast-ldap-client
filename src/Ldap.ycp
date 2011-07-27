@@ -802,7 +802,8 @@
 	else
 	{
 	    // ... or as 'sssd'
-	    start = contains (nsswitch["passwd"]:[], "sss");
+	    sssd	= contains (nsswitch["passwd"]:[], "sss");
+	    start	= sssd;
 	}
 
 	old_start	= start;
