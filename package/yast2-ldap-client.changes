@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Aug  2 09:22:12 CEST 2011 - jsuchome@suse.cz
+
+- check LDAP connection before writing the settings (bnc#709236)
+- 2.17.31 
+
+-------------------------------------------------------------------
 Wed Jul 27 13:59:53 CEST 2011 - jsuchome@suse.cz
 
 - correctly set sssd value during Read (bnc#708562)
