@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Aug  2 14:48:20 CEST 2011 - jsuchome@suse.cz
+
+- check LDAP connection before writing the settings (bnc#709236)
+- 2.21.9 
+
+-------------------------------------------------------------------
 Fri Jul 22 15:07:22 CEST 2011 - locilka@suse.cz
 
 - Removed obsoleted X-KDE-SubstituteUID from desktop file

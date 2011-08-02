@@ -327,6 +327,16 @@
     // enumerate users/group
     global boolean sssd_enumerate		= false;
 
+    global map ldap_error_hints			= $[
+	// hint to error message
+	-1	: _("Verify that the LDAP Server is running and reachable."),
+	// hint to error message
+	-11	: _("Failed to establish TLS encryption.
+Verify that the correct CA Certificate is installed and the Server Certificate is valid."),
+	// hint to error message
+	2	: _("Failed to establish TLS encryption.
+Verify that the Server has StartTLS support enabled."),
+    ];
     //----------------------------------------------------------------
 
     /**
@@ -1054,7 +1064,12 @@
      */
     global define map LDAPErrorMap () ``{
 
-        return ((map)SCR::Read(.ldap.error));
+        map ret = ((map)SCR::Read(.ldap.error));
+	if (ldap_error_hints[ret["code"]:0]:"" != "")
+	{
+	    ret["hint"]	= ldap_error_hints[ret["code"]:0]:"";
+	}
+	return ret;
     }
 
     /**
@@ -1066,7 +1081,7 @@
 	string error	= err_map["msg"]:"";
 	if (err_map["server_msg"]:"" != "")
 	{
-	    error = sformat ("%1\n%2", error, err_map["server_msg"]:"");
+	    error = sformat ("%1\n(%2)", error, err_map["server_msg"]:"");
 	}
 	return error;
     }
@@ -1161,6 +1176,96 @@
 	    }
 	}
 	return ret;
+    }
+
+    /**
+     * Initializes LDAP agent; use the data passed as argument instead global values
+     * Returns whole error map, not just message
+     */
+    global map LDAPInitArgs (map args) {
+
+	map ret = $[];
+	boolean init = (boolean) SCR::Execute (.ldap, args);
+	if (init == nil)
+	{
+	    // error message
+	    ret["msg"] = _("Unknown error. Perhaps 'yast2-ldap' is not available.");
+	}
+	else
+	{
+	    ldap_initialized	= init;
+	    if (!init)
+	    {
+		ret = LDAPErrorMap ();
+	    }
+	    else
+	    {
+		tls_when_initialized= args["use_tls"]:"" == "yes";
+	    }
+	}
+	return ret;
+    }
+
+    /**
+     * Check if LDAP connection can be established with given values.
+     */
+    global boolean CheckLDAPConnection (map args) {
+
+	LDAPClose ();
+	map errmap = LDAPInitArgs (args);
+
+	if (errmap == $[])
+	    return true;
+
+	string details	= errmap["msg"]:"";
+	if (errmap["server_msg"]:"" != "")
+	    details = sformat ("%1\n%2", details, errmap["server_msg"]:"");
+	string hint	= errmap["hint"]:"";
+
+	UI::OpenDialog (`HBox(`HSpacing (0.5),
+	    `VBox(
+		`VSpacing (0.5),
+		// label
+		`Left (`Heading (Label::ErrorMsg())),
+		// error message
+		`Left (`Label (_("Connection to the LDAP server cannot be established."))),
+		`ReplacePoint (`id(`rp), `Empty()),
+		`VSpacing (0.2),
+		`Left (`CheckBox (`id(`details), `opt (`notify),
+		    // checkbox label
+		    _("&Show Details"), false)),
+		`VSpacing (),
+		hint != "" ? `VBox (
+		    `Left (`Label (hint)),
+		    `VSpacing ()
+		) : `VBox (),
+		`Left (`Label (
+		// question following error message (yes/no buttons follow)
+_("Really keep this configuration?"))),
+		`HBox (
+		    `PushButton (`id(`yes), `opt(`key_F10,`default), Label::YesButton()),
+		    `PushButton (`id(`no),`opt(`key_F9), Label::NoButton())
+		)
+	    ),
+	    `HSpacing(0.5))
+	);
+	any ret = nil;
+	do
+	{
+	    ret = UI::UserInput();
+	    if (ret == `details)
+	    {
+		if ((boolean)UI::QueryWidget (`id(`details), `Value))
+		{
+		    UI::ReplaceWidget (`id(`rp), `VBox (`Label (details)));
+		}
+		else
+		    UI::ReplaceWidget (`id(`rp), `Empty());
+	    }
+	}
+	while (ret != `yes && ret != `no);
+	UI::CloseDialog ();
+	return ret == `yes;
     }
 
     /**
