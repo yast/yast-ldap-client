@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Fri Aug  5 12:33:02 CEST 2011 - tgoettlicher@suse.de
+
+- fixed .desktop file (bnc #681249)
+
+-------------------------------------------------------------------
 Tue Aug  2 14:48:20 CEST 2011 - jsuchome@suse.cz
 
 - check LDAP connection before writing the settings (bnc#709236)
