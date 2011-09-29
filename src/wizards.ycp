@@ -76,7 +76,7 @@ define symbol LdapAutoSequence() ``{
     term contents = `Label(_("Initializing..."));
 
     Wizard::CreateDialog();
-    Wizard::SetDesktopIcon("ldap");
+    Wizard::SetDesktopTitleAndIcon("ldap");
     Wizard::SetContentsButtons(caption, contents, "",
 	    Label::BackButton(), Label::NextButton());
 
@@ -123,7 +123,7 @@ define symbol LdapSequence() ``{
 	Wizard::OpenNextBackDialog ();
 	Wizard::HideAbortButton ();
     }
-    Wizard::SetDesktopIcon("ldap");
+    Wizard::SetDesktopTitleAndIcon("ldap");
 
     any ret = Sequencer::Run (aliases, sequence);
 

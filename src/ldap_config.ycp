@@ -23,7 +23,7 @@
 
     if (param != "late_dialog") {
 	Wizard::CreateDialog();
-        Wizard::SetDesktopIcon("ldap");
+        Wizard::SetDesktopTitleIcon("ldap");
     }
 
     ReadDialog (); // TODO not necessary when already done...
@@ -34,7 +34,7 @@
 
     if (param == "late_dialog") {
 	Wizard::CreateDialog();
-        Wizard::SetDesktopIcon("ldap");
+        Wizard::SetDesktopTitleAndIcon("ldap");
     }
 
     ret = ModuleConfigurationDialog ();

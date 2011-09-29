@@ -258,7 +258,7 @@ Discard these changes?
 
     Wizard::CreateDialog ();
 
-    Wizard::SetDesktopIcon ("ldap_browser");
+    Wizard::SetDesktopTitleAndIcon ("ldap_browser");
     // dialog caption
     Wizard::SetContentsButtons (_("LDAP Browser"),
 	contents, help_text, "", Label::CloseButton());
