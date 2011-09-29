@@ -23,7 +23,7 @@
 
     if (param != "late_dialog") {
 	Wizard::CreateDialog();
-        Wizard::SetDesktopTitleIcon("ldap");
+        Wizard::SetDesktopTitleAndIcon("ldap");
     }
 
     ReadDialog (); // TODO not necessary when already done...
