@@ -1005,11 +1005,11 @@ Verify that the Server has StartTLS support enabled."),
 	    // error message, more specific description follows
 	    "read": _("A problem occurred while reading data from the LDAP server."),
 	    // error message, more specific description follows
-	    "users": _("There was a problem with writing LDAP users."),
+	    "users": _("A problem occurred while writing LDAP users."),
 	    // error message, more specific description follows
-	    "groups": _("There was a problem with writing LDAP groups."),
+	    "groups": _("A problem occurred while writing LDAP groups."),
 	    // error message, more specific description follows
-	    "write": _("There was a problem with writing data to the LDAP server."),
+	    "write": _("A problem occurred while writing data to the LDAP server."),
 	    // error message, more specific description follows
 	    "schema": _("A problem occurred while reading schema from the LDAP server."),
 	];

@@ -574,7 +574,7 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	`pwchange	: _("<p>Specify the <b>Maximum Number of Passwords Stored in History</b> to set how many previously used passwords should be saved. Saved passwords may not be used.</p>") +
 
 	// help text for pwdMustChange attribute
-	_("<p>Check <b>User Must Change Password after Reset</b> to force users to change their passwords after the the password is reset or changed by an administrator.</p>") +
+	_("<p>Check <b>User Must Change Password after Reset</b> to force users to change their passwords after the password is reset or changed by an administrator.</p>") +
 
 	// help text for pwdAllowUserChange attribute
 	_("<p>Check <b>User Can Change Password</b> to allow users to change their passwords.</p>") +
@@ -583,7 +583,7 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	_("<p>If the existing password must be provided along with the new password, check <b>Old Password Required for Password Change</b>.</p>") +
 
 	// help text for pwdCheckQuality attribute
-	_("<p>Select whether the password quality should be verified while passwords are modified or added. Select <b>No Checking</b> if passwords should not be checked at all. With <b>Accept Uncheckable Passwords</b>, passwords are accepted even if the check cannot be performed, for example, if the user has provided an encrypted password. With <b>Only Accept Checked Passwords</b> passwords are refused if the quality test fails or the password cannot be checked.</p>") +
+	_("<p>Select whether the password quality should be verified while passwords are modified or added. Select <b>No Checking</b> if passwords should not be evaluated. With <b>Accept Uncheckable Passwords</b>, passwords are accepted even if the check cannot be performed, for example, if the user provides an encrypted password. With <b>Only Accept Checked Passwords</b> passwords are refused if the quality test fails or the password cannot be checked.</p>") +
 
 	// help text for pwdMinLength attribute
 	_("Set the minimum number of characters that must be used in a password in <b>Minimum Password Length</b>.</p>"),
@@ -595,7 +595,7 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	_("<p><b>Maximum Password Age</b> sets how long after modification a password expires.</p>") +
 
 	// help text for pwdExpireWarning attribute
-	_("<p>In <b>Time before Password Expiration to Issue Warning</b> set how long before a password is due to expire that an expiration warning messages should be given to an authenticating user.</p>") +
+	_("<p>In <b>Time before Password Expiration to Issue Warning</b> specify how long\nbefore expiration an authenticating user should be warned.</p>") +
 
 	// help text for pwdGraceAuthNLimit attribute
 	_("<p>Set the number of times an expired password can be used to authenticate in <b>Allowed Uses of an Expired Password</b>.</p>"),
@@ -607,10 +607,10 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	_("<p>Set the number of consecutive failed bind  attempts after which the password may not be used to authenticate in <b>Bind Failures to Lock the Password</b>.</p>") +
 
 	// help text for pwdLockoutDuration attribute
-	_("<p>Set how long the password cannot be used in <b>Password Lock Duration</b>.</p>") +
+	_("<p>Set for how long the password cannot be used in <b>Password Lock Duration</b>.</p>") +
 
 	// help text for pwdFailureCountInterval attribute
-	_("<p><b>Bind Failures Cache Duration</b> sets how long before password failures are purged from the failure counter even though no successful authentication has occurred.</p>"),
+	_("<p><b>Bind Failures Cache Duration</b> specifies the time after which password failures are purged from the failure counter even if no successful authentication has occurred.</p>"),
     ];
 
     // map of attribute names for each tab
@@ -764,7 +764,7 @@ global define map PasswordPolicyDialog (map ppolicy) {
 	    `VSpacing (0.2),
 	    `IntField (`id ("pwdGraceAuthNLimit"),
 		// IntField label
-		_("Allowed Uses of an Expired Password"), 0, max,
+		_("Allowed Use of an Expired Password"), 0, max,
 		tointeger (ppolicy["pwdGraceAuthNLimit"]:"0")
 	    )
 	), `HSpacing (0.5)));

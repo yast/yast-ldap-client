@@ -165,8 +165,7 @@
     define symbol LdapDialog () {
 
 	// help text 1/9
-	string help_text = _("<p>Here, your machine can be set up as an
-LDAP client.</p>
+	string help_text = _("<p>Set up your machine as an LDAP client.</p>
 ") +
 
 	// help text 2/9
@@ -197,20 +196,19 @@ addresses without using LDAP. You can also specify the port on which the server 
 	// help text 6/9
 	_("<p>Some LDAP servers support StartTLS (RFC2830).
 If your server supports it and it is configured, activate <b>LDAP TLS/SSL</b>
-to encrypt your communication with the LDAP server. You may download CA certificate file in PEM format from given URL.</p>
+to encrypt your communication with the LDAP server. You may download a CA
+certificate file in PEM format from a given URL.</p>
 ") +
 
 	// help text 8/9
-	_("<p>For configuration of advanced LDAP settings, click
+	_("<p>To configure advanced LDAP settings, click
 <b>Advanced Configuration</b>.</p>
 ");
 	// help text 9/9 (additional)
-	string autofs_help_text = _("<p><b>Automounter</b> is a daemon that automatically mounts directories,
-such as users' home directories.
-It is assumed that its configuration files (auto.*) already exist
-locally or over LDAP.
-If it is not installed and you want to use it, it is installed
-automatically.</p>
+	string autofs_help_text = _("<p><b>Automounter</b> is a daemon that automatically mounts directories, such
+as users' home directories. Its configuration files (auto.*) should already
+exist locally or over LDAP. If the automounter is not installed yet but you
+want to use it, it will be installed automatically.</p>
 ");
 
 
@@ -460,7 +458,8 @@ automatically.</p>
 
 '%1'
 
-was copied to '%2' directory"), name, dir));
+has been copied to '%2' directory.
+"), name, dir));
 
 		    Ldap::tls_cacertdir	= dir;
 		    Ldap::modified	= true;
@@ -672,7 +671,7 @@ in /etc/ldap.conf file.</p>
 "))	+
 
     // help text 2/3
-    _("<p><b>Password Change Protocol</b> refers to the pam_password attribute of the <tt>/etc/ldap.conf</tt> file. See <tt>man pam_ldap</tt> for the meaning of its values.</p>")	+
+    _("<p><b>Password Change Protocol</b> refers to the pam_password attribute of the\n<tt>/etc/ldap.conf</tt> file. See <tt>man pam_ldap</tt> for an explanation of its values.</p>")	+
 
     // help text 3/3, %1 is attribute name
     sformat (_("<p>Set the type of LDAP groups to use.
@@ -680,7 +679,7 @@ The default value for <b>Group Member Attribute</b> is <i>%1</i>.</p>
 "),
     "member") +
 
-    _("<p>If secure connection requires certificate checking, you may specify where is your certificate file located. It is possible to enter either directory with certificates, or the explicit path to one certificate file.</p>") +
+    _("<p>If secure connection requires certificate checking, specify where your\ncertificate file is located. Enter either a directory containing certificates\nor the explicit path to one certificate file.</p>") +
 
     // help text 7/9
     _("<p>Normally, the LDAP version 3 protocol is used. If you have
@@ -695,14 +694,14 @@ an LDAP server using protocol 2 (for example, OpenLDAP v1), activate
 
     // help text 1/4
     _("<p>First, set <b>Configuration Base DN</b>.
-It is the base for storing your configuration data, which is saved on the LDAP
+This is the base for storing your configuration data on the LDAP
 server.</p>
 ") +
 
     // help text 2/4
     _("<p>To access the data stored on the server, enter the
 <b>Administrator DN</b>.
-You can enter the full DN (for example, cn=Administrator,dc=mydomain,dc=com) or just
+You can enter the full DN (for example, cn=Administrator,dc=mydomain,dc=com) or 
 the relative DN (for example, cn=Administrator). The LDAP base DN is appended automatically if the appropriate option is checked.</p>
 ") +
 
@@ -723,7 +722,7 @@ have changed your configuration.</p>
     // help text 1/1
     _("<p>If home directories of users should be stored on this machine,
 check the appropriate option. Changing this value does not cause any direct
-action.  It is only information for the YaST users module, which can manage
+action.  It is only information for the YaST users module, which manages
 user home directories.</p>
 ") +
 
@@ -731,7 +730,9 @@ user home directories.</p>
     _("<p><b>Password Policy</b></p>") +
 
     // password policy help
-    _("<p>Configure the selected password policy with <b>Edit</b>. Use <b>Add</b> to add a new password policy. The configuration is only possible,\n  if the password policies are already enabled on the LDAP server.</p>")
+    _("<p>Configure the selected password policy with <b>Edit</b>. Use <b>Add</b> to
+add a new password policy. Password policies must be enabled on the LDAP server.</p>
+")
     ];
 
     string bind_dn		= Ldap::bind_dn;
@@ -1482,8 +1483,8 @@ all changes will be lost. Really reread?
 define map<string,any> TemplateConfigurationDialog (map templ) {
 
     // help text 1/3
-    string help_text = _("<p>Here, configure the template used for
-creating new objects (like users or groups).</p>
+    string help_text = _("<p>Configure the template used for creating 
+new objects (like users or groups).</p>
 ") +
 
     // help text 2/3
@@ -1492,8 +1493,8 @@ Changing the <b>cn</b> value renames the template.</p>
 ") +
 
     // help text 3/3
-    _("<p>The second table contains a list of <b>default values</b>, used
-for new objects. Modify the list by adding new values and editing or
+    _("<p>The second table contains a list of <b>default values</b> used
+for new objects. Modify the list by adding new values, editing or
 removing current ones.</p>
 ");
 
@@ -1709,7 +1710,7 @@ Enter a value."), attr));
 define symbol ModuleConfigurationDialog () ``{
 
     // helptext 1/4
-    string help_text = _("<p>Here, manage the configuration stored in LDAP directory.</p>") +
+    string help_text = _("<p>Manage the configuration stored in the LDAP directory.</p>") +
 
     // helptext 2/4
     _("<p>Each configuration set is called a \"configuration module.\" If there
@@ -1929,8 +1930,9 @@ Enter a value."), attr));
 	    if (available == [])
 	    {
 		// message
-		Popup::Message (_("You currently have configuration modules
-of each type, so you cannot add a new one."));
+		Popup::Message (_("You currently have a configuration module of each 
+type, therefore you cannot add a new one.
+"));
 		continue;
 	    }
 	    // get new name and class
