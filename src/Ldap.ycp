@@ -606,7 +606,7 @@ Verify that the Server has StartTLS support enabled."),
 	list<string> kdcs = (list<string>) SCR::Read (add (add (.etc.krb5_conf.v, krb5_realm), "kdc"));
 	if (kdcs == nil)
 	    kdcs	= [];
-	krb5_kdcip	= mergestring (kdcs, " ");
+	krb5_kdcip	= mergestring (kdcs, ",");
 
 	return true;
     }
@@ -2238,7 +2238,11 @@ Select another one.
 
 	path domain	= add (.etc.sssd_conf.v, "domain/default");
 
-	string uri	= sformat ("ldap://%1", String::FirstChunk (server, " \t"));
+	string uri	= mergestring (
+		maplist (string s, splitstring (server, " \t"),
+			``(sformat ("ldap://%1", s))
+		), ","
+	);
 	SCR::Write (add (domain, "ldap_uri"), uri);
 	SCR::Write (add (domain, "ldap_search_base"), base_dn);
 	SCR::Write (add (domain, "ldap_schema"), sssd_ldap_schema);

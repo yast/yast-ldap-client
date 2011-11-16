@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Nov 16 15:35:53 CET 2011 - jsuchome@suse.cz
+
+- correctly handle sssd config with more LDAP servers (bnc#729174)
+- 2.22.1 
+
+-------------------------------------------------------------------
 Wed Nov 16 12:31:32 CET 2011 - jsuchome@suse.cz
 
 - merged texts from proofreading
