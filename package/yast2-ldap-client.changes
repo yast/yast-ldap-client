@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Nov 16 15:17:23 CET 2011 - jsuchome@suse.cz
+
+- correctly handle sssd config with more LDAP servers (bnc#729174)
+- 2.20.14.2
+
+-------------------------------------------------------------------
 Mon Apr 18 10:50:28 CEST 2011 - jsuchome@suse.cz
 
 - if sssd is removed in GUI, remove also the pam module (bnc#680184)
