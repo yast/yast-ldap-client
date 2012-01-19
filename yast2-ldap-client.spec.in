@@ -2,8 +2,8 @@
 
 
 @HEADER@
-Group:	System/YaST
-License: GPL-2.0+
+Group:          System/YaST
+License:        GPL-2.0
 BuildRequires:	doxygen perl-XML-Writer update-desktop-files yast2 yast2-devtools yast2-pam yast2-testsuite yast2-network
 
 PreReq:         %fillup_prereq

@@ -9,7 +9,6 @@ ldap = element ldap {
     ldap_domain? &
     ldap_server? &
     ldap_tls? &
-    ldap_v2? &
     create_ldap? &
     start_ldap? &
     member_attribute? &
@@ -33,7 +32,6 @@ login_enabled = element login_enabled { BOOLEAN }
 
 file_server = element file_server { BOOLEAN }
 ldap_tls = element ldap_tls { BOOLEAN }
-ldap_v2 = element ldap_v2 { BOOLEAN }
 start_ldap = element start_ldap { BOOLEAN }
 create_ldap = element create_ldap { BOOLEAN }
 start_autofs = element start_autofs { BOOLEAN }

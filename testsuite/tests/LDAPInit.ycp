@@ -47,7 +47,6 @@
     DUMP ("==== init (more servers set, TLS used) ===========");
 
     Ldap::server = "chimera.suse.cz:333 localhost";
-    Ldap::ldap_v2 = true;
     Ldap::ldap_tls = true;
     Ldap::tls_cacertdir = "/etc/ssl/certs";
 

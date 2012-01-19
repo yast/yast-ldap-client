@@ -1,3 +1,23 @@
+/* ------------------------------------------------------------------------------
+ * Copyright (c) 2006-2012 Novell, Inc. All Rights Reserved.
+ *
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of version 2 of the GNU General Public License as published by the
+ * Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, contact Novell, Inc.
+ *
+ * To contact Novell about this file by physical or electronic mail, you may find
+ * current contact information at www.novell.com.
+ * ------------------------------------------------------------------------------
+ */
+
 /**
  * File:	include/ldap/ui.ycp
  * Package:	Configuration of LDAP
@@ -376,7 +396,6 @@ want to use it, it will be installed automatically.</p>
 		    LdapPopup::InitAndBrowseTree ("", $[
 			"hostname"	: Ldap::GetFirstServer (server),
 			"port"		: Ldap::GetFirstPort (server),
-			"version"	: Ldap::ldap_v2 ? 2 : 3,
 			"use_tls"	: ldap_tls ? "yes" : "no",
 			"cacertdir"	: Ldap::tls_cacertdir,
 			"cacertfile"	: Ldap::tls_cacertfile
@@ -552,7 +571,6 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 		    map args	= $[
 			"hostname"	: Ldap::GetFirstServer (server),
 			"port"		: Ldap::GetFirstPort (server),
-			"version"	: Ldap::ldap_v2 ? 2 : 3,
 			"use_tls"	: ldap_tls ? "yes" : "no",
 			"cacertdir"	: Ldap::tls_cacertdir,
 			"cacertfile"	: Ldap::tls_cacertfile
@@ -679,13 +697,7 @@ The default value for <b>Group Member Attribute</b> is <i>%1</i>.</p>
 "),
     "member") +
 
-    _("<p>If secure connection requires certificate checking, specify where your\ncertificate file is located. Enter either a directory containing certificates\nor the explicit path to one certificate file.</p>") +
-
-    // help text 7/9
-    _("<p>Normally, the LDAP version 3 protocol is used. If you have
-an LDAP server using protocol 2 (for example, OpenLDAP v1), activate
-<b>LDAP Version 2</b>.</p>
-"),
+    _("<p>If secure connection requires certificate checking, specify where your\ncertificate file is located. Enter either a directory containing certificates\nor the explicit path to one certificate file.</p>"),
 
 
 	`admin		:
@@ -746,7 +758,6 @@ add a new password policy. Password policies must be enabled on the LDAP server.
     string nss_base_shadow	= Ldap::nss_base_shadow;
     string nss_base_group	= Ldap::nss_base_group;
     string pam_password		= Ldap::pam_password;
-    boolean ldap_v2		= Ldap::ldap_v2;
     string tls_cacertdir	= Ldap::tls_cacertdir;
     string tls_cacertfile	= Ldap::tls_cacertfile;
     string krb5_realm		= Ldap::krb5_realm;
@@ -985,9 +996,7 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 		    `PushButton (`id(`br_tls_cacertfile), _("Brows&e"))
 		)
 	      ))
-	    ),
-	    `VSpacing(0.2),
-	    `Left (`CheckBox (`id(`ldapv), _("LDAP &Version 2"), ldap_v2))
+	    )
 	), `HSpacing (5)));
 
 	UI::ReplaceWidget (`tabContents, cont);
@@ -1120,7 +1129,6 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 
 	    tls_cacertfile	= (string) UI::QueryWidget(`id(`tls_cacertfile), `Value);
 	    tls_cacertdir	= (string) UI::QueryWidget(`id(`tls_cacertdir), `Value);
-	    ldap_v2		= (boolean) UI::QueryWidget(`id(`ldapv), `Value);
 	}
 	if (current == `admin)
 	{
@@ -1160,7 +1168,6 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 		LdapPopup::InitAndBrowseTree (base_dn, $[
 		    "hostname"	: Ldap::GetFirstServer (Ldap::server),
 		    "port"	: Ldap::GetFirstPort (Ldap::server),
-		    "version"	: Ldap::ldap_v2 ? 2 : 3,
 		    "use_tls"	: Ldap::ldap_tls ? "yes" : "no",
 		    "cacertdir"	: Ldap::tls_cacertdir,
 		    "cacertfile": Ldap::tls_cacertfile
@@ -1236,7 +1243,6 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 		    string suf	= LdapPopup::InitAndBrowseTree (base_dn, $[
 			"hostname"	: Ldap::GetFirstServer (Ldap::server),
 			"port"		: Ldap::GetFirstPort (Ldap::server),
-			"version"	: Ldap::ldap_v2 ? 2 : 3,
 			"use_tls"	: Ldap::ldap_tls ? "yes" : "no",
 			"cacertdir"	: Ldap::tls_cacertdir,
 			"cacertfile"	: Ldap::tls_cacertfile
@@ -1368,7 +1374,6 @@ Please select another one."), new_dn));
 		Ldap::nss_base_passwd != nss_base_passwd	||
 		Ldap::nss_base_group != nss_base_group		||
 		Ldap::nss_base_shadow != nss_base_shadow	||
-		Ldap::ldap_v2 != ldap_v2 ||
 		Ldap::tls_cacertdir != tls_cacertdir ||
 		Ldap::tls_cacertfile != tls_cacertfile		||
 		Ldap::krb5_realm != krb5_realm			||
@@ -1387,7 +1392,6 @@ Please select another one."), new_dn));
 		Ldap::nss_base_passwd	= nss_base_passwd;
 		Ldap::nss_base_group	= nss_base_group;
 		Ldap::nss_base_shadow	= nss_base_shadow;
-		Ldap::ldap_v2		= ldap_v2;
 		Ldap::tls_cacertdir	= tls_cacertdir;
 		Ldap::tls_cacertfile	= tls_cacertfile;
 		Ldap::krb5_realm	= krb5_realm;

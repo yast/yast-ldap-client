@@ -1,3 +1,23 @@
+/* ------------------------------------------------------------------------------
+ * Copyright (c) 2006-2012 Novell, Inc. All Rights Reserved.
+ *
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of version 2 of the GNU General Public License as published by the
+ * Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, contact Novell, Inc.
+ *
+ * To contact Novell about this file by physical or electronic mail, you may find
+ * current contact information at www.novell.com.
+ * ------------------------------------------------------------------------------
+ */
+
 /**
  * File:	modules/Ldap.ycp
  * Module:	Configuration of LDAP client
@@ -108,8 +128,6 @@
     string old_base_dn		= nil;
     boolean base_dn_changed	= false;
 
-    /* Do we have an v2 or v3 ldap server? */
-    global boolean ldap_v2 = false;
     global boolean ldap_tls = false;
 
     // CA certificates for server certificate verification
@@ -432,7 +450,6 @@ Verify that the Server has StartTLS support enabled."),
 	server		= settings ["ldap_server"]:"";
 	// leaving "ldap_domain" for backward compatibility
 	base_dn		= settings ["ldap_domain"]:"";
-	ldap_v2		= settings ["ldap_v2"]:false;
 	ldap_tls	= settings ["ldap_tls"]:false;
 	pam_password	= settings ["pam_password"]:"exop";
 	bind_dn		= settings ["bind_dn"]:"";
@@ -487,7 +504,6 @@ Verify that the Server has StartTLS support enabled."),
 	    "start_ldap"	: start,
 	    "ldap_server"	: server,
 	    "ldap_domain"	: base_dn,
-	    "ldap_v2"		: ldap_v2,
 	    "ldap_tls"		: ldap_tls,
 	    "bind_dn"		: bind_dn,
 	    "file_server"	: file_server,
@@ -551,7 +567,7 @@ Verify that the Server has StartTLS support enabled."),
 
 	// summary item
 	summary = Summary::AddHeader(summary, _("System Security Services Daemon (SSSD) Set"));
-	// summary (LDAP version 2?)
+	// summary (SSSD Set?)
 	summary = Summary::AddLine(summary, (sssd && start) ? _("Yes") : Summary::NotConfigured());
 
 	return summary;
@@ -832,7 +848,6 @@ Verify that the Server has StartTLS support enabled."),
 	    }
 	}
 
-	ldap_v2 = (ReadLdapConfEntry ("ldap_version", "3") == "2");
 	ldap_tls = (ReadLdapConfEntry ("ssl", "no") == "start_tls");
 	tls_cacertdir	= ReadLdapConfEntry ("tls_cacertdir", "");
 	tls_cacertfile	= ReadLdapConfEntry ("tls_cacertfile", "");
@@ -1155,7 +1170,6 @@ Verify that the Server has StartTLS support enabled."),
 	map args = $[
 	    "hostname":	GetFirstServer (server),
 	    "port":	GetFirstPort (server),
-	    "version":	ldap_v2 ? 2 : 3,
 	    "use_tls":	ldap_tls ? "yes" : "no",
 	    "cacertdir"	: Ldap::tls_cacertdir,
 	    "cacertfile": Ldap::tls_cacertfile
@@ -1336,7 +1350,6 @@ Retry connection without TLS/SSL?
 	    args = $[
 		"hostname"	: GetFirstServer (server),
 		"port"		: GetFirstPort (server),
-		"version"	: ldap_v2 ? 2 : 3,
 		"use_tls"	: ldap_tls ? "yes" : "no",
 		"cacertdir"	: Ldap::tls_cacertdir,
 		"cacertfile"	: Ldap::tls_cacertfile
@@ -2710,11 +2723,6 @@ Select another one.
 	    }
 
 	    WriteOpenLdapConf();
-
-	    if (ldap_v2)
-		WriteLdapConfEntry ("ldap_version", "2");
-	    else
-		WriteLdapConfEntry ("ldap_version", "3");
 
 	    if (ldap_tls)
 		WriteLdapConfEntry ("ssl", "start_tls");
