@@ -2240,9 +2240,10 @@ Select another one.
      */
     global boolean WriteSSSDConfig () {
 
-	if (!FileUtils::Exists ("/etc/sssd/sssd.conf"))
+	string file     = "/etc/sssd/sssd.conf";
+	if (!FileUtils::Exists (file))
 	{
-	    y2warning ("file /etc/sssd/sssd.conf does not exists: not writing");
+	    y2warning ("file %1 does not exists: not writing", file);
 	    return false;
 	}
 
@@ -2305,8 +2306,13 @@ Select another one.
 
 	if (!SCR::Write(.etc.sssd_conf, nil))
 	{
-	    y2error ("error writing ldap.conf file");
+	    y2error ("error writing %1 file", file);
 	}
+        else
+        {
+            // workadound for ini-agent bug (bnc#743355)
+            SCR::Execute (.target.bash, sformat ("/bin/chmod 600 %1", file));
+        }
 	return true;
     }
 
