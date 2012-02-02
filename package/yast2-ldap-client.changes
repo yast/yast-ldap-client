@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Feb  2 09:01:47 CET 2012 - jsuchome@suse.cz
+
+- change mode of sssd.conf file after writing (workaround for
+  ini-agent bnc#743355) 
+- 2.21.13
+
+-------------------------------------------------------------------
 Wed Nov 16 15:31:30 CET 2011 - jsuchome@suse.cz
 
 - correctly handle sssd config with more LDAP servers (bnc#729174)
