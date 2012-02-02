@@ -128,7 +128,7 @@
     string old_base_dn		= nil;
     boolean base_dn_changed	= false;
 
-    global boolean ldap_tls = false;
+    global boolean ldap_tls     = true;
 
     // CA certificates for server certificate verification
     // At least one of these are required if tls_checkpeer is "yes"

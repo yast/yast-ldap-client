@@ -179,6 +179,88 @@
     }
 
     /**
+     * Popup for TLS/SSL related stuff
+     */
+    boolean SSLConfiguration () {
+
+        string tls_cacertdir    = Ldap::tls_cacertdir;
+        string tls_cacertfile   = Ldap::tls_cacertfile;
+	UI::OpenDialog (`opt (`decorated), `HBox (`HSpacing (1), `VBox(
+            `VSpacing (0.5),
+	    `HSpacing (75),
+            `HBox (
+                `InputField (`id (`tls_cacertdir), `opt (`hstretch),
+                    // inputfield label
+                    _("Cer&tificate Directory"), tls_cacertdir),
+		`VBox (`Bottom (
+		    // button label
+		    `PushButton (`id(`br_tls_cacertdir), _("B&rowse"))
+		))
+	    ),
+            `HBox (
+		`InputField (`id (`tls_cacertfile), `opt (`hstretch),
+                    // inputfield label
+                    _("CA Cert&ificate File"), tls_cacertfile),
+		`VBox (`Bottom (
+		    // button label
+		    `PushButton (`id(`br_tls_cacertfile), _("Brows&e"))
+		))
+            ),
+            `HBox (
+                `InputField (`id (`url),  `opt (`hstretch),
+                // inputfield label
+		_("CA Certificate URL for Download")),
+		`VBox (`Bottom (
+		    // push button label
+		    `PushButton (`id(`import_cert), _("Do&wnload CA Certificate"))
+                ))
+            ),
+	    `ButtonBox (
+		`PushButton (`id(`ok), Label::OKButton()),
+		`PushButton (`id(`cancel), Label::CancelButton())
+	    ),
+            `VSpacing (0.5)
+	), `HSpacing (1)));
+	symbol ret = `again;
+	do
+	{
+	    ret		= (symbol) UI::UserInput ();
+	    if (ret == `br_tls_cacertdir)
+            {
+	      string dir = UI::AskForExistingDirectory (tls_cacertdir,
+                // popup label
+                _("Choose the directory with certificates"));
+	      if (dir != nil)
+	      {
+	        tls_cacertdir	= dir;
+		UI::ChangeWidget (`id (`tls_cacertdir), `Value, dir);
+	      }
+            }
+	    if (ret == `br_tls_cacertfile)
+	    {
+	      string file = UI::AskForExistingFile (tls_cacertfile, "*.pem *.crt",
+                // popup label
+                _("Choose the certificate file"));
+	      if (file != nil)
+	      {
+		tls_cacertfile	= file;
+		UI::ChangeWidget (`id (`tls_cacertfile), `Value, file);
+	      }
+	    }
+	} while (ret != `ok && ret != `cancel);
+
+	UI::CloseDialog ();
+
+        if (ret == `ok)
+        {
+            Ldap::tls_cacertfile        = tls_cacertfile;
+            Ldap::tls_cacertdir         = tls_cacertdir;
+        }
+
+	return ret == `ok;
+    }
+
+    /**
      * The main dialog for ldap-client configuration
      * @return	`back, `next or `abort
      */
@@ -236,13 +318,13 @@ want to use it, it will be installed automatically.</p>
 	boolean installation	=
 	    Stage::cont () && !contains (WFM::Args (), "from_users");
 	boolean start		= Ldap::start || installation;
-	boolean sssd		= Ldap::sssd;
 	string base_dn		= Ldap::GetBaseDN ();
 	string server		= Ldap::server;
 	boolean ldap_tls	= Ldap::ldap_tls || Ldap::sssd; // force TLS to true if sssd is used
 	string tls_checkpeer	= Ldap::tls_checkpeer;
 	boolean login_enabled	= Ldap::login_enabled;
 	string certTmpFile	= sformat ("%1/__LDAPcert.crt", Directory::tmpdir);
+        boolean ssl_changed     = false;
 	boolean autofs		= Ldap::_start_autofs;
 	term autofs_con		= `Empty ();
 	if (Ldap::_autofs_allowed)
@@ -257,12 +339,17 @@ want to use it, it will be installed automatically.</p>
 
 	boolean mkhomedir	= Ldap::mkhomedir;
 	term mkhomedir_term	= `VBox (
-	    Ldap::_autofs_allowed ? `VSpacing (0) : `VSpacing (0.5),
 	    `Left(`CheckBox(`id(`mkhomedir),
 		// checkbox label
 		_("C&reate Home Directory on Login"), mkhomedir
 	    ))
 	);
+        term disable_login_term = `VBox (
+	    `Left (`CheckBox (`id (`ldapnologin),
+		// checkbox label
+		_("Disable User &Logins"), !login_enabled
+            ))
+        );
 
 	term con = `VCenter (`HBox (`HSpacing (3), `VBox (
 	    `VSpacing (0.5),
@@ -276,18 +363,9 @@ want to use it, it will be installed automatically.</p>
 			    _("Do &Not Use LDAP"), !start)),
 			`Left(`RadioButton(`id(`ldapyes), `opt (`notify),
 			    // radio button label
-			    _("&Use LDAP"), start)),
-			`Left(`RadioButton(`id(`ldapnologin), `opt (`notify),
-			    // radio button label
-			    _("Use LDAP but Disable &Logins"),
-				start && !login_enabled))
+			    _("&Use LDAP"), start))
 		    )))
 		),
-		`VSpacing (0.4),
-		`Left (`CheckBox (`id (`sssd), `opt (`notify),
-		    // checkbox label
-		    _("Use S&ystem Security Services Daemon (SSSD)"), sssd
-		)),
 		`VSpacing (0.4)
 	    ))),
 	    `VSpacing (0.4),
@@ -316,20 +394,16 @@ want to use it, it will be installed automatically.</p>
 		),
 		`VSpacing (0.4)
 	    ), `HSpacing (0.5))),
-	    `Frame (_("Secure Connection"), `HBox (`HSpacing (0.5), `VBox(
-		`HBox (
-		    // check box label
-		    `Left (`CheckBox (`id(`ldaps), `opt (`notify), _("LDAP &TLS/SSL"), ldap_tls)),
-		    // push button label
-		    `PushButton (`id(`import_cert), _("Do&wnload CA Certificate"))
-		),
-		`VSpacing (0.2)
-	    ), `HSpacing (0.5))),
 	    autofs_con,
 	    mkhomedir_term,
-	    `VSpacing(0.4),
-	    // pushbutton label
-	    `PushButton (`id(`advanced), _("&Advanced Configuration..."))
+            disable_login_term,
+	    `VSpacing (),
+            `HBox (
+	      // pushbutton label
+	      `PushButton (`id(`ssl_config), _("SSL/TLS Configuration...")),
+	      // pushbutton label
+	      `PushButton (`id(`advanced), _("&Advanced Configuration..."))
+            )
         ), `HSpacing (3)));
 
 	Wizard::SetContentsButtons (
@@ -345,9 +419,6 @@ want to use it, it will be installed automatically.</p>
 
 
 	UI::ChangeWidget (`id(`server),`ValidChars, Address::ValidChars + " ");
-	UI::ChangeWidget (`id(`import_cert),`Enabled, ldap_tls);
-	// do not alow to turn off TLS when SSSD is used
-	UI::ChangeWidget (`id (`ldaps), `Enabled, !sssd);
 
 	symbol result = `not_next;
 	do {
@@ -355,20 +426,15 @@ want to use it, it will be installed automatically.</p>
 
 	    any rb	= UI::QueryWidget(`id(`rd), `CurrentButton);
 	    start	= (rb != `ldapno);
-	    login_enabled = (rb != `ldapnologin);
+	    login_enabled = UI::QueryWidget (`id (`ldapnologin), `Value) != true;
 
-	    sssd	= (boolean) UI::QueryWidget (`id (`sssd), `Value);
 	    server	= (string) UI::QueryWidget(`id(`server), `Value);
-	    ldap_tls	= (boolean) UI::QueryWidget(`id(`ldaps), `Value);
 	    mkhomedir	= (boolean) UI::QueryWidget (`id(`mkhomedir),`Value);
-	    UI::ChangeWidget (`id(`import_cert), `Enabled, ldap_tls);
 
-	    if (result == `sssd)
-	    {
-		UI::ChangeWidget (`id (`ldaps), `Value, true);
-		UI::ChangeWidget (`id (`ldaps), `Enabled, !sssd);
-	    }
-
+            if (result == `ssl_config)
+            {
+                ssl_changed     = SSLConfiguration () || ssl_changed;
+            }
 	    if (result == `slp)
 	    {
 		string srv	= "";
@@ -538,7 +604,7 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 		    }
 		}
 
-		list<string> needed_packages = sssd ? Ldap::sssd_packages : Ldap::pam_nss_packages;
+		list<string> needed_packages = Ldap::sssd_packages;
 		if (Ldap::sssd_with_krb)
 		    needed_packages	= (list<string>) union (needed_packages, Ldap::kerberos_packages);
 
@@ -587,19 +653,12 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 
 	if (result == `next || result == `advanced)
 	{
-	    if (Ldap::GetBaseDN() != base_dn &&
-		Ldap::nss_base_passwd == Ldap::GetBaseDN ())
-	    {
-		Ldap::nss_base_passwd	= base_dn;
-		Ldap::nss_base_shadow	= base_dn;
-		Ldap::nss_base_group	= base_dn;
-	    }
 	    if (Ldap::start != start || Ldap::GetBaseDN() != base_dn ||
 		Ldap::server != server ||
 		Ldap::ldap_tls != ldap_tls || Ldap::_start_autofs != autofs ||
 		Ldap::login_enabled != login_enabled ||
 		Ldap::mkhomedir != mkhomedir ||
-		Ldap::sssd != sssd
+                ssl_changed
 	    )
 	    {
 		if (result == `next)
@@ -655,7 +714,6 @@ Enable certificate checks now?")))
 		Ldap::_start_autofs = autofs;
 		Ldap::login_enabled = login_enabled;
 		Ldap::mkhomedir = mkhomedir;
-		Ldap::sssd	= sssd;
 		Ldap::modified = true;
 	    }
 	}
@@ -674,19 +732,11 @@ define symbol AdvancedConfigurationDialog () {
     // help text caption 1
     _("<p><b>Advanced LDAP Client Settings</b></p>") +
 
-    (Ldap::sssd ?
-
     // help text 1/3
     _("<p>If Kerberos authentication should be used, specify the <b>realm</b> and <b>KDC Address</b>.
 Determine if user credentials should be cached locally by checking <b>SSSD Offline Authentication</b>.
 For more info about SSSD settings, check the man page of <tt>sssd.conf</tt>.</p>
-") :
-
-    // help text 1/3
-    _("<p>Specify the search bases to use for specific maps (users, passwords, and groups) if they are different from the base DN. These values are
-set to the nss_base_passwd, nss_base_shadow, and nss_base_group attributes
-in /etc/ldap.conf file.</p>
-"))	+
+") +
 
     // help text 2/3
     _("<p><b>Password Change Protocol</b> refers to the pam_password attribute of the\n<tt>/etc/ldap.conf</tt> file. See <tt>man pam_ldap</tt> for an explanation of its values.</p>")	+
@@ -754,12 +804,7 @@ add a new password policy. Password policies must be enabled on the LDAP server.
     string base_config_dn	= Ldap::GetMainConfigDN();
     boolean create_ldap		= Ldap::create_ldap;
     boolean append_base	= (bind_dn != "" && issubstring (bind_dn, base_dn));
-    string nss_base_passwd	= Ldap::nss_base_passwd;
-    string nss_base_shadow	= Ldap::nss_base_shadow;
-    string nss_base_group	= Ldap::nss_base_group;
     string pam_password		= Ldap::pam_password;
-    string tls_cacertdir	= Ldap::tls_cacertdir;
-    string tls_cacertfile	= Ldap::tls_cacertfile;
     string krb5_realm		= Ldap::krb5_realm;
     string krb5_kdcip		= Ldap::krb5_kdcip;
     boolean sssd_with_krb	= Ldap::sssd_with_krb;
@@ -885,61 +930,25 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 	);
     }
 
-    term get_frame_nss () {
-	return
-	    // frame label
-	    `Frame (_("Naming Contexts"), `HBox(
-	    `HSpacing (1), `VBox(
-		`VSpacing(0.4),
-		`HBox (
-		    `InputField (`id (`nss_base_passwd), `opt (`hstretch),
-			// textentry label
-			_("&User Map"), nss_base_passwd),
-		    `VBox (
-			`Label (""),
-			// button label
-			`PushButton (`id(`br_passwd), _("&Browse"))
-		    )
-		),
-		`HBox (
-		    `InputField (`id (`nss_base_shadow), `opt (`hstretch),
-			// textentry label
-			_("&Password Map"), nss_base_shadow),
-		    `VBox (
-			`Label (""),
-			// button label
-			`PushButton (`id(`br_shadow), _("Brow&se"))
-		    )
-		),
-		`HBox (
-		    `InputField (`id (`nss_base_group), `opt (`hstretch),
-			// textentry label
-			_("&Group Map"), nss_base_group),
-		    `VBox (
-			`Label (""),
-			// button label
-			`PushButton (`id(`br_group), _("Bro&wse"))
-		    )
-		),
-		`VSpacing(0.4)
-	    ),
-	    `HSpacing (1)
-	    ));
-    }
 
-    term get_frame_krb () {
-	return
-	    // frame label
-	    `Frame (_("Basic SSSD Settings"), `HBox (`HSpacing (1), `VBox (
+
+    define void set_client_term () {
+
+
+	term cont = `Top (`HBox(`HSpacing (4), `VBox(
+	    `VSpacing (1),
+
 		// checkbox label
 		`Left (`CheckBox (`id (`sssd_with_krb), `opt (`notify), _("&Use Kerberos"), sssd_with_krb)),
 		`VSpacing(0.4),
 		`HBox (
+                    `HSpacing (2),
 		    // textentry label
 		    `TextEntry (`id (`krb5_realm), _("Default Real&m"), krb5_realm),
 		    // textentry label
 		    `TextEntry (`id (`krb5_kdcip), _("&KDC Server Address"), krb5_kdcip)
 		),
+		`VSpacing (),
 		// combobox label
 		`ComboBox (`id (`sssd_ldap_schema), `opt (`notify, `hstretch), _("LDAP Schema"),
 			maplist (string s, ldap_schemas, ``(`item (`id (s), s, s == sssd_ldap_schema)))
@@ -958,46 +967,15 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 		    `Left (`CheckBox (`id (`sssd_cache_credentials), _("SSSD O&ffline Authentication"),
 			sssd_cache_credentials))
 		),
-		`VSpacing (0.4)
-	    ), `HSpacing (1)));
-    }
 
-    define void set_client_term () {
-
-	term cont = `Top (`HBox(`HSpacing (5), `VBox(
-	    `VSpacing(0.4),
-	    `VBox (Ldap::sssd ? get_frame_krb () : get_frame_nss ()),
-	    `VSpacing (0.4),
+	    `VSpacing (),
 	    `ComboBox (`id (`pam_password), `opt(`notify,`hstretch,`editable),
 		// combobox label
 		_("Passwor&d Change Protocol"), pam_password_items),
 	    `ComboBox (`id (`group_style), `opt (`notify, `hstretch),
 		// combobox label
-		_("Group Member &Attribute"), member_attributes),
-	    // check box label
-	    `VSpacing(0.4),
-	    `HBox (
-	      `HWeight (1, `HBox (
-		`InputField (`id (`tls_cacertdir), `opt (`hstretch), _("Cer&tificate Directory"),
-		    tls_cacertdir
-		),
-		`VBox (
-		    `Label (""),
-		    // button label
-		    `PushButton (`id(`br_tls_cacertdir), _("B&rowse"))
-		)
-	      )), `HWeight (1, `HBox (
-		`InputField (`id (`tls_cacertfile), `opt (`hstretch), _("CA Cert&ificate File"),
-		    tls_cacertfile
-		),
-		`VBox (
-		    `Label (""),
-		    // button label
-		    `PushButton (`id(`br_tls_cacertfile), _("Brows&e"))
-		)
-	      ))
-	    )
-	), `HSpacing (5)));
+		_("Group Member &Attribute"), member_attributes)
+	), `HSpacing (4)));
 
 	UI::ReplaceWidget (`tabContents, cont);
 	if (has_tabs)
@@ -1011,7 +989,7 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 
     define void set_admin_term () {
 
-	term cont = `HBox (`HSpacing (5), `VBox(
+	term cont = `HBox (`HSpacing (4), `VBox(
 	    `VSpacing (0.4),
 	    `HBox (
 		    `InputField (`id (`base_config_dn), `opt (`hstretch),
@@ -1061,7 +1039,7 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 		`HStretch ()
 	    ),
 	    `VSpacing(0.4)
-	), `HSpacing (5));
+	), `HSpacing (4));
 
 	UI::ReplaceWidget (`tabContents, cont);
 	if (has_tabs)
@@ -1103,32 +1081,18 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 	{
 	    member_attribute =(string)UI::QueryWidget(`id(`group_style),`Value);
 
-	    if (Ldap::sssd)
-	    {
-		krb5_realm	= (string)
+	    krb5_realm	= (string)
 		    UI::QueryWidget (`id (`krb5_realm), `Value);
-		krb5_kdcip	= (string)
+            krb5_kdcip	= (string)
 		    UI::QueryWidget (`id (`krb5_kdcip), `Value);
-		sssd_cache_credentials	= (boolean)
+            sssd_cache_credentials	= (boolean)
 		    UI::QueryWidget (`id (`sssd_cache_credentials), `Value);
-		sssd_enumerate	= (boolean)
+            sssd_enumerate	= (boolean)
 		    UI::QueryWidget (`id (`sssd_enumerate), `Value);
-		sssd_ldap_schema= (string)
+            sssd_ldap_schema= (string)
 		    UI::QueryWidget (`id (`sssd_ldap_schema), `Value);
-	    }
-	    else
-	    {
-		nss_base_passwd	= (string)
-		    UI::QueryWidget(`id(`nss_base_passwd),`Value);
-		nss_base_shadow	= (string)
-		    UI::QueryWidget(`id(`nss_base_shadow),`Value);
-		nss_base_group	= (string)
-		    UI::QueryWidget(`id(`nss_base_group),`Value);
-	    }
 	    pam_password = (string) UI::QueryWidget(`id(`pam_password), `Value);
 
-	    tls_cacertfile	= (string) UI::QueryWidget(`id(`tls_cacertfile), `Value);
-	    tls_cacertdir	= (string) UI::QueryWidget(`id(`tls_cacertdir), `Value);
 	}
 	if (current == `admin)
 	{
@@ -1156,8 +1120,7 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 	}
 
 	// 3. other events
-	if (is (result, symbol) &&
-	    contains ([`br, `br_passwd, `br_shadow, `br_group ], (symbol)result))
+	if (result == `br)
 	{
 	    if (Ldap::ldap_initialized && Ldap::tls_when_initialized != Ldap::ldap_tls)
 	    {
@@ -1174,13 +1137,7 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 		]);
 	    if (dn != "")
 	    {
-		map br2entry	= $[
-		    `br		: `base_config_dn,
-		    `br_passwd	: `nss_base_passwd,
-		    `br_shadow	: `nss_base_shadow,
-		    `br_group	: `nss_base_group
-		];
-		UI::ChangeWidget (`id(br2entry[result]:nil), `Value, dn);
+		UI::ChangeWidget (`id(`base_config_dn), `Value, dn);
 	    }
 	}
 	if (result == `sssd_with_krb)
@@ -1188,24 +1145,6 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 	    sssd_with_krb	= (boolean) UI::QueryWidget (`id (`sssd_with_krb), `Value);
 	    UI::ChangeWidget (`id (`krb5_realm), `Enabled, sssd_with_krb);
 	    UI::ChangeWidget (`id (`krb5_kdcip), `Enabled, sssd_with_krb);
-	}
-	if (result == `br_tls_cacertdir)
-	{
-	    string dir = UI::AskForExistingDirectory (tls_cacertdir, _("Choose the directory with certificates"));
-	    if (dir != nil)
-	    {
-		tls_cacertdir	= dir;
-		UI::ChangeWidget (`id (`tls_cacertdir), `Value, dir);
-	    }
-	}
-	if (result == `br_tls_cacertfile)
-	{
-	    string file = UI::AskForExistingFile (tls_cacertfile, "*.pem *.crt", _("Choose the certificate file"));
-	    if (file != nil)
-	    {
-		tls_cacertfile	= file;
-		UI::ChangeWidget (`id (`tls_cacertfile), `Value, file);
-	    }
 	}
 	if (result == `add)
 	{
@@ -1371,11 +1310,6 @@ Please select another one."), new_dn));
 		Ldap::member_attribute != member_attribute	||
 		Ldap::create_ldap != create_ldap		||
 		Ldap::pam_password != pam_password		||
-		Ldap::nss_base_passwd != nss_base_passwd	||
-		Ldap::nss_base_group != nss_base_group		||
-		Ldap::nss_base_shadow != nss_base_shadow	||
-		Ldap::tls_cacertdir != tls_cacertdir ||
-		Ldap::tls_cacertfile != tls_cacertfile		||
 		Ldap::krb5_realm != krb5_realm			||
 		Ldap::krb5_kdcip != krb5_kdcip			||
 		Ldap::sssd_cache_credentials != sssd_cache_credentials ||
@@ -1389,11 +1323,6 @@ Please select another one."), new_dn));
 		Ldap::member_attribute	= member_attribute;
 		Ldap::create_ldap	= create_ldap;
 		Ldap::pam_password	= pam_password;
-		Ldap::nss_base_passwd	= nss_base_passwd;
-		Ldap::nss_base_group	= nss_base_group;
-		Ldap::nss_base_shadow	= nss_base_shadow;
-		Ldap::tls_cacertdir	= tls_cacertdir;
-		Ldap::tls_cacertfile	= tls_cacertfile;
 		Ldap::krb5_realm	= krb5_realm;
 		Ldap::krb5_kdcip	= krb5_kdcip;
 		Ldap::sssd_with_krb	= sssd_with_krb;

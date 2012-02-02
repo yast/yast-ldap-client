@@ -1,10 +1,10 @@
 Dump	==== init (one server, no port set) ==============
 Dump	==== value of server: "localhost"
-Execute	.ldap $["cacertdir":"", "cacertfile":"", "hostname":"localhost", "port":389, "use_tls":"no"] true
+Execute	.ldap $["cacertdir":"", "cacertfile":"", "hostname":"localhost", "port":389, "use_tls":"yes"] true
 Return	
 Dump	==== init (one server, nonsence port set) ========
 Dump	==== value of server: "localhost:sdgfd#$"
-Execute	.ldap $["cacertdir":"", "cacertfile":"", "hostname":"localhost", "port":389, "use_tls":"no"] true
+Execute	.ldap $["cacertdir":"", "cacertfile":"", "hostname":"localhost", "port":389, "use_tls":"yes"] true
 Return	
 Dump	==== init (more servers set, TLS used) ===========
 Dump	==== value of server: "chimera.suse.cz:333 localhost"
