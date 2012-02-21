@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Feb 21 11:06:29 CET 2012 - jsuchome@suse.cz
+
+- removed password policies configuration from client, relevant parts
+  moved to server configuration (fate #313143)
+- 2.22.4
+
+-------------------------------------------------------------------
 Thu Feb  2 15:00:26 CET 2012 - jsuchome@suse.cz
 
 - removed option to switch off TLS/SSL from UI
