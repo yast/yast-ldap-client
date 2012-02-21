@@ -55,7 +55,7 @@
 
     define boolean Modified () ``{
 
-	return (Ldap::modified || Ldap::ldap_modified || Ldap::ppolicies != $[]);
+	return (Ldap::modified || Ldap::ldap_modified);
     }
 
     /**
@@ -786,14 +786,6 @@ have changed your configuration.</p>
 check the appropriate option. Changing this value does not cause any direct
 action.  It is only information for the YaST users module, which manages
 user home directories.</p>
-") +
-
-    // password policy help text caption
-    _("<p><b>Password Policy</b></p>") +
-
-    // password policy help
-    _("<p>Configure the selected password policy with <b>Edit</b>. Use <b>Add</b> to
-add a new password policy. Password policies must be enabled on the LDAP server.</p>
 ")
     ];
 
@@ -846,64 +838,6 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 	"rfc2307",
 	"rfc2307bis"
     ];
-
-    list ppolicy_list	= [];
-
-    boolean ppolicies_enabled	= false;
-    map<string,map> ppolicies	= $[];
-    map<string,map> ppolicies_orig= $[];
-    list<string> ppolicies_deleted	= []; // list of DN
-
-    // read the list of pwdpolicy objects under base_config_dn
-    void read_ppolicies () {
-
-	if (base_dn == "") return;
-
-	if (Ldap::ldap_initialized && Ldap::tls_when_initialized != Ldap::ldap_tls)
-	{
-	    Ldap::LDAPClose ();
-	}
-
-	if (Ldap::ldap_initialized || Ldap::LDAPInit () == "")
-	{
-	    ppolicies_enabled	= (boolean) SCR::Execute (.ldap.ppolicy, $[
-		"hostname"	: Ldap::GetFirstServer (Ldap::server),
-		"bind_dn"	: Ldap::GetBaseDN ()
-	    ]);
-
-	    list schemas = (list)SCR::Read (.ldap.search, $[
-		"base_dn":  "",
-		"attrs":    [ "subschemaSubentry" ],
-		"scope":    0,
-	    ]);
-	    string schema_dn = schemas[0,"subschemaSubentry",0]:"";
-	    if (schemas != nil && schema_dn != "" &&
-		SCR::Execute (.ldap.schema, $[ "schema_dn": schema_dn ])== true)
-	    {
-		map<string,map> pp = (map<string,map>) SCR::Read (.ldap.search,
-		$[
-		    "base_dn"		: base_dn,
-		    "filter"		: "objectClass=pwdPolicy",
-		    "scope"		: 2,
-		    "map"		: true,
-		    "not_found_ok"	: true
-		]);
-		if (pp != nil)
-		{
-		    ppolicies	= pp;
-		    ppolicies_orig	= ppolicies;
-		}
-	    }
-	}
-	// TODO re-read is not supported, is it correct?
-	foreach (string dn, map ppolicy, Ldap::ppolicies, {
-	    if (ppolicy["modified"]:"" == "deleted" && haskey (ppolicies, dn))
-		ppolicies	= remove (ppolicies, dn);
-	    else if (ppolicy["modified"]:"" == "added")
-		ppolicies[dn]	= ppolicy;
-	    else ppolicies[dn]	= union (ppolicies[dn]:$[], ppolicy);
-	});
-    }
 
     list<term> tabs	= [
 	// tab label
@@ -1026,19 +960,7 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 	    `Right (`PushButton (`id(`configure),
 		    // pushbutton label
 		    _("Configure User Management &Settings..."))),
-	    `VSpacing (),
-	    `Table (`id (`ppolicy_table), `opt(`notify), `header (
-		// table header
-		_("Password Policy")),
-		maplist (string dn, map pp, ppolicies, ``(`item (`id (dn), dn)))
-	    ),
-	    `HBox (
-		`PushButton (`id (`add), Label::AddButton ()),
-		`PushButton (`id (`edit), Label::EditButton ()),
-		`PushButton (`id (`delete), Label::DeleteButton ()),
-		`HStretch ()
-	    ),
-	    `VSpacing(0.4)
+            `VStretch ()
 	), `HSpacing (4));
 
 	UI::ReplaceWidget (`tabContents, cont);
@@ -1049,9 +971,6 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 	if (Mode::config ())
 	    UI::ChangeWidget (`id(`configure), `Enabled, false);
 
-	foreach (symbol s, [ `ppolicy_table, `add, `edit, `delete ], {
-	    UI::ChangeWidget (`id (s), `Enabled, ppolicies_enabled);
-	});
     }
 
 
@@ -1065,7 +984,6 @@ add a new password policy. Password policies must be enabled on the LDAP server.
     symbol current	= `client;
 
     set_client_term ();
-    read_ppolicies ();
 
     while (true)
     {
@@ -1146,105 +1064,6 @@ add a new password policy. Password policies must be enabled on the LDAP server.
 	    UI::ChangeWidget (`id (`krb5_realm), `Enabled, sssd_with_krb);
 	    UI::ChangeWidget (`id (`krb5_kdcip), `Enabled, sssd_with_krb);
 	}
-	if (result == `add)
-	{
-	    string suffix	= base_dn;
-	    UI::OpenDialog ( `opt(`decorated), `HBox(
-		`HSpacing(1),
-		`VBox(
-		    // InputField label
-		    `InputField (`id (`cn),  `opt (`hstretch),
-			_("Name of Password Policy Object")),
-		    `ReplacePoint (`id (`rp_suf), `HBox (
-			// text label,suffix will follow in next label
-			`Label (`id (`suffix_label), _("Suffix:")),
-			`Label (`id (`suffix), base_dn),
-			// pushbutton label
-			`PushButton (`id (`br_suf), _("Change Suffix"))
-		    )),
-		    `ButtonBox (
-			`PushButton(`id(`ok),`opt(`default,`key_F10),Label::OKButton()),
-			`PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton())
-		    )
-		),
-		`HSpacing(1)
-	    ));
-	    UI::SetFocus (`id (`cn));
-	    any ret		= nil;
-	    string new_dn	= "";
-	    while (true)
-	    {
-		ret	= UI::UserInput ();
-		if (ret == `cancel)
-		    break;
-		if (ret == `br_suf)
-		{
-		    string suf	= LdapPopup::InitAndBrowseTree (base_dn, $[
-			"hostname"	: Ldap::GetFirstServer (Ldap::server),
-			"port"		: Ldap::GetFirstPort (Ldap::server),
-			"use_tls"	: Ldap::ldap_tls ? "yes" : "no",
-			"cacertdir"	: Ldap::tls_cacertdir,
-			"cacertfile"	: Ldap::tls_cacertfile
-		    ]);
-		    if (suf != "")
-			UI::ReplaceWidget (`id (`rp_suf), `HBox (
-			    // text label,suffix will follow in next label
-			    `Label (`id (`suffix_label), _("Suffix:")),
-			    `Label (`id (`suffix), suf),
-			    // pushbutton label
-			    `PushButton (`id (`br_suf), _("Change Suffix"))
-			));
-		}
-		if (ret == `ok)
-		{
-		    string cn		= (string) UI::QueryWidget (`id (`cn), `Value);
-		    if (cn == "") break;
-		    string suffix	= (string) UI::QueryWidget (`id (`suffix), `Value);
-		    new_dn		= sformat ("cn=%1,%2", cn, suffix);
-		    if (haskey (ppolicies, new_dn))
-		    {
-			Popup::Error (sformat (_("The Policy \'%1\' already exists.
-Please select another one."), new_dn));
-			continue;
-		    }
-		    break;
-		}
-	    }
-	    UI::CloseDialog ();
-	    if (ret == `ok && new_dn != "")
-	    {
-		map new	= LdapPopup::PasswordPolicyDialog ($["dn": new_dn ]);
-		if (new != nil)
-		{
-		    ppolicies[new_dn]	= new;
-		    UI::ChangeWidget (`id (`ppolicy_table), `Items, 
-			maplist (string dn, map pp, ppolicies, ``(`item (`id (dn), dn)))
-		    );
-		    UI::ChangeWidget (`id (`edit), `Enabled, size (ppolicies) > 0);
-		    UI::ChangeWidget (`id (`delete), `Enabled, size (ppolicies) > 0);
-		}
-	    }
-	}
-	if (result == `edit || result == `ppolicy_table)
-	{
-	    string dn	= (string) UI::QueryWidget (`id (`ppolicy_table), `CurrentItem);
-	    map changes	= LdapPopup::PasswordPolicyDialog (ppolicies[dn]:$[]);
-	    if (changes != nil)
-	    {
-		ppolicies[dn]	= union (ppolicies[dn]:$[], changes);
-	    }
-	}
-	if (result == `delete)
-	{
-	    string dn   = (string) UI::QueryWidget (`id (`ppolicy_table), `CurrentItem);
-	    ppolicies	= remove (ppolicies, dn);
-	    ppolicies_deleted	= (list<string>) union (ppolicies_deleted, [dn]);
-	    UI::ChangeWidget (`id (`ppolicy_table), `Items,
-		maplist (string dn, map pp, ppolicies, ``(`item (`id (dn), dn)))
-	    );
-	    UI::ChangeWidget (`id (`edit), `Enabled, size (ppolicies) > 0);
-	    UI::ChangeWidget (`id (`delete), `Enabled, size (ppolicies) > 0);
-	}
 
 	if (result == `next || result == `configure)
 	{
@@ -1263,44 +1082,6 @@ Please select another one."), new_dn));
 		UI::SetFocus (`id (`base_config_dn));
 		continue;
 	    }
-	    foreach (string dn, map ppolicy, ppolicies, {
-		// new ppolicy
-		if (!haskey (ppolicies_orig, dn))
-		{
-		    ppolicy["modified"]		= "added";
-		    ppolicy["pwdAttribute"]	= "userPassword";
-		    ppolicy["objectClass"]	= ["pwdPolicy", "namedObject"];
-		    ppolicy["cn"]		= get_cn (dn);
-		    Ldap::ppolicies[dn]	= ppolicy;
-
-		}
-		else
-		{
-		    map pp	= $[];
-		    foreach (string a, any val, (map<string,any>) ppolicy, {
-			if (val != ppolicies_orig[dn,a]:nil)
-			    pp[a]	= val;
-		    });
-		    if (pp != $[])
-		    {
-			pp["modified"]		= "edited";
-			Ldap::ppolicies[dn]	= pp;
-		    }
-		}
-	    });
-	    // deleted ppolicies
-	    foreach (string dn, ppolicies_deleted, {
-		map pp	= Ldap::ppolicies[dn]:$[];
-		if (pp["modified"]:"" == "added")
-		{
-		    Ldap::ppolicies	= remove (Ldap::ppolicies, dn);
-		}
-		else if (haskey (ppolicies_orig, dn))
-		{
-		    pp["modified"]	= "deleted";
-		    Ldap::ppolicies[dn]	= pp;
-		}
-	    });
 	    if (krb5_realm == "" || krb5_kdcip == "" || !Ldap::sssd)
 		sssd_with_krb	= false;
 

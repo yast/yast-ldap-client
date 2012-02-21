@@ -312,9 +312,6 @@
      */
     global boolean mkhomedir        = false;
 
-    // map with modifications of Password Policies objects
-    global map<string,map> ppolicies	= $[];
-
     // packages needed for pam_ldap/nss_ldap configuration
     global list<string> pam_nss_packages	= ["pam_ldap", "nss_ldap"];
 
@@ -3034,12 +3031,6 @@ Select another one.
 	    if (WriteLDAP (templates) && WriteLDAP (config_modules)) {
 		ldap_modified	= false;
 	    }
-	}
-	if (ppolicies != $[])
-	{
-	    WriteLDAP (ppolicies);
-	    modified	= true; // so data get reset in next step
-	    ppolicies	= $[];
 	}
 
 	// final stage
