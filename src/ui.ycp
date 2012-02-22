@@ -183,6 +183,7 @@
      */
     boolean SSLConfiguration () {
 
+	string certTmpFile	= sformat ("%1/__LDAPcert.crt", Directory::tmpdir);
         string tls_cacertdir    = Ldap::tls_cacertdir;
         string tls_cacertfile   = Ldap::tls_cacertfile;
 	UI::OpenDialog (`opt (`decorated), `HBox (`HSpacing (1), `VBox(
@@ -246,6 +247,50 @@
 		tls_cacertfile	= file;
 		UI::ChangeWidget (`id (`tls_cacertfile), `Value, file);
 	      }
+	    }
+	    if (ret == `import_cert)
+	    {
+                string dir      = tls_cacertdir;
+		if (dir == "")
+		    dir = "/etc/openldap/cacerts/";
+
+		boolean success	= false;
+		string name	= "";
+
+		string cert_url = (string) UI::QueryWidget (`id (`url), `Value);
+		string curlcmd = sformat("curl -f --connect-timeout 60  --max-time 120  '%1' -o  %2", cert_url, certTmpFile);
+
+		if (SCR::Execute(.target.bash, curlcmd) != 0)
+		{
+		    // error message
+		    Popup::Error (_("Could not download the certificate file from specified URL."));
+		}
+		else if (FileUtils::CheckAndCreatePath (dir))
+		{
+                    list <string> l = splitstring (cert_url, "/");
+                    name	= l[size(l) - 1]:"downloaded-by-yast2-ldap-client.pem";
+                    success = SCR::Execute (.target.bash, sformat ("/bin/cp -a '%1' '%2/%3'", certTmpFile, dir, name)) == 0;
+                    // rehash cert directory (bnc#662937)
+                    map out = (map)SCR::Execute (.target.bash_output, sformat ("/usr/bin/c_rehash %1", dir));
+                    if (out["stderr"]:"" != "")
+                    {
+                        y2error ("something went wrong: %1", out);
+                    }
+		}
+
+		if (success)
+		{
+		    // popup message, %1 is file name, %2 directory
+		    Popup::Message (sformat (_("The downloaded certificate file
+
+'%1'
+
+has been copied to '%2' directory.
+"), name, dir));
+
+		    tls_cacertdir	= dir;
+                    Ldap::modified      = true;
+		}
 	    }
 	} while (ret != `ok && ret != `cancel);
 
@@ -323,7 +368,6 @@ want to use it, it will be installed automatically.</p>
 	boolean ldap_tls	= Ldap::ldap_tls || Ldap::sssd; // force TLS to true if sssd is used
 	string tls_checkpeer	= Ldap::tls_checkpeer;
 	boolean login_enabled	= Ldap::login_enabled;
-	string certTmpFile	= sformat ("%1/__LDAPcert.crt", Directory::tmpdir);
         boolean ssl_changed     = false;
 	boolean autofs		= Ldap::_start_autofs;
 	term autofs_con		= `Empty ();
@@ -472,82 +516,6 @@ want to use it, it will be installed automatically.</p>
 		if (Ldap::tls_switched_off)
 		{
 		    UI::ChangeWidget (`id (`ldaps), `Value, false);
-		}
-	    }
-	    if (result == `import_cert)
-	    {
-		string dir		= Ldap::tls_cacertdir;
-		if (Ldap::tls_cacertdir == "")
-		    dir = "/etc/openldap/cacerts/";
-
-		UI::OpenDialog ( `opt(`decorated), `HBox(
-		    `HSpacing(1),
-		    `VBox (
-			`HSpacing (75),
-			// InputField label
-			`InputField (`id (`url),  `opt (`hstretch),
-			    _("CA Certificate URL for Download")),
-			`ButtonBox (
-			    `PushButton(`id(`ok),`opt(`default,`key_F10), Label::OKButton()),
-			    `PushButton(`id(`cancel),`opt (`key_F9), Label::CancelButton())
-			)
-		    ),
-		    `HSpacing(1)
-		));
-		UI::SetFocus (`id (`url));
-
-		any ret	= nil;
-		boolean success	= false;
-		string name	= "";
-
-		while (true)
-		{
-		    ret	= UI::UserInput ();
-		    if (ret == `cancel)
-			break;
-		    if (ret == `ok)
-		    {
-			string cert_url = (string) UI::QueryWidget (`id (`url), `Value);
-			string curlcmd = sformat("curl -f --connect-timeout 60  --max-time 120  '%1' -o  %2", cert_url, certTmpFile);
-
-			if (SCR::Execute(.target.bash, curlcmd) != 0)
-			{
-			    // error message
-			    Popup::Error (_("Could not download the certificate file from specified URL."));
-			}
-			else if (FileUtils::CheckAndCreatePath (dir))
-			{
-			    list <string> l = splitstring (cert_url, "/");
-			    name	= l[size(l) - 1]:"downloaded-by-yast2-ldap-client.pem";
-			    success = SCR::Execute (.target.bash, sformat ("/bin/cp -a '%1' '%2/%3'", certTmpFile, dir, name)) == 0;
-			    // rehash cert directory (bnc#662937)
-			    map out = (map)SCR::Execute (.target.bash_output, sformat ("/usr/bin/c_rehash %1", dir));
-			    if (out["stderr"]:"" != "")
-			    {
-				y2error ("something went wrong: %1", out);
-			    }
-			    break;
-			}
-		    }
-		}
-		UI::CloseDialog ();
-
-		if (ret == `cancel)
-		{
-		    continue;
-		}
-		if (success)
-		{
-		    // popup message, %1 is file name, %2 directory
-		    Popup::Message (sformat (_("The downloaded certificate file
-
-'%1'
-
-has been copied to '%2' directory.
-"), name, dir));
-
-		    Ldap::tls_cacertdir	= dir;
-		    Ldap::modified	= true;
 		}
 	    }
 
