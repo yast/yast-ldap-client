@@ -464,6 +464,25 @@ want to use it, it will be installed automatically.</p>
 
 	UI::ChangeWidget (`id(`server),`ValidChars, Address::ValidChars + " ");
 
+        if (Ldap::start && !Ldap::sssd)
+        {
+            if (Popup::ContinueCancel (
+        // question popup
+_("Previous LDAP client configuration was detected.
+
+Current configuration does not use SSSD but nss_ldap.
+Only SSSD based configurations are supported by YaST.
+Do you want to continue and use SSSD or cancel to keep the old configuration?")))
+            {
+                Ldap::sssd = true;
+                ldap_tls = true;
+            }
+            else
+            {
+                return `cancel;
+            }
+        }
+
 	symbol result = `not_next;
 	do {
 	    result = (symbol) UI::UserInput ();
