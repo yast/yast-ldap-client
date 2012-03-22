@@ -41,27 +41,19 @@
     }
     y2debug ("param=%1", param);
 
-    if (param != "late_dialog") {
-	Wizard::CreateDialog();
-        Wizard::SetDesktopTitleAndIcon("ldap");
-    }
-
-    ReadDialog (); // TODO not necessary when already done...
-
     any ret = LDAPReadDialog ();
     if (ret != `next)
+    {
 	return ret;
-
-    if (param == "late_dialog") {
-	Wizard::CreateDialog();
-        Wizard::SetDesktopTitleAndIcon("ldap");
     }
+
+    Wizard::CreateDialog();
+    Wizard::SetDesktopTitleAndIcon("ldap");
 
     ret = ModuleConfigurationDialog ();
 
     if (ret == `next && Ldap::ldap_modified)
     {
-	// TODO maybe add question "Really Write?"
 	if (Ldap::WriteLDAP (Ldap::config_modules))
 	    Ldap::WriteLDAP (Ldap::templates);
     }
