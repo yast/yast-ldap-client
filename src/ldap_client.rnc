@@ -17,6 +17,10 @@ ldap = element ldap {
     nss_base_shadow? &
     pam_password? &
     start_autofs? &
+    sssd? &
+    mkhomedir? &
+    tls_cacertdir? &
+    tls_cacertfile? &
     login_enabled?
 }
 ldap_domain = element ldap_domain { text }
@@ -28,11 +32,14 @@ nss_base_group = element nss_base_group { text }
 nss_base_passwd = element nss_base_passwd { text }
 nss_base_shadow = element nss_base_shadow { text }
 pam_password    = element pam_password    { text }
+tls_cacertdir   = element tls_cacertdir { text }
+tls_cacertfile  = element tls_cacertfile { text }
 login_enabled = element login_enabled { BOOLEAN }
-
 file_server = element file_server { BOOLEAN }
 ldap_tls = element ldap_tls { BOOLEAN }
 start_ldap = element start_ldap { BOOLEAN }
 create_ldap = element create_ldap { BOOLEAN }
+sssd = element sssd { BOOLEAN }
+mkhomedir = element mkhomedir { BOOLEAN }
 start_autofs = element start_autofs { BOOLEAN }
 
