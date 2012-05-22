@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon May 21 13:55:32 CEST 2012 - jsuchome@suse.cz
+
+- updated AutoYaST schema
+- 2.22.8 
+
+-------------------------------------------------------------------
 Thu Mar 22 11:16:27 CET 2012 - jsuchome@suse.cz
 
 - simplify ldap_config client for only one usage from users module
