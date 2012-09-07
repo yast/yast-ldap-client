@@ -467,6 +467,7 @@ Verify that the Server has StartTLS support enabled."),
 	sssd_ldap_schema= settings ["sssd_ldap_schema"]:sssd_ldap_schema;
 	sssd_enumerate	= settings ["sssd_enumerate"]:sssd_enumerate;
 	sssd_cache_credentials	= settings ["sssd_cache_credentials"]:sssd_cache_credentials;
+	sssd_with_krb   = settings ["sssd_with_krb"]:sssd_with_krb;
 	krb5_realm	= settings ["krb5_realm"]:krb5_realm;
 	krb5_kdcip	= settings ["krb5_kdcip"]:krb5_kdcip;
 	if (_start_autofs)
@@ -511,6 +512,7 @@ Verify that the Server has StartTLS support enabled."),
 	    "login_enabled"	: login_enabled,
 	    "mkhomedir"		: mkhomedir,
 	    "sssd"		: sssd,
+	    "sssd_with_krb"	: sssd_with_krb,
 	];
 	if (tls_checkpeer != "yes")
 	    e["tls_checkpeer"]	= tls_checkpeer;

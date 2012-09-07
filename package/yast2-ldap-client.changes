@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Sep  6 12:55:06 CEST 2012 - jsuchome@suse.cz
+
+- added missing AutoYaST support for SSSD + Kerberos (bnc#778949)
+- 2.22.9
+
+-------------------------------------------------------------------
 Mon May 21 13:55:32 CEST 2012 - jsuchome@suse.cz
 
 - updated AutoYaST schema
