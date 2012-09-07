@@ -628,7 +628,7 @@ you cannot retrieve data with NIS. Really use LDAP instead of NIS?
 			"cacertdir"	: Ldap::tls_cacertdir,
 			"cacertfile"	: Ldap::tls_cacertfile
 		    ];
-		    if (!Ldap::CheckLDAPConnection (args))
+		    if (!Mode::config () && !Ldap::CheckLDAPConnection (args))
 		    {
 
 			result = `not_next;
