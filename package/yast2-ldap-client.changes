@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Sep 13 10:28:56 CEST 2012 - jsuchome@suse.cz
+
+- added missing AutoYaST support for SSSD + Kerberos (bnc#778949)
+- enable sssd service during autoinstallation (bnc#779261)
+- 2.17.35 
+
+-------------------------------------------------------------------
 Mon Feb  6 08:36:00 CET 2012 - jsuchome@suse.cz
 
 - removed previous workaround (bnc#743355 fixed properly)
