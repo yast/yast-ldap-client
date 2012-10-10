@@ -64,7 +64,8 @@
 			"krb5_kdcip"	: "kdc.suse.cz",
 			"ldap_schema"	: "rfc2307",
 			"cache_credentials"	: "true",
-			"enumerate"	: "true"
+			"enumerate"	: "true",
+                        "ldap_id_use_start_tls" : nil, // will lead to ldap_tls true
 		    ],
 		],
 	    ],

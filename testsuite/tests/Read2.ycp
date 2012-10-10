@@ -65,7 +65,8 @@
 			"krb5_kdcip"	: "kdc.suse.cz",
 			"ldap_schema"	: nil,
 			"cache_credentials"	: "True",
-			"enumerate"	: nil
+			"enumerate"	: nil,
+                        "ldap_id_use_start_tls" : nil,
 		    ],
 		],
 	    ],
