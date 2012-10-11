@@ -2652,6 +2652,29 @@ Select another one.
     }
 
     /**
+    * Adpat passwd and group cache in /etc/nscd.conf
+    * Caching should be disabled with sssd on
+    * @param start_sssd if sssd will be started
+    */
+    boolean WriteNscdCache (boolean start_sssd) {
+
+      list<string> enable_cache	= (list<string>) SCR::Read (.etc.nscd_conf.v.enable-cache);
+      enable_cache        = maplist (string sect, enable_cache, {
+        list<string> l = filter (string part, splitstring (sect, " \t"), ``(part != ""));
+        if (l[0]:"" == "passwd" || l[0]:"" == "group")
+        {
+          return sformat ("%1\t\t%2", l[0]:"", start_sssd ? "no": "yes");
+        }
+        return sect;
+      });
+      if (enable_cache == [] || enable_cache == nil)
+      {
+        return false;
+      }
+      return SCR::Write (.etc.nscd_conf.v.enable-cache, enable_cache);
+    }
+
+    /**
      * Saves LDAP configuration.
      * @param abort block for abort
      * @return symbol
@@ -2777,6 +2800,7 @@ Select another one.
 
 	    // default value is 'yes'
 	    WriteLdapConfEntry ("tls_checkpeer", tls_checkpeer == "yes" ? nil : tls_checkpeer);
+	    WriteNscdCache (start && sssd);
 	}
 	if (start) // ldap used for authentocation
 	{
@@ -2976,6 +3000,11 @@ Select another one.
 		    Service::Start ("sssd");
 		}
 	    }
+            else
+            {
+                Service::Stop ("sssd");
+                Service::Adjust ("sssd", "disable");
+            }
 
 	    if (Package::Installed ("nscd") && modified)
 	    {
@@ -3026,10 +3055,10 @@ Select another one.
 		}
 	    }
 	}
-	else if (sssd && start)
+	else if (sssd)
 	{
-	    // enable the sssd daemon to be started at bootup
-	    Service::Adjust ("sssd", "enable");
+            // enable the sssd daemon to be started at bootup
+            Service::Adjust ("sssd", start ? "enable" : "disable");
 	}
 
 	// -------------------- write settings to LDAP
