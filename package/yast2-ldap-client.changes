@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Oct  5 14:51:25 CEST 2012 - jsuchome@suse.cz
+
+- added TLS enablement checkbox again, might be used
+  even with sssd (bnc#775167)
+- 2.23.0
+
+-------------------------------------------------------------------
 Mon Sep 10 12:09:07 CEST 2012 - jsuchome@suse.cz
 
 - enable sssd service during autoinstallation (bnc#779261)

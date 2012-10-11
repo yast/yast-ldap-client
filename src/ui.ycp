@@ -186,9 +186,15 @@
 	string certTmpFile	= sformat ("%1/__LDAPcert.crt", Directory::tmpdir);
         string tls_cacertdir    = Ldap::tls_cacertdir;
         string tls_cacertfile   = Ldap::tls_cacertfile;
+        boolean ldap_id_use_start_tls   = Ldap::ldap_tls;
+
 	UI::OpenDialog (`opt (`decorated), `HBox (`HSpacing (1), `VBox(
             `VSpacing (0.5),
 	    `HSpacing (75),
+            `Left (`CheckBox (`id (`ldap_id_use_start_tls),
+                // checkbox label
+                _("Use TLS for Identity Resolve"), ldap_id_use_start_tls)),
+            `VSpacing (0.4),
             `HBox (
                 `InputField (`id (`tls_cacertdir), `opt (`hstretch),
                     // inputfield label
@@ -237,7 +243,7 @@
 		UI::ChangeWidget (`id (`tls_cacertdir), `Value, dir);
 	      }
             }
-	    if (ret == `br_tls_cacertfile)
+	    else if (ret == `br_tls_cacertfile)
 	    {
 	      string file = UI::AskForExistingFile (tls_cacertfile, "*.pem *.crt",
                 // popup label
@@ -248,6 +254,12 @@
 		UI::ChangeWidget (`id (`tls_cacertfile), `Value, file);
 	      }
 	    }
+            else
+            {
+              tls_cacertdir     = (string) UI::QueryWidget (`id (`tls_cacertdir), `Value);
+              tls_cacertfile    = (string) UI::QueryWidget (`id (`tls_cacertfile), `Value);
+              ldap_id_use_start_tls     = UI::QueryWidget (`id (`ldap_id_use_start_tls), `Value) == true;
+            }
 	    if (ret == `import_cert)
 	    {
                 string dir      = tls_cacertdir;
@@ -300,6 +312,7 @@ has been copied to '%2' directory.
         {
             Ldap::tls_cacertfile        = tls_cacertfile;
             Ldap::tls_cacertdir         = tls_cacertdir;
+            Ldap::ldap_tls              = ldap_id_use_start_tls;
         }
 
 	return ret == `ok;
@@ -365,7 +378,7 @@ want to use it, it will be installed automatically.</p>
 	boolean start		= Ldap::start || installation;
 	string base_dn		= Ldap::GetBaseDN ();
 	string server		= Ldap::server;
-	boolean ldap_tls	= Ldap::ldap_tls || Ldap::sssd; // force TLS to true if sssd is used
+	boolean ldap_tls	= Ldap::ldap_tls;
 	string tls_checkpeer	= Ldap::tls_checkpeer;
 	boolean login_enabled	= Ldap::login_enabled;
         boolean ssl_changed     = false;
@@ -497,6 +510,7 @@ Do you want to continue and use SSSD or cancel to keep the old configuration?"))
             if (result == `ssl_config)
             {
                 ssl_changed     = SSLConfiguration () || ssl_changed;
+                ldap_tls        = Ldap::ldap_tls; // re-read after possible change
             }
 	    if (result == `slp)
 	    {

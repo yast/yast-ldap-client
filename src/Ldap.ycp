@@ -952,6 +952,17 @@ Verify that the Server has StartTLS support enabled."),
 	    sssd_cache_credentials	= cache_credentials != nil && tolower (cache_credentials) == "true";
 	    string enumerate		= (string)SCR::Read (add (domain, "enumerate"));
 	    sssd_enumerate		= enumerate != nil && tolower (enumerate) == "true";
+
+            string id_start_tls         = (string)SCR::Read (add (domain, "ldap_id_use_start_tls"));
+            if (id_start_tls != nil)
+            {
+              ldap_tls                  = tolower (id_start_tls) == "true";
+            }
+            else
+            {
+              // true for SSSD by default, if not overriden by ldap_id_use_start_tls
+              ldap_tls  = true;
+            }
 	}
 	if (krb5_realm != "" && krb5_kdcip != "")
 	{
@@ -2241,10 +2252,12 @@ Select another one.
 
 	// " Make sure that "filter_groups" and "filter_users" in the "[nss]" section contains "root".
 	string f_g	= (string) SCR::Read (.etc.sssd_conf.v.nss.filter_groups);
+	if (f_g == nil) f_g   = "";
 	list<string> l	= (list<string>) union (splitstring (f_g, ","), ["root"]);
 	SCR::Write (.etc.sssd_conf.v.nss.filter_groups, mergestring (l, ","));
 
 	string f_u	= (string) SCR::Read (.etc.sssd_conf.v.nss.filter_users);
+	if (f_u == nil) f_u   = "";
 	l		= (list<string>) union (splitstring (f_u, ","), ["root"]);
 	SCR::Write (.etc.sssd_conf.v.nss.filter_users, mergestring (l, ","));
 
