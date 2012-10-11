@@ -2976,6 +2976,11 @@ Select another one.
 		    Service::Start ("sssd");
 		}
 	    }
+            else
+            {
+                Service::Stop ("sssd");
+                Service::Adjust ("sssd", "disable");
+            }
 
 	    if (Package::Installed ("nscd") && modified)
 	    {
@@ -3026,10 +3031,10 @@ Select another one.
 		}
 	    }
 	}
-	else if (sssd && start)
+	else if (sssd)
 	{
-	    // enable the sssd daemon to be started at bootup
-	    Service::Adjust ("sssd", "enable");
+            // enable the sssd daemon to be started at bootup
+            Service::Adjust ("sssd", start ? "enable" : "disable");
 	}
 
 	// -------------------- write settings to LDAP

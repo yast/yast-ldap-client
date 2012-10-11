@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Wed Oct 10 15:19:26 CEST 2012 - jsuchome@suse.cz
+
+- disable sssd service on LDAP client disablemebt (bnc#772944) 
+
+-------------------------------------------------------------------
 Fri Oct  5 14:51:25 CEST 2012 - jsuchome@suse.cz
 
 - added TLS enablement checkbox again, might be used
