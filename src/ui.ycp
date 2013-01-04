@@ -185,6 +185,15 @@
      */
     boolean check_certificate (string file) {
 
+      // first, check for DER encoded certificate
+      if (FileUtils::Exists ("/usr/bin/openssl") &&
+          SCR::Execute (.target.bash, sformat ("/usr/bin/openssl x509 -in %1 -inform der", file)) == 0
+      )
+      {
+        return true;
+      }
+
+      // check the contents of possible plain text certificates
       map out = (map) SCR::Execute (.target.bash_output, sformat (
         "grep -I '\\-----BEGIN CERTIFICATE' %1 && grep -I '\\-----END CERTIFICATE' %1", file));
       if (out["exit"]:1 != 0)
