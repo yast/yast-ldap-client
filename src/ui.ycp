@@ -179,6 +179,33 @@
     }
 
     /**
+     * Try to check if certificate file has a valid format (bnc#792413)
+     * (Just a simple check, for a warning that something might be wrong)
+     * Return the check result
+     */
+    boolean check_certificate (string file) {
+
+      // first, check for DER encoded certificate
+      if (FileUtils::Exists ("/usr/bin/openssl") &&
+          SCR::Execute (.target.bash, sformat ("/usr/bin/openssl x509 -in %1 -inform der", file)) == 0
+      )
+      {
+        return true;
+      }
+
+      // check the contents of possible plain text certificates
+      map out = (map) SCR::Execute (.target.bash_output, sformat (
+        "grep -I '\\-----BEGIN CERTIFICATE' %1 && grep -I '\\-----END CERTIFICATE' %1", file));
+      if (out["exit"]:1 != 0)
+      {
+        // warning popup
+        Popup::Warning (_("The certificate file does not seem to have valid format."));
+        return false;
+      }
+      return true;
+    }
+
+    /**
      * Popup for TLS/SSL related stuff
      */
     boolean SSLConfiguration () {
@@ -250,6 +277,7 @@
                 _("Choose the certificate file"));
 	      if (file != nil)
 	      {
+		check_certificate (file);
 		tls_cacertfile	= file;
 		UI::ChangeWidget (`id (`tls_cacertfile), `Value, file);
 	      }
@@ -277,7 +305,7 @@
 		    // error message
 		    Popup::Error (_("Could not download the certificate file from specified URL."));
 		}
-		else if (FileUtils::CheckAndCreatePath (dir))
+		else if (FileUtils::CheckAndCreatePath (dir) && check_certificate (certTmpFile))
 		{
                     list <string> l = splitstring (cert_url, "/");
                     name	= l[size(l) - 1]:"downloaded-by-yast2-ldap-client.pem";

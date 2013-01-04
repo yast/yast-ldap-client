@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jan  3 16:01:07 CET 2013 - jsuchome@suse.cz
+
+- added simple check for certificates (bnc#792413)
+- 2.23.2 
+
+-------------------------------------------------------------------
 Thu Oct 11 10:31:53 CEST 2012 - jsuchome@suse.cz
 
 - disable nscd caching when sssd is used (bnc#772944)
