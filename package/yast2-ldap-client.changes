@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Apr 19 08:42:11 CEST 2013 - jsuchome@suse.cz
+
+- ensure nscd.conf changes are written before restarting the service
+  (bnc#804454)
+- 2.24.0
+
+-------------------------------------------------------------------
 Thu Jan  3 16:01:07 CET 2013 - jsuchome@suse.cz
 
 - added simple check for certificates (bnc#792413)
