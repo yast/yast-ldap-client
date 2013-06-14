@@ -2671,7 +2671,10 @@ Select another one.
       {
         return false;
       }
-      return SCR::Write (.etc.nscd_conf.v.enable-cache, enable_cache);
+      boolean ret = SCR::Write (.etc.nscd_conf.v.enable-cache, enable_cache);
+      // ensure the changes are written
+      ret       = ret && SCR::Write (.etc.nscd_conf, nil);
+      return ret;
     }
 
     /**
