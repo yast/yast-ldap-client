@@ -67,6 +67,8 @@
 			"cache_credentials"	: "True",
 			"enumerate"	: nil,
                         "ldap_id_use_start_tls" : nil,
+                        "ldap_user_search_base" : nil,
+                        "ldap_group_search_base"        : "ou=group,dc=suse,dc=cz"
 		    ],
 		],
 	    ],
@@ -117,5 +119,8 @@
     Testsuite::Dump ( sformat ("ldap: -%1-", Ldap::start) );
 
     Testsuite::Dump ( sformat ("sssd: -%1-", Ldap::sssd) );
+
+    Testsuite::Dump ( sformat ("nss: -%1-", Ldap::nss_base_passwd) );
+    Testsuite::Dump ( sformat ("nss: -%1-", Ldap::nss_base_group) );
 
 }

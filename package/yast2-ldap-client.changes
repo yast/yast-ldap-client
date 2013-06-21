@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Jun 14 09:28:13 CEST 2013 - jsuchome@suse.cz
+
+- bring back fields for editing user and group search bases
+  (bnc#815506)
+- 2.24.1
+
+-------------------------------------------------------------------
 Fri Apr 19 08:42:11 CEST 2013 - jsuchome@suse.cz
 
 - ensure nscd.conf changes are written before restarting the service

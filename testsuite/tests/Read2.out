@@ -20,6 +20,10 @@ Read	.etc.sssd_conf.v."domain/default"."ldap_schema" nil
 Read	.etc.sssd_conf.v."domain/default"."cache_credentials" "True"
 Read	.etc.sssd_conf.v."domain/default"."enumerate" nil
 Read	.etc.sssd_conf.v."domain/default"."ldap_id_use_start_tls" nil
+Read	.etc.sssd_conf.v."domain/default"."ldap_user_search_base" nil
+Read	.etc.sssd_conf.v."domain/default"."ldap_group_search_base" "ou=group,dc=suse,dc=cz"
 Return	true
 Dump	ldap: -true-
 Dump	sssd: -true-
+Dump	nss: -dc=suse,dc=cz-
+Dump	nss: -ou=group,dc=suse,dc=cz-

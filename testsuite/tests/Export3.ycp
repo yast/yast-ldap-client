@@ -67,6 +67,8 @@
 			"cache_credentials"	: "true",
 			"enumerate"	: "true",
                         "ldap_id_use_start_tls" : "False",
+                        "ldap_user_search_base" : nil,
+                        "ldap_group_search_base": "ou=group,dc=suse,dc=cz"
 		    ],
 		],
 	    ],
