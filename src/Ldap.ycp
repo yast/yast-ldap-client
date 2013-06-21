@@ -2283,16 +2283,17 @@ Select another one.
 	SCR::Write (add (domain, "ldap_user_uuid"), "entryuuid");
 	SCR::Write (add (domain, "ldap_group_uuid"), "entryuuid");
 
-	SCR::Write (add (domain, "ldap_user_search_base"),
-	  (nss_base_passwd != base_dn && nss_base_passwd != "") ?  nss_base_passwd : nil);
-	SCR::Write (add (domain, "ldap_group_search_base"),
-	  (nss_base_group != base_dn && nss_base_group != "") ?  nss_base_group : nil);
-
 	SCR::Write (add (domain, "ldap_id_use_start_tls"), ldap_tls ? "True" : "False");
 	SCR::Write (add (domain, "enumerate"), sssd_enumerate ? "True" : "False");
 	SCR::Write (add (domain, "cache_credentials"), sssd_cache_credentials ? "True" : "False");
 	SCR::Write (add (domain, "ldap_tls_cacertdir"), tls_cacertdir == "" ? nil : tls_cacertdir);
 	SCR::Write (add (domain, "ldap_tls_cacert"), tls_cacertfile == "" ? nil : tls_cacertfile);
+
+        // remove the keys if their value is same as default (base_dn)
+	SCR::Write (add (domain, "ldap_user_search_base"),
+	  (nss_base_passwd != base_dn && nss_base_passwd != "") ?  nss_base_passwd : nil);
+	SCR::Write (add (domain, "ldap_group_search_base"),
+	  (nss_base_group != base_dn && nss_base_group != "") ?  nss_base_group : nil);
 
 	if (!contains (sections, "domain/default"))
 	{
