@@ -1091,7 +1091,7 @@ set to the ldap_user_search_base and ldap_group_search_base attributes in /etc/s
 		set_client_term ();
 	    else if (result == `admin)
 		set_admin_term ();
-	    else
+	    else if (result == `searching)
 		set_searching_term ();
 	}
 
