@@ -66,6 +66,8 @@
 			"cache_credentials"	: "true",
 			"enumerate"	: "true",
                         "ldap_id_use_start_tls" : nil, // will lead to ldap_tls true
+                        "ldap_user_search_base" : "ou=users,dc=suse,dc=cz",
+                        "ldap_group_search_base": nil,
 		    ],
 		],
 	    ],

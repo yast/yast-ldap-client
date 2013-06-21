@@ -805,6 +805,11 @@ check <b>Create Default Configuration Objects</b>. The objects are only created 
     _("<p>Press <b>Configure</b> to configure settings stored on the
 LDAP server. You will be asked for the password if you are not connected yet or
 have changed your configuration.</p>
+"),
+      `searching:
+    // help text 1/1
+    _("<p>Specify the search bases to use for specific maps (users or groups) if they are different from the base DN. These values are
+set to the ldap_user_search_base and ldap_group_search_base attributes in /etc/sssd/sssd.conf file.</p>
 ")
 
     ];
@@ -822,6 +827,8 @@ have changed your configuration.</p>
     string sssd_ldap_schema	= Ldap::sssd_ldap_schema;
     boolean sssd_enumerate	= Ldap::sssd_enumerate;
     boolean sssd_cache_credentials	= Ldap::sssd_cache_credentials;
+    string nss_base_passwd	= Ldap::nss_base_passwd;
+    string nss_base_group	= Ldap::nss_base_group;
 
     list<term>member_attributes	= [
 	`item (`id("member"), "member", member_attribute == "member"),
@@ -858,11 +865,20 @@ have changed your configuration.</p>
 	"rfc2307bis"
     ];
 
+    // mapping of browse button id's to appropriate text entries
+    map br2entry	= $[
+        `br             : `base_config_dn,
+        `br_passwd      : `nss_base_passwd,
+        `br_group       : `nss_base_group
+    ];
+
     list<term> tabs	= [
 	// tab label
 	`item(`id(`client), _("C&lient Settings"), true),
 	// tab label
 	`item(`id(`admin), _("Ad&ministration Settings")),
+        // tab label
+	`item(`id(`searching), _("Naming Contexts")),
     ];
 
     term contents = `VBox (
@@ -883,14 +899,43 @@ have changed your configuration.</p>
 	);
     }
 
+    void set_searching_term () {
+        term cont = `Top (`HBox(`HSpacing (4), `VBox(
+	    `VSpacing (1),
+		`VSpacing(0.4),
+		`HBox (
+		    `InputField (`id (`nss_base_passwd), `opt (`hstretch),
+			// textentry label
+			_("&User Map"), nss_base_passwd),
+		    `VBox (
+			`Label (""),
+			// button label
+			`PushButton (`id(`br_passwd), _("&Browse"))
+		    )
+		),
+		`HBox (
+		    `InputField (`id (`nss_base_group), `opt (`hstretch),
+			// textentry label
+			_("&Group Map"), nss_base_group),
+		    `VBox (
+			`Label (""),
+			// button label
+			`PushButton (`id(`br_group), _("Bro&wse"))
+		    )
+		),
+		`VSpacing(0.4)
+	), `HSpacing (4)));
 
+	UI::ReplaceWidget (`tabContents, cont);
+	if (has_tabs)
+	    UI::ChangeWidget (`id (`tabs), `CurrentItem, `searching);
+    }
 
     define void set_client_term () {
 
 
 	term cont = `Top (`HBox(`HSpacing (4), `VBox(
 	    `VSpacing (1),
-
 		// checkbox label
 		`Left (`CheckBox (`id (`sssd_with_krb), `opt (`notify), _("&Use Kerberos"), sssd_with_krb)),
 		`VSpacing(0.4),
@@ -1023,7 +1068,13 @@ have changed your configuration.</p>
             sssd_ldap_schema= (string)
 		    UI::QueryWidget (`id (`sssd_ldap_schema), `Value);
 	    pam_password = (string) UI::QueryWidget(`id(`pam_password), `Value);
-
+        }
+        if (current == `searching)
+        {
+            nss_base_passwd     = (string)
+                    UI::QueryWidget(`id(`nss_base_passwd),`Value);
+            nss_base_group      = (string)
+                    UI::QueryWidget(`id(`nss_base_group),`Value);
 	}
 	if (current == `admin)
 	{
@@ -1039,19 +1090,21 @@ have changed your configuration.</p>
 	}
 
 	// 2. switch the tabs
-	if (result == `client || result == `admin)
+	if (result == `client || result == `admin || result == `searching)
 	{
 	    current = (symbol) result;
 	    Wizard::SetHelpText (help_text[current]:"");
 	    if (result == `client)
 		set_client_term ();
-	    else
+	    else if (result == `admin)
 		set_admin_term ();
+	    else if (result == `searching)
+		set_searching_term ();
 	}
 
 	// 3. other events
-	if (result == `br)
-	{
+	if (is (result, symbol) && haskey (br2entry, (symbol)result))
+        {
 	    if (Ldap::ldap_initialized && Ldap::tls_when_initialized != Ldap::ldap_tls)
 	    {
 		Ldap::LDAPClose ();
@@ -1067,7 +1120,7 @@ have changed your configuration.</p>
 		]);
 	    if (dn != "")
 	    {
-		UI::ChangeWidget (`id(`base_config_dn), `Value, dn);
+		UI::ChangeWidget (`id(br2entry[result]:nil), `Value, dn);
 	    }
 	}
 	if (result == `sssd_with_krb)
@@ -1102,6 +1155,8 @@ have changed your configuration.</p>
 		Ldap::member_attribute != member_attribute	||
 		Ldap::create_ldap != create_ldap		||
 		Ldap::pam_password != pam_password		||
+		Ldap::nss_base_passwd != nss_base_passwd	||
+		Ldap::nss_base_group != nss_base_group		||
 		Ldap::krb5_realm != krb5_realm			||
 		Ldap::krb5_kdcip != krb5_kdcip			||
 		Ldap::sssd_cache_credentials != sssd_cache_credentials ||
@@ -1114,6 +1169,8 @@ have changed your configuration.</p>
 		Ldap::member_attribute	= member_attribute;
 		Ldap::create_ldap	= create_ldap;
 		Ldap::pam_password	= pam_password;
+		Ldap::nss_base_passwd	= nss_base_passwd;
+		Ldap::nss_base_group	= nss_base_group;
 		Ldap::krb5_realm	= krb5_realm;
 		Ldap::krb5_kdcip	= krb5_kdcip;
 		Ldap::sssd_with_krb	= sssd_with_krb;
