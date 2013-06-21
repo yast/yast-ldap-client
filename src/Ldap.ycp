@@ -963,6 +963,14 @@ Verify that the Server has StartTLS support enabled."),
               // true for SSSD by default, if not overriden by ldap_id_use_start_tls
               ldap_tls  = true;
             }
+
+            // replace nss_base_passwd with ldap_user_search_base (if it is set)
+	    string user_base    = (string) SCR::Read (add (domain, "ldap_user_search_base"));
+	    if (user_base != nil)
+		nss_base_passwd = user_base;
+	    string group_base    = (string) SCR::Read (add (domain, "ldap_group_search_base"));
+	    if (group_base != nil)
+		nss_base_group = group_base;
 	}
 	if (krb5_realm != "" && krb5_kdcip != "")
 	{
@@ -2280,6 +2288,12 @@ Select another one.
 	SCR::Write (add (domain, "cache_credentials"), sssd_cache_credentials ? "True" : "False");
 	SCR::Write (add (domain, "ldap_tls_cacertdir"), tls_cacertdir == "" ? nil : tls_cacertdir);
 	SCR::Write (add (domain, "ldap_tls_cacert"), tls_cacertfile == "" ? nil : tls_cacertfile);
+
+        // remove the keys if their value is same as default (base_dn)
+	SCR::Write (add (domain, "ldap_user_search_base"),
+	  (nss_base_passwd != base_dn && nss_base_passwd != "") ?  nss_base_passwd : nil);
+	SCR::Write (add (domain, "ldap_group_search_base"),
+	  (nss_base_group != base_dn && nss_base_group != "") ?  nss_base_group : nil);
 
 	if (!contains (sections, "domain/default"))
 	{
