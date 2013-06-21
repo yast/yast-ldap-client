@@ -865,6 +865,13 @@ set to the ldap_user_search_base and ldap_group_search_base attributes in /etc/s
 	"rfc2307bis"
     ];
 
+    // mapping of browse button id's to appropriate text entries
+    map br2entry	= $[
+        `br             : `base_config_dn,
+        `br_passwd      : `nss_base_passwd,
+        `br_group       : `nss_base_group
+    ];
+
     list<term> tabs	= [
 	// tab label
 	`item(`id(`client), _("C&lient Settings"), true),
@@ -1096,8 +1103,7 @@ set to the ldap_user_search_base and ldap_group_search_base attributes in /etc/s
 	}
 
 	// 3. other events
-	if (is (result, symbol) &&
-	    contains ([`br, `br_passwd, `br_group ], (symbol)result))
+	if (is (result, symbol) && haskey (br2entry, (symbol)result))
         {
 	    if (Ldap::ldap_initialized && Ldap::tls_when_initialized != Ldap::ldap_tls)
 	    {
@@ -1114,11 +1120,6 @@ set to the ldap_user_search_base and ldap_group_search_base attributes in /etc/s
 		]);
 	    if (dn != "")
 	    {
-		map br2entry	= $[
-		    `br		: `base_config_dn,
-		    `br_passwd	: `nss_base_passwd,
-		    `br_group	: `nss_base_group
-		];
 		UI::ChangeWidget (`id(br2entry[result]:nil), `Value, dn);
 	    }
 	}
