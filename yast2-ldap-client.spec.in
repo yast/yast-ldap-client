@@ -27,6 +27,8 @@ Obsoletes:	yast2-trans-ldap_client
 
 BuildArchitectures:	noarch
 
+Requires:       yast2-ruby-bindings >= 1.0.0
+
 Summary:	YaST2 - LDAP Client Configuration
 
 %description
@@ -50,9 +52,9 @@ OpenLDAP server will be used for user authentication.
 @desktopdir@/ldap_browser.desktop
 %dir @yncludedir@/ldap
 @yncludedir@/ldap/*
-@moduledir@/Ldap.y*
-@moduledir@/LdapPopup.y*
-@clientdir@/ldap*.ycp
+@moduledir@/Ldap.rb
+@moduledir@/LdapPopup.rb
+@clientdir@/ldap*.rb
 @scrconfdir@/*.scr
 @schemadir@/autoyast/rnc/ldap_client.rnc
 %doc @docdir@
