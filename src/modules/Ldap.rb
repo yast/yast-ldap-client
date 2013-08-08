@@ -304,7 +304,11 @@ module Yast
       @sssd_enumerate = false
 
       @ldap_error_hints = {
-        -1  => _("Verify that the LDAP Server is running and reachable."),
+        # hint to error message
+        -1  => _(
+          "Verify that the LDAP Server is running and reachable."
+        ),
+        # hint to error message
         -11 => _(
           "Failed to establish TLS encryption.\nVerify that the correct CA Certificate is installed and the Server Certificate is valid."
         ),
