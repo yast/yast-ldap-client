@@ -222,7 +222,7 @@ module Yast
     def InitAndBrowseTree(root_dn, connection)
       connection = deep_copy(connection)
       args = Ops.greater_than(Builtins.size(connection), 0) ?
-        connection :
+        deep_copy(connection) :
         {
           "hostname"   => Ldap.GetFirstServer(Ldap.server),
           "port"       => Ldap.GetFirstPort(Ldap.server),

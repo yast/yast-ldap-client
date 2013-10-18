@@ -3236,7 +3236,9 @@ module Yast
     def WriteNow
       abort = lambda { false }
 
-      needed_packages = @sssd ? @sssd_packages : @pam_nss_packages
+      needed_packages = @sssd ?
+        deep_copy(@sssd_packages) :
+        deep_copy(@pam_nss_packages)
       if @sssd_with_krb
         needed_packages = Convert.convert(
           Builtins.union(needed_packages, @kerberos_packages),

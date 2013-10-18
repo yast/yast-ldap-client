@@ -203,7 +203,7 @@ module Yast
               )
             ) do |c|
               @i = Ops.add(@i, 1)
-              @i == @conf ? @configuration : c
+              @i == @conf ? deep_copy(@configuration) : deep_copy(c)
             end
           end
         end
