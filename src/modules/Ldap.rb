@@ -131,9 +131,11 @@ module Yast
       @nss_base_passwd = ""
       @nss_base_shadow = ""
       @nss_base_group = ""
+      @nss_base_automount = ""
       # settings from LDAP configuration objects
       @user_base = ""
       @group_base = ""
+      @autofs_base = ""
 
       # stored values of /etc/nsswitch.conf
       @nsswitch = {
@@ -416,6 +418,7 @@ module Yast
       @nss_base_passwd = Ops.get_string(settings, "nss_base_passwd", "")
       @nss_base_shadow = Ops.get_string(settings, "nss_base_passwd", "")
       @nss_base_group = Ops.get_string(settings, "nss_base_group", "")
+      @nss_base_automount = Ops.get_string(settings, "nss_base_automount", "")
       @member_attribute = Ops.get_string(settings, "member_attribute", "member")
       @create_ldap = Ops.get_boolean(settings, "create_ldap", false)
       @login_enabled = Ops.get_boolean(settings, "login_enabled", true)
@@ -504,6 +507,9 @@ module Yast
       end
       if @nss_base_group != @base_dn
         Ops.set(e, "nss_base_group", @nss_base_group)
+      end
+      if @nss_base_automount != @base_dn
+        Ops.set(e, "nss_base_automount", @nss_base_automount)
       end
       Ops.set(e, "start_autofs", @_start_autofs) if @_autofs_allowed
       Ops.set(e, "krb5_realm", @krb5_realm) if @krb5_realm != ""
@@ -891,6 +897,7 @@ module Yast
       @nss_base_passwd = ReadLdapConfEntry("nss_base_passwd", @base_dn)
       @nss_base_shadow = ReadLdapConfEntry("nss_base_shadow", @base_dn)
       @nss_base_group = ReadLdapConfEntry("nss_base_group", @base_dn)
+      @nss_base_automount = ReadLdapConfEntry("nss_base_automount", @base_dn)
 
       @pam_password = ReadLdapConfEntry("pam_password", "exop")
       # check if Password Modify extenstion is supported (bnc#546398, c#6)
@@ -1014,6 +1021,10 @@ module Yast
           SCR.Read(Builtins.add(domain, "ldap_group_search_base"))
         )
         @nss_base_group = group_base if group_base != nil
+        autofs_base = Convert.to_string(
+          SCR.Read(Builtins.add(domain, "ldap_autofs_search_base"))
+        )
+        @nss_base_automount = autofs_base if autofs_base != nil
       end
       @sssd_with_krb = true if @krb5_realm != "" && @krb5_kdcip != ""
 
@@ -2315,9 +2326,16 @@ module Yast
 
       SCR.Write(path(".etc.sssd_conf.v.sssd.domains"), "default")
 
+      # Create autofs section if autofs is enabled
+      if @_start_autofs
+        SCR.Write(
+          Builtins.add(path(".etc.sssd_conf.section_comment"), "autofs"),
+          "\n# Section created by YaST\n"
+        )
+      end
 
-      # "The "services" setting should have the value "nss, pam"
-      SCR.Write(path(".etc.sssd_conf.v.sssd.services"), "nss,pam")
+      # "The "services" setting should have the value "nss, pam" and "autofs" if autofs is enabled
+      SCR.Write(path(".etc.sssd_conf.v.sssd.services"), @_start_autofs ? "nss,pam,autofs" : "nss,pam")
 
       # " Make sure that "filter_groups" and "filter_users" in the "[nss]" section contains "root".
       f_g = Convert.to_string(
@@ -2393,6 +2411,10 @@ module Yast
         Builtins.add(domain, "ldap_group_search_base"),
         @nss_base_group != @base_dn && @nss_base_group != "" ? @nss_base_group : nil
       )
+      SCR.Write(
+        Builtins.add(domain, "ldap_autofs_search_base"),
+        @nss_base_automount != @base_dn && @nss_base_automount != "" ? @nss_base_automount : nil
+      )
 
       if !Builtins.contains(sections, "domain/default")
         SCR.Write(
@@ -2414,7 +2436,7 @@ module Yast
       end
 
       if !SCR.Write(path(".etc.sssd_conf"), nil)
-        Builtins.y2error("error writing ldap.conf file")
+        Builtins.y2error("error writing sssd.conf file")
       end
       true
     end
@@ -2931,7 +2953,7 @@ module Yast
         )
         WriteNscdCache(@start && @sssd)
       end
-      if @start # ldap used for authentocation
+      if @start # ldap used for authentication
         # ---------- correct pam_password value for Novell eDirectory
         if @pam_password != "nds" && @expert_ui
           CheckNDS() if !@nds_checked && !Mode.autoinst
@@ -3110,7 +3132,7 @@ module Yast
       end
 
       if @_autofs_allowed
-        if Nsswitch.WriteAutofs(@start && @_start_autofs, "ldap")
+        if Nsswitch.WriteAutofs(@start && @_start_autofs, @sssd ? "sss" : "ldap")
           if @_start_autofs
             Service.Adjust("autofs", "enable")
           else
@@ -3261,6 +3283,7 @@ module Yast
         @nss_base_passwd = @base_dn
         @nss_base_shadow = @base_dn
         @nss_base_group = @base_dn
+        @nss_base_automount = @base_dn
       end
 
       Write(abort) == :next
@@ -3372,8 +3395,10 @@ module Yast
     publish :variable => :nss_base_passwd, :type => "string"
     publish :variable => :nss_base_shadow, :type => "string"
     publish :variable => :nss_base_group, :type => "string"
+    publish :variable => :nss_base_automount, :type => "string"
     publish :variable => :user_base, :type => "string"
     publish :variable => :group_base, :type => "string"
+    publish :variable => :autofs_base, :type => "string"
     publish :variable => :nsswitch, :type => "map", :private => true
     publish :variable => :anonymous, :type => "boolean"
     publish :variable => :bind_pass, :type => "string"

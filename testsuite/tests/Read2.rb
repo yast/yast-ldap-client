@@ -28,6 +28,7 @@ module Yast
                 "nss_base_passwd" => nil,
                 "nss_base_shadow" => nil,
                 "nss_base_group"  => nil,
+                "nss_base_automount" => nil,
                 "ldap_version"    => nil,
                 "ssl"             => nil,
                 "pam_password"    => "crypt",
@@ -59,7 +60,8 @@ module Yast
                 "enumerate"              => nil,
                 "ldap_id_use_start_tls"  => nil,
                 "ldap_user_search_base"  => nil,
-                "ldap_group_search_base" => "ou=group,dc=suse,dc=cz"
+                "ldap_group_search_base" => "ou=group,dc=suse,dc=cz",
+                "ldap_autofs_search_base" => nil
               }
             }
           }
@@ -94,6 +96,7 @@ module Yast
 
       Testsuite.Dump(Builtins.sformat("nss: -%1-", Ldap.nss_base_passwd))
       Testsuite.Dump(Builtins.sformat("nss: -%1-", Ldap.nss_base_group))
+      Testsuite.Dump(Builtins.sformat("nss: -%1-", Ldap.nss_base_automount))
 
       nil
     end

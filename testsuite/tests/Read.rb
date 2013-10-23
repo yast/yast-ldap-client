@@ -26,6 +26,7 @@ module Yast
                 "nss_base_passwd" => nil,
                 "nss_base_shadow" => nil,
                 "nss_base_group"  => nil,
+                "nss_base_automount"  => nil,
                 "ldap_version"    => nil,
                 "ssl"             => nil,
                 "pam_password"    => "crypt",
