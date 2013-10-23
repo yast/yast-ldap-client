@@ -7,6 +7,7 @@ Read	.etc.ldap_conf.v."/etc/ldap.conf"."tls_checkpeer" "no"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_passwd" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_shadow" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_group" nil
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_automount" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."pam_password" "crypt"
 Read	.sysconfig.ldap.BASE_CONFIG_DN nil
 Read	.sysconfig.ldap.FILE_SERVER "no"
@@ -22,8 +23,10 @@ Read	.etc.sssd_conf.v."domain/default"."enumerate" nil
 Read	.etc.sssd_conf.v."domain/default"."ldap_id_use_start_tls" nil
 Read	.etc.sssd_conf.v."domain/default"."ldap_user_search_base" nil
 Read	.etc.sssd_conf.v."domain/default"."ldap_group_search_base" "ou=group,dc=suse,dc=cz"
+Read	.etc.sssd_conf.v."domain/default"."ldap_autofs_search_base" nil
 Return	true
 Dump	ldap: -true-
 Dump	sssd: -true-
 Dump	nss: -dc=suse,dc=cz-
 Dump	nss: -ou=group,dc=suse,dc=cz-
+Dump	nss: -dc=suse,dc=cz-

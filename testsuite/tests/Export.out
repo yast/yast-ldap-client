@@ -9,6 +9,7 @@ Read	.etc.ldap_conf.v."/etc/ldap.conf"."tls_checkpeer" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_passwd" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_shadow" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_group" "ou=group,dc=suse,dc=cz"
+Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_base_automount" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."pam_password" "crypt"
 Read	.sysconfig.ldap.BASE_CONFIG_DN nil
 Read	.sysconfig.ldap.FILE_SERVER "no"

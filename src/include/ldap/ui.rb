@@ -929,7 +929,7 @@ module Yast
         :searching =>
           # help text 1/1
           _(
-            "<p>Specify the search bases to use for specific maps (users or groups) if they are different from the base DN. These values are\nset to the ldap_user_search_base and ldap_group_search_base attributes in /etc/sssd/sssd.conf file.</p>\n"
+            "<p>Specify the search bases to use for specific maps (users or groups) if they are different from the base DN. These values are\nset to the ldap_user_search_base, ldap_group_search_base and ldap_autofs_search_base attributes in /etc/sssd/sssd.conf file.</p>\n"
           )
       }
 
@@ -948,6 +948,7 @@ module Yast
       sssd_cache_credentials = Ldap.sssd_cache_credentials
       nss_base_passwd = Ldap.nss_base_passwd
       nss_base_group = Ldap.nss_base_group
+      nss_base_automount = Ldap.nss_base_automount
 
       member_attributes = [
         Item(Id("member"), "member", member_attribute == "member"),
@@ -995,7 +996,8 @@ module Yast
       br2entry = {
         :br        => :base_config_dn,
         :br_passwd => :nss_base_passwd,
-        :br_group  => :nss_base_group
+        :br_group  => :nss_base_group,
+        :br_autofs => :nss_base_automount
       }
 
       tabs = [
@@ -1059,6 +1061,20 @@ module Yast
                   Label(""),
                   # button label
                   PushButton(Id(:br_group), _("Bro&wse"))
+                )
+              ),
+              HBox(
+                InputField(
+                  Id(:nss_base_automount),
+                  Opt(:hstretch),
+                  # textentry label
+                  _("&Autofs Map"),
+                  nss_base_automount
+                ),
+                VBox(
+                  Label(""),
+                  # button label
+                  PushButton(Id(:br_autofs), _("Bro&wse"))
                 )
               ),
               VSpacing(0.4)
@@ -1280,6 +1296,9 @@ module Yast
           nss_base_group = Convert.to_string(
             UI.QueryWidget(Id(:nss_base_group), :Value)
           )
+          nss_base_automount = Convert.to_string(
+            UI.QueryWidget(Id(:nss_base_automount), :Value)
+          )
         end
         if current == :admin
           bind_dn = Convert.to_string(UI.QueryWidget(Id(:bind_dn), :Value))
@@ -1362,6 +1381,7 @@ module Yast
               Ldap.pam_password != pam_password ||
               Ldap.nss_base_passwd != nss_base_passwd ||
               Ldap.nss_base_group != nss_base_group ||
+              Ldap.nss_base_automount != nss_base_automount ||
               Ldap.krb5_realm != krb5_realm ||
               Ldap.krb5_kdcip != krb5_kdcip ||
               Ldap.sssd_cache_credentials != sssd_cache_credentials ||
@@ -1374,6 +1394,7 @@ module Yast
             Ldap.pam_password = pam_password
             Ldap.nss_base_passwd = nss_base_passwd
             Ldap.nss_base_group = nss_base_group
+            Ldap.nss_base_automount = nss_base_automount
             Ldap.krb5_realm = krb5_realm
             Ldap.krb5_kdcip = krb5_kdcip
             Ldap.sssd_with_krb = sssd_with_krb
