@@ -449,7 +449,10 @@ module Yast
         @sssd_with_krb
       )
       @krb5_realm = Ops.get_string(settings, "krb5_realm", @krb5_realm)
-      @krb5_server = Ops.get_string(settings, "krb5_server", @krb5_server)
+
+      # krb5_kdcip is obsoleted key - check for it if the profile is not new enough
+      krb5_kdcip = Ops.get_string(settings, "krb5_kdcip", @krb5_server)
+      @krb5_server = Ops.get_string(settings, "krb5_server", krb5_kdcip)
       if @_start_autofs
         @required_packages = Convert.convert(
           Builtins.union(@required_packages, ["autofs"]),
