@@ -405,67 +405,46 @@ module Yast
     # Only set variables, without checking anything
     # @return [void]
     def Set(settings)
-      settings = deep_copy(settings)
-      @start = Ops.get_boolean(settings, "start_ldap", false)
-      @server = Ops.get_string(settings, "ldap_server", "")
+
+      @start            = settings.fetch("start_ldap", false)
+      @ldap_tls         = settings.fetch("ldap_tls", false)
+      @login_enabled    = settings.fetch("login_enabled", true)
+      @_start_autofs    = settings.fetch("start_autofs", false)
+      @file_server      = settings.fetch("file_server", false)
+      @create_ldap      = settings.fetch("create_ldap", false)
+      @mkhomedir        = settings.fetch("mkhomedir", @mkhomedir)
+      @sssd             = settings.fetch("sssd", @sssd)
+      @sssd_enumerate   = settings.fetch("sssd_enumerate", @sssd_enumerate)
+      @sssd_cache_credentials = settings.fetch("sssd_cache_credentials", @sssd_cache_credentials)
+      @sssd_with_krb    = settings.fetch("sssd_with_krb", @sssd_with_krb)
+
+      @server           = settings["ldap_server"] || ""
       # leaving "ldap_domain" for backward compatibility
-      @base_dn = Ops.get_string(settings, "ldap_domain", "")
-      @ldap_tls = Ops.get_boolean(settings, "ldap_tls", false)
-      @pam_password = Ops.get_string(settings, "pam_password", "exop")
-      @bind_dn = Ops.get_string(settings, "bind_dn", "")
-      @file_server = Ops.get_boolean(settings, "file_server", false)
-      @base_config_dn = Ops.get_string(settings, "base_config_dn", "")
-      @nss_base_passwd = Ops.get_string(settings, "nss_base_passwd", "")
-      @nss_base_shadow = Ops.get_string(settings, "nss_base_passwd", "")
-      @nss_base_group = Ops.get_string(settings, "nss_base_group", "")
-      @nss_base_automount = Ops.get_string(settings, "nss_base_automount", "")
-      @member_attribute = Ops.get_string(settings, "member_attribute", "member")
-      @create_ldap = Ops.get_boolean(settings, "create_ldap", false)
-      @login_enabled = Ops.get_boolean(settings, "login_enabled", true)
-      @_start_autofs = Ops.get_boolean(settings, "start_autofs", false)
-      @tls_cacertdir = Ops.get_string(settings, "tls_cacertdir", "")
-      @tls_cacertfile = Ops.get_string(settings, "tls_cacertfile", "")
-      @tls_checkpeer = Ops.get_string(settings, "tls_checkpeer", "yes")
-      @mkhomedir = Ops.get_boolean(settings, "mkhomedir", @mkhomedir)
-      @sssd = Ops.get_boolean(settings, "sssd", @sssd)
-      @sssd_ldap_schema = Ops.get_string(
-        settings,
-        "sssd_ldap_schema",
-        @sssd_ldap_schema
-      )
-      @sssd_enumerate = Ops.get_boolean(
-        settings,
-        "sssd_enumerate",
-        @sssd_enumerate
-      )
-      @sssd_cache_credentials = Ops.get_boolean(
-        settings,
-        "sssd_cache_credentials",
-        @sssd_cache_credentials
-      )
-      @sssd_with_krb = Ops.get_boolean(
-        settings,
-        "sssd_with_krb",
-        @sssd_with_krb
-      )
-      @krb5_realm = Ops.get_string(settings, "krb5_realm", @krb5_realm)
+      @base_dn          = settings["ldap_domain"] || ""
+      @pam_password     = settings["pam_password"] || "exop"
+      @bind_dn          = settings["bind_dn"] || ""
+      @base_config_dn   = settings["base_config_dn"] || ""
+      @nss_base_passwd  = settings["nss_base_passwd"] || ""
+      @nss_base_shadow  = settings["nss_base_shadow"] || ""
+      @nss_base_group   = settings["nss_base_group"] || ""
+      @nss_base_automount = settings["nss_base_automount"] || ""
+      @member_attribute = settings["member_attribute"] || "member"
+      @tls_cacertdir    = settings["tls_cacertdir"] || ""
+      @tls_cacertfile   = settings["tls_cacertfile"] || ""
+      @tls_checkpeer    = settings["tls_checkpeer"] || "yes"
+      @sssd_ldap_schema = settings["sssd_ldap_schema"] || @sssd_ldap_schema
+      @krb5_realm       = settings["krb5_realm"] || @krb5_realm
 
       # krb5_kdcip is obsoleted key - check for it if the profile is not new enough
-      krb5_kdcip = Ops.get_string(settings, "krb5_kdcip", @krb5_server)
-      @krb5_server = Ops.get_string(settings, "krb5_server", krb5_kdcip)
-      if @_start_autofs
-        @required_packages = Convert.convert(
-          Builtins.union(@required_packages, ["autofs"]),
-          :from => "list",
-          :to   => "list <string>"
-        )
-      end
+      @krb5_server      = settings["krb5_server"] || settings["krb5_kdcip"] || @krb5_server
 
-      @old_base_dn = @base_dn
-      @old_server = @server
-      @old_member_attribute = @member_attribute
-      @modified = true
-      @openldap_modified = true
+      @required_packages.push("autofs") if @_start_autofs
+
+      @old_base_dn              = @base_dn
+      @old_server               = @server
+      @old_member_attribute     = @member_attribute
+      @modified                 = true
+      @openldap_modified        = true
       nil
     end
 
