@@ -941,7 +941,7 @@ module Yast
       append_base = bind_dn != "" && Builtins.issubstring(bind_dn, base_dn)
       pam_password = Ldap.pam_password
       krb5_realm = Ldap.krb5_realm
-      krb5_kdcip = Ldap.krb5_kdcip
+      krb5_server = Ldap.krb5_server
       sssd_with_krb = Ldap.sssd_with_krb
       sssd_ldap_schema = Ldap.sssd_ldap_schema
       sssd_enumerate = Ldap.sssd_enumerate
@@ -1110,7 +1110,7 @@ module Yast
                 # textentry label
                 TextEntry(Id(:krb5_realm), _("Default Real&m"), krb5_realm),
                 # textentry label
-                TextEntry(Id(:krb5_kdcip), _("&KDC Server Address"), krb5_kdcip)
+                TextEntry(Id(:krb5_server), _("&KDC Server Address"), krb5_server)
               ),
               VSpacing(),
               # combobox label
@@ -1170,7 +1170,7 @@ module Yast
         UI.ChangeWidget(Id(:tabs), :CurrentItem, :client) if has_tabs
         if Ldap.sssd
           UI.ChangeWidget(Id(:krb5_realm), :Enabled, sssd_with_krb)
-          UI.ChangeWidget(Id(:krb5_kdcip), :Enabled, sssd_with_krb)
+          UI.ChangeWidget(Id(:krb5_server), :Enabled, sssd_with_krb)
         end
 
         nil
@@ -1273,8 +1273,8 @@ module Yast
           krb5_realm = Convert.to_string(
             UI.QueryWidget(Id(:krb5_realm), :Value)
           )
-          krb5_kdcip = Convert.to_string(
-            UI.QueryWidget(Id(:krb5_kdcip), :Value)
+          krb5_server = Convert.to_string(
+            UI.QueryWidget(Id(:krb5_server), :Value)
           )
           sssd_cache_credentials = Convert.to_boolean(
             UI.QueryWidget(Id(:sssd_cache_credentials), :Value)
@@ -1354,7 +1354,7 @@ module Yast
             UI.QueryWidget(Id(:sssd_with_krb), :Value)
           )
           UI.ChangeWidget(Id(:krb5_realm), :Enabled, sssd_with_krb)
-          UI.ChangeWidget(Id(:krb5_kdcip), :Enabled, sssd_with_krb)
+          UI.ChangeWidget(Id(:krb5_server), :Enabled, sssd_with_krb)
         end
 
         if result == :next || result == :configure
@@ -1371,7 +1371,7 @@ module Yast
             UI.SetFocus(Id(:base_config_dn))
             next
           end
-          if krb5_realm == "" || krb5_kdcip == "" || !Ldap.sssd
+          if krb5_realm == "" || krb5_server == "" || !Ldap.sssd
             sssd_with_krb = false
           end
 
@@ -1383,7 +1383,7 @@ module Yast
               Ldap.nss_base_group != nss_base_group ||
               Ldap.nss_base_automount != nss_base_automount ||
               Ldap.krb5_realm != krb5_realm ||
-              Ldap.krb5_kdcip != krb5_kdcip ||
+              Ldap.krb5_server != krb5_server ||
               Ldap.sssd_cache_credentials != sssd_cache_credentials ||
               Ldap.sssd_enumerate != sssd_enumerate ||
               Ldap.sssd_ldap_schema != sssd_ldap_schema
@@ -1396,7 +1396,7 @@ module Yast
             Ldap.nss_base_group = nss_base_group
             Ldap.nss_base_automount = nss_base_automount
             Ldap.krb5_realm = krb5_realm
-            Ldap.krb5_kdcip = krb5_kdcip
+            Ldap.krb5_server = krb5_server
             Ldap.sssd_with_krb = sssd_with_krb
             Ldap.sssd_cache_credentials = sssd_cache_credentials
             Ldap.sssd_enumerate = sssd_enumerate

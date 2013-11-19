@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Nov 19 15:02:19 CET 2013 - jsuchome@suse.cz
+
+- replace obsolete krb5_kdcip with krb5_server (bnc#851048)
+- 3.1.2 
+
+-------------------------------------------------------------------
 Wed Oct 23 09:39:33 UTC 2013 - ckornacker@suse.de
 
 - Use sssd for LDAP based automount maps (fate#313275)

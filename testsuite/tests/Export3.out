@@ -19,7 +19,7 @@ Read	.passwd.passwd.pluslines ["+"]
 Read	.etc.krb5_conf.v.libdefaults.default_realm ["SUSE.CZ"]
 Read	.etc.krb5_conf.v."SUSE.CZ"."kdc" ["kdc.suse.cz", "kdc.suse.de"]
 Read	.etc.sssd_conf.v."domain/default"."krb5_realm" "SUSE.CZ"
-Read	.etc.sssd_conf.v."domain/default"."krb5_kdcip" nil
+Read	.etc.sssd_conf.v."domain/default"."krb5_server" nil
 Read	.etc.sssd_conf.v."domain/default"."ldap_schema" "rfc2307"
 Read	.etc.sssd_conf.v."domain/default"."cache_credentials" "true"
 Read	.etc.sssd_conf.v."domain/default"."enumerate" "true"
@@ -28,4 +28,4 @@ Read	.etc.sssd_conf.v."domain/default"."ldap_user_search_base" nil
 Read	.etc.sssd_conf.v."domain/default"."ldap_group_search_base" "ou=group,dc=suse,dc=cz"
 Read	.etc.sssd_conf.v."domain/default"."ldap_autofs_search_base" nil
 Return	true
-Return	$["base_config_dn":"", "bind_dn":"uid=manager,dc=suse,dc=cz", "create_ldap":false, "file_server":false, "krb5_kdcip":"kdc.suse.cz,kdc.suse.de", "krb5_realm":"SUSE.CZ", "ldap_domain":"dc=suse,dc=cz", "ldap_server":"localhost", "ldap_tls":false, "login_enabled":true, "member_attribute":"member", "mkhomedir":true, "nss_base_group":"ou=group,dc=suse,dc=cz", "pam_password":"crypt", "sssd":true, "sssd_cache_credentials":true, "sssd_enumerate":true, "sssd_ldap_schema":"rfc2307", "sssd_with_krb":true, "start_autofs":true, "start_ldap":true, "tls_cacertdir":"/etc/openldap/cacerts/"]
+Return	$["base_config_dn":"", "bind_dn":"uid=manager,dc=suse,dc=cz", "create_ldap":false, "file_server":false, "krb5_realm":"SUSE.CZ", "krb5_server":"kdc.suse.cz,kdc.suse.de", "ldap_domain":"dc=suse,dc=cz", "ldap_server":"localhost", "ldap_tls":false, "login_enabled":true, "member_attribute":"member", "mkhomedir":true, "nss_base_group":"ou=group,dc=suse,dc=cz", "pam_password":"crypt", "sssd":true, "sssd_cache_credentials":true, "sssd_enumerate":true, "sssd_ldap_schema":"rfc2307", "sssd_with_krb":true, "start_autofs":true, "start_ldap":true, "tls_cacertdir":"/etc/openldap/cacerts/"]

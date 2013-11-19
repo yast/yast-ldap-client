@@ -297,13 +297,13 @@ module Yast
       end
       if Ops.get(options, "kdc", "") != ""
         kdc = Ops.get(options, "kdc", "")
-        if Ldap.krb5_kdcip != kdc
-          Ldap.krb5_kdcip = kdc
+        if Ldap.krb5_server != kdc
+          Ldap.krb5_server = kdc
           Ldap.modified = true
         end
       end
 
-      if Ldap.krb5_kdcip != "" && Ldap.krb5_realm != ""
+      if Ldap.krb5_server != "" && Ldap.krb5_realm != ""
         Ldap.sssd_with_krb = true
       end
 

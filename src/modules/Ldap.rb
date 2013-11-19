@@ -297,7 +297,7 @@ module Yast
       @krb5_realm = ""
 
       # adress of KDC (key distribution centre) server for default realm
-      @krb5_kdcip = ""
+      @krb5_server = ""
 
       # ldap_schema argument of /etc/sssd/sssd.conf
       @sssd_ldap_schema = "rfc2307bis"
@@ -449,7 +449,7 @@ module Yast
         @sssd_with_krb
       )
       @krb5_realm = Ops.get_string(settings, "krb5_realm", @krb5_realm)
-      @krb5_kdcip = Ops.get_string(settings, "krb5_kdcip", @krb5_kdcip)
+      @krb5_server = Ops.get_string(settings, "krb5_server", @krb5_server)
       if @_start_autofs
         @required_packages = Convert.convert(
           Builtins.union(@required_packages, ["autofs"]),
@@ -513,7 +513,7 @@ module Yast
       end
       Ops.set(e, "start_autofs", @_start_autofs) if @_autofs_allowed
       Ops.set(e, "krb5_realm", @krb5_realm) if @krb5_realm != ""
-      Ops.set(e, "krb5_kdcip", @krb5_kdcip) if @krb5_kdcip != ""
+      Ops.set(e, "krb5_server", @krb5_server) if @krb5_server != ""
       if @sssd_ldap_schema != "rfc2307bis"
         Ops.set(e, "sssd_ldap_schema", @sssd_ldap_schema)
       end
@@ -642,7 +642,7 @@ module Yast
         :to   => "list <string>"
       )
       kdcs = [] if kdcs == nil
-      @krb5_kdcip = Builtins.mergestring(kdcs, ",")
+      @krb5_server = Builtins.mergestring(kdcs, ",")
 
       true
     end
@@ -984,8 +984,8 @@ module Yast
         domain = Builtins.add(path(".etc.sssd_conf.v"), "domain/default")
         realm = Convert.to_string(SCR.Read(Builtins.add(domain, "krb5_realm")))
         @krb5_realm = realm if realm != nil
-        kdc = Convert.to_string(SCR.Read(Builtins.add(domain, "krb5_kdcip")))
-        @krb5_kdcip = kdc if kdc != nil
+        kdc = Convert.to_string(SCR.Read(Builtins.add(domain, "krb5_server")))
+        @krb5_server = kdc if kdc != nil
         schema = Convert.to_string(
           SCR.Read(Builtins.add(domain, "ldap_schema"))
         )
@@ -1026,7 +1026,7 @@ module Yast
         )
         @nss_base_automount = autofs_base if autofs_base != nil
       end
-      @sssd_with_krb = true if @krb5_realm != "" && @krb5_kdcip != ""
+      @sssd_with_krb = true if @krb5_realm != "" && @krb5_server != ""
 
       # Now check if previous configuration of LDAP server didn't proposed
       # some better values:
@@ -2429,7 +2429,7 @@ module Yast
         SCR.Write(Builtins.add(domain, "chpass_provider"), "krb5")
 
         SCR.Write(Builtins.add(domain, "krb5_realm"), @krb5_realm)
-        SCR.Write(Builtins.add(domain, "krb5_kdcip"), @krb5_kdcip)
+        SCR.Write(Builtins.add(domain, "krb5_server"), @krb5_server)
       else
         SCR.Write(Builtins.add(domain, "chpass_provider"), "ldap")
         SCR.Write(Builtins.add(domain, "auth_provider"), "ldap")
@@ -3438,7 +3438,7 @@ module Yast
     publish :variable => :sssd_cache_credentials, :type => "boolean"
     publish :variable => :sssd_with_krb, :type => "boolean"
     publish :variable => :krb5_realm, :type => "string"
-    publish :variable => :krb5_kdcip, :type => "string"
+    publish :variable => :krb5_server, :type => "string"
     publish :variable => :sssd_ldap_schema, :type => "string"
     publish :variable => :sssd_enumerate, :type => "boolean"
     publish :variable => :ldap_error_hints, :type => "map"

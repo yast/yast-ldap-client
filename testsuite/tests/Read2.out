@@ -16,7 +16,7 @@ Read	.etc.ldap_conf.v."/etc/ldap.conf"."nss_map_attribute" 0
 Execute	.passwd.init $["base_directory":"/etc"] true
 Read	.passwd.passwd.pluslines ["+"]
 Read	.etc.sssd_conf.v."domain/default"."krb5_realm" "SUSE.CZ"
-Read	.etc.sssd_conf.v."domain/default"."krb5_kdcip" "kdc.suse.cz"
+Read	.etc.sssd_conf.v."domain/default"."krb5_server" "kdc.suse.cz"
 Read	.etc.sssd_conf.v."domain/default"."ldap_schema" nil
 Read	.etc.sssd_conf.v."domain/default"."cache_credentials" "True"
 Read	.etc.sssd_conf.v."domain/default"."enumerate" nil
