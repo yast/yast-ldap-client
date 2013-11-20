@@ -1,7 +1,8 @@
 -------------------------------------------------------------------
 Tue Nov 19 15:02:19 CET 2013 - jsuchome@suse.cz
 
-- replace obsolete krb5_kdcip with krb5_server (bnc#851048)
+- replace obsolete krb5_kdcip key with krb5_server (bnc#851048)
+  (new autoYaST profile not usable for releases using the old key)
 - 3.1.2 
 
 -------------------------------------------------------------------
