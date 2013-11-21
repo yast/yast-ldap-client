@@ -2808,10 +2808,10 @@ Select another one.
 
 	    // default value is 'yes'
 	    WriteLdapConfEntry ("tls_checkpeer", tls_checkpeer == "yes" ? nil : tls_checkpeer);
-            if (!oes)
-            {
+	    if (!oes)
+	    {
 	      WriteNscdCache (start && sssd);
-            }
+	    }
 	}
 	if (start) // ldap used for authentocation
 	{
