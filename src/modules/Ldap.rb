@@ -2932,7 +2932,7 @@ module Yast
           "tls_checkpeer",
           @tls_checkpeer == "yes" ? nil : @tls_checkpeer
         )
-        WriteNscdCache(@start && @sssd)
+        WriteNscdCache(@start && @sssd) unless oes
       end
       if @start # ldap used for authentication
         # ---------- correct pam_password value for Novell eDirectory

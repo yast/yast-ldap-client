@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Fri Nov 22 13:26:14 CET 2013 - jsuchome@suse.cz
+
+- do not change nscd cache value for OES (bnc#848051)
+
+-------------------------------------------------------------------
 Fri Nov 22 10:16:56 CET 2013 - jsuchome@suse.cz
 
 - revoked fix for bnc#708562: do not base sssd state on current
