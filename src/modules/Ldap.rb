@@ -781,8 +781,7 @@ module Yast
         @sssd = false
       else
         # ... or as 'sssd'
-        @sssd = Builtins.contains(Ops.get_list(@nsswitch, "passwd", []), "sss")
-        @start = @sssd
+        @start  = Builtins.contains(Ops.get_list(@nsswitch, "passwd", []), "sss")
       end
 
       # nothing is configured, but some packages are installed
