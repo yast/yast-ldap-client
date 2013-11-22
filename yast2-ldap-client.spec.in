@@ -26,7 +26,8 @@ BuildArchitectures:	noarch
 Summary:	Configuration of LDAP client
 
 %description
--
+With this YaST2 module you can configure an LDAP client so that an
+OpenLDAP server will be used for user authentication.
 
 @PREP@
 
