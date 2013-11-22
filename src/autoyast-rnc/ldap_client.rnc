@@ -18,6 +18,12 @@ ldap = element ldap {
     pam_password? &
     start_autofs? &
     sssd? &
+    sssd_ldap_schema? &
+    sssd_enumerate? &
+    sssd_cache_credentials? &
+    sssd_with_krb? &
+    krb5_realm? &
+    krb5_server? &
     mkhomedir? &
     tls_cacertdir? &
     tls_cacertfile? &
@@ -42,4 +48,9 @@ create_ldap = element create_ldap { BOOLEAN }
 sssd = element sssd { BOOLEAN }
 mkhomedir = element mkhomedir { BOOLEAN }
 start_autofs = element start_autofs { BOOLEAN }
-
+sssd_ldap_schema = element sssd_ldap_schema { text }
+sssd_enumerate = element sssd_enumerate { BOOLEAN }
+sssd_cache_credentials = element sssd_cache_credentials { BOOLEAN }
+sssd_with_krb = element sssd_with_krb { BOOLEAN }
+krb5_realm = element krb5_realm { text }
+krb5_server = element krb5_server { text }

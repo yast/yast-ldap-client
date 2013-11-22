@@ -53,7 +53,7 @@ module Yast
               "domain/default" => {
                 "krb5_realm"             => "SUSE.CZ",
                 # this ensures kdc is read from krb5.conf
-                "krb5_kdcip"             => nil,
+                "krb5_server"             => nil,
                 "ldap_schema"            => "rfc2307",
                 "cache_credentials"      => "true",
                 "enumerate"              => "true",

@@ -52,7 +52,7 @@ module Yast
             "v" => {
               "domain/default" => {
                 "krb5_realm"             => "SUSE.CZ",
-                "krb5_kdcip"             => "kdc.suse.cz",
+                "krb5_server"             => "kdc.suse.cz",
                 "ldap_schema"            => "rfc2307",
                 "cache_credentials"      => "true",
                 "enumerate"              => "true",

@@ -54,7 +54,7 @@ module Yast
             "v" => {
               "domain/default" => {
                 "krb5_realm"             => "SUSE.CZ",
-                "krb5_kdcip"             => "kdc.suse.cz",
+                "krb5_server"             => "kdc.suse.cz",
                 "ldap_schema"            => nil,
                 "cache_credentials"      => "True",
                 "enumerate"              => nil,
@@ -97,6 +97,11 @@ module Yast
       Testsuite.Dump(Builtins.sformat("nss: -%1-", Ldap.nss_base_passwd))
       Testsuite.Dump(Builtins.sformat("nss: -%1-", Ldap.nss_base_group))
       Testsuite.Dump(Builtins.sformat("nss: -%1-", Ldap.nss_base_automount))
+
+      # test that sssd is true on read even if not present in nsswitch
+      @READ["etc"]["nsswitch_conf"]["passwd"]   = ""
+      Testsuite.Test(lambda { Ldap.Read }, [@READ, {}, @EX], 0)
+      Testsuite.Dump(Builtins.sformat("sssd: -%1-", Ldap.sssd))
 
       nil
     end

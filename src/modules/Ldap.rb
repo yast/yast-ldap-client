@@ -297,7 +297,7 @@ module Yast
       @krb5_realm = ""
 
       # adress of KDC (key distribution centre) server for default realm
-      @krb5_kdcip = ""
+      @krb5_server = ""
 
       # ldap_schema argument of /etc/sssd/sssd.conf
       @sssd_ldap_schema = "rfc2307bis"
@@ -405,64 +405,46 @@ module Yast
     # Only set variables, without checking anything
     # @return [void]
     def Set(settings)
-      settings = deep_copy(settings)
-      @start = Ops.get_boolean(settings, "start_ldap", false)
-      @server = Ops.get_string(settings, "ldap_server", "")
-      # leaving "ldap_domain" for backward compatibility
-      @base_dn = Ops.get_string(settings, "ldap_domain", "")
-      @ldap_tls = Ops.get_boolean(settings, "ldap_tls", false)
-      @pam_password = Ops.get_string(settings, "pam_password", "exop")
-      @bind_dn = Ops.get_string(settings, "bind_dn", "")
-      @file_server = Ops.get_boolean(settings, "file_server", false)
-      @base_config_dn = Ops.get_string(settings, "base_config_dn", "")
-      @nss_base_passwd = Ops.get_string(settings, "nss_base_passwd", "")
-      @nss_base_shadow = Ops.get_string(settings, "nss_base_passwd", "")
-      @nss_base_group = Ops.get_string(settings, "nss_base_group", "")
-      @nss_base_automount = Ops.get_string(settings, "nss_base_automount", "")
-      @member_attribute = Ops.get_string(settings, "member_attribute", "member")
-      @create_ldap = Ops.get_boolean(settings, "create_ldap", false)
-      @login_enabled = Ops.get_boolean(settings, "login_enabled", true)
-      @_start_autofs = Ops.get_boolean(settings, "start_autofs", false)
-      @tls_cacertdir = Ops.get_string(settings, "tls_cacertdir", "")
-      @tls_cacertfile = Ops.get_string(settings, "tls_cacertfile", "")
-      @tls_checkpeer = Ops.get_string(settings, "tls_checkpeer", "yes")
-      @mkhomedir = Ops.get_boolean(settings, "mkhomedir", @mkhomedir)
-      @sssd = Ops.get_boolean(settings, "sssd", @sssd)
-      @sssd_ldap_schema = Ops.get_string(
-        settings,
-        "sssd_ldap_schema",
-        @sssd_ldap_schema
-      )
-      @sssd_enumerate = Ops.get_boolean(
-        settings,
-        "sssd_enumerate",
-        @sssd_enumerate
-      )
-      @sssd_cache_credentials = Ops.get_boolean(
-        settings,
-        "sssd_cache_credentials",
-        @sssd_cache_credentials
-      )
-      @sssd_with_krb = Ops.get_boolean(
-        settings,
-        "sssd_with_krb",
-        @sssd_with_krb
-      )
-      @krb5_realm = Ops.get_string(settings, "krb5_realm", @krb5_realm)
-      @krb5_kdcip = Ops.get_string(settings, "krb5_kdcip", @krb5_kdcip)
-      if @_start_autofs
-        @required_packages = Convert.convert(
-          Builtins.union(@required_packages, ["autofs"]),
-          :from => "list",
-          :to   => "list <string>"
-        )
-      end
 
-      @old_base_dn = @base_dn
-      @old_server = @server
-      @old_member_attribute = @member_attribute
-      @modified = true
-      @openldap_modified = true
+      @start            = settings.fetch("start_ldap", false)
+      @ldap_tls         = settings.fetch("ldap_tls", false)
+      @login_enabled    = settings.fetch("login_enabled", true)
+      @_start_autofs    = settings.fetch("start_autofs", false)
+      @file_server      = settings.fetch("file_server", false)
+      @create_ldap      = settings.fetch("create_ldap", false)
+      @mkhomedir        = settings.fetch("mkhomedir", @mkhomedir)
+      @sssd             = settings.fetch("sssd", @sssd)
+      @sssd_enumerate   = settings.fetch("sssd_enumerate", @sssd_enumerate)
+      @sssd_cache_credentials = settings.fetch("sssd_cache_credentials", @sssd_cache_credentials)
+      @sssd_with_krb    = settings.fetch("sssd_with_krb", @sssd_with_krb)
+
+      @server           = settings["ldap_server"] || ""
+      # leaving "ldap_domain" for backward compatibility
+      @base_dn          = settings["ldap_domain"] || ""
+      @pam_password     = settings["pam_password"] || "exop"
+      @bind_dn          = settings["bind_dn"] || ""
+      @base_config_dn   = settings["base_config_dn"] || ""
+      @nss_base_passwd  = settings["nss_base_passwd"] || ""
+      @nss_base_shadow  = settings["nss_base_shadow"] || ""
+      @nss_base_group   = settings["nss_base_group"] || ""
+      @nss_base_automount = settings["nss_base_automount"] || ""
+      @member_attribute = settings["member_attribute"] || "member"
+      @tls_cacertdir    = settings["tls_cacertdir"] || ""
+      @tls_cacertfile   = settings["tls_cacertfile"] || ""
+      @tls_checkpeer    = settings["tls_checkpeer"] || "yes"
+      @sssd_ldap_schema = settings["sssd_ldap_schema"] || @sssd_ldap_schema
+      @krb5_realm       = settings["krb5_realm"] || @krb5_realm
+
+      # krb5_kdcip is obsoleted key - check for it if the profile is not new enough
+      @krb5_server      = settings["krb5_server"] || settings["krb5_kdcip"] || @krb5_server
+
+      @required_packages.push("autofs") if @_start_autofs
+
+      @old_base_dn              = @base_dn
+      @old_server               = @server
+      @old_member_attribute     = @member_attribute
+      @modified                 = true
+      @openldap_modified        = true
       nil
     end
 
@@ -513,7 +495,7 @@ module Yast
       end
       Ops.set(e, "start_autofs", @_start_autofs) if @_autofs_allowed
       Ops.set(e, "krb5_realm", @krb5_realm) if @krb5_realm != ""
-      Ops.set(e, "krb5_kdcip", @krb5_kdcip) if @krb5_kdcip != ""
+      Ops.set(e, "krb5_server", @krb5_server) if @krb5_server != ""
       if @sssd_ldap_schema != "rfc2307bis"
         Ops.set(e, "sssd_ldap_schema", @sssd_ldap_schema)
       end
@@ -642,7 +624,7 @@ module Yast
         :to   => "list <string>"
       )
       kdcs = [] if kdcs == nil
-      @krb5_kdcip = Builtins.mergestring(kdcs, ",")
+      @krb5_server = Builtins.mergestring(kdcs, ",")
 
       true
     end
@@ -799,8 +781,7 @@ module Yast
         @sssd = false
       else
         # ... or as 'sssd'
-        @sssd = Builtins.contains(Ops.get_list(@nsswitch, "passwd", []), "sss")
-        @start = @sssd
+        @start  = Builtins.contains(Ops.get_list(@nsswitch, "passwd", []), "sss")
       end
 
       # nothing is configured, but some packages are installed
@@ -984,8 +965,8 @@ module Yast
         domain = Builtins.add(path(".etc.sssd_conf.v"), "domain/default")
         realm = Convert.to_string(SCR.Read(Builtins.add(domain, "krb5_realm")))
         @krb5_realm = realm if realm != nil
-        kdc = Convert.to_string(SCR.Read(Builtins.add(domain, "krb5_kdcip")))
-        @krb5_kdcip = kdc if kdc != nil
+        kdc = Convert.to_string(SCR.Read(Builtins.add(domain, "krb5_server")))
+        @krb5_server = kdc if kdc != nil
         schema = Convert.to_string(
           SCR.Read(Builtins.add(domain, "ldap_schema"))
         )
@@ -1026,7 +1007,7 @@ module Yast
         )
         @nss_base_automount = autofs_base if autofs_base != nil
       end
-      @sssd_with_krb = true if @krb5_realm != "" && @krb5_kdcip != ""
+      @sssd_with_krb = true if @krb5_realm != "" && @krb5_server != ""
 
       # Now check if previous configuration of LDAP server didn't proposed
       # some better values:
@@ -2429,7 +2410,7 @@ module Yast
         SCR.Write(Builtins.add(domain, "chpass_provider"), "krb5")
 
         SCR.Write(Builtins.add(domain, "krb5_realm"), @krb5_realm)
-        SCR.Write(Builtins.add(domain, "krb5_kdcip"), @krb5_kdcip)
+        SCR.Write(Builtins.add(domain, "krb5_server"), @krb5_server)
       else
         SCR.Write(Builtins.add(domain, "chpass_provider"), "ldap")
         SCR.Write(Builtins.add(domain, "auth_provider"), "ldap")
@@ -3438,7 +3419,7 @@ module Yast
     publish :variable => :sssd_cache_credentials, :type => "boolean"
     publish :variable => :sssd_with_krb, :type => "boolean"
     publish :variable => :krb5_realm, :type => "string"
-    publish :variable => :krb5_kdcip, :type => "string"
+    publish :variable => :krb5_server, :type => "string"
     publish :variable => :sssd_ldap_schema, :type => "string"
     publish :variable => :sssd_enumerate, :type => "boolean"
     publish :variable => :ldap_error_hints, :type => "map"
