@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Dec  5 16:44:42 CET 2013 - jsuchome@suse.cz
+
+- remove krb5 realm and kdc from sssd config when Kerberos support
+  is switched off (bnc#853331)
+
+-------------------------------------------------------------------
 Fri Nov 22 13:26:14 CET 2013 - jsuchome@suse.cz
 
 - do not change nscd cache value for OES (bnc#848051)

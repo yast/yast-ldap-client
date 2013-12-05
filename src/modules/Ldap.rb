@@ -2414,6 +2414,8 @@ module Yast
       else
         SCR.Write(Builtins.add(domain, "chpass_provider"), "ldap")
         SCR.Write(Builtins.add(domain, "auth_provider"), "ldap")
+        SCR.Write(Builtins.add(domain, "krb5_realm"), nil)
+        SCR.Write(Builtins.add(domain, "krb5_server"), nil)
       end
 
       if !SCR.Write(path(".etc.sssd_conf"), nil)
