@@ -1382,6 +1382,7 @@ module Yast
               Ldap.nss_base_passwd != nss_base_passwd ||
               Ldap.nss_base_group != nss_base_group ||
               Ldap.nss_base_automount != nss_base_automount ||
+              Ldap.sssd_with_krb != sssd_with_krb ||
               Ldap.krb5_realm != krb5_realm ||
               Ldap.krb5_server != krb5_server ||
               Ldap.sssd_cache_credentials != sssd_cache_credentials ||
