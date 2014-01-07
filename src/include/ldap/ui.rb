@@ -224,56 +224,102 @@ module Yast
           VBox(
             VSpacing(0.5),
             HSpacing(75),
-            Left(
-              CheckBox(
-                Id(:ldap_id_use_start_tls),
-                # checkbox label
-                _("Use TLS for Identity Resolve"),
-                ldap_id_use_start_tls
-              )
-            ),
-            VSpacing(0.4),
-            HBox(
-              InputField(
-                Id(:tls_cacertdir),
-                Opt(:hstretch),
-                # inputfield label
-                _("Cer&tificate Directory"),
-                tls_cacertdir
-              ),
-              VBox(
-                Bottom(
-                  # button label
-                  PushButton(Id(:br_tls_cacertdir), _("B&rowse"))
+            Frame(
+              _("Security configuration"),
+              HBox(
+                HSpacing(0.5),
+                VBox(
+                  VSpacing(0.4),
+                  RadioButtonGroup(
+                    Id(:protocols),
+                    Left(
+                      HVSquash(
+                        VBox(
+                          Left(
+                            RadioButton(
+                              Id(:tls),
+                              Opt(:notify),
+                              "START_TLS",
+                              false
+                            )
+                          ),
+                          Left(
+                            RadioButton(
+                              Id(:ssl),
+                              Opt(:notify),
+                              _("SSL only"),
+                              true
+                            )
+                          )
+                        )
+                      )
+                    )
+                  ),
+                  VSpacing(0.4)
                 )
               )
             ),
-            HBox(
-              InputField(
-                Id(:tls_cacertfile),
-                Opt(:hstretch),
-                # inputfield label
-                _("CA Cert&ificate File"),
-                tls_cacertfile
-              ),
-              VBox(
-                Bottom(
-                  # button label
-                  PushButton(Id(:br_tls_cacertfile), _("Brows&e"))
-                )
-              )
-            ),
-            HBox(
-              InputField(
-                Id(:url),
-                Opt(:hstretch),
-                # inputfield label
-                _("CA Certificate URL for Download")
-              ),
-              VBox(
-                Bottom(
-                  # push button label
-                  PushButton(Id(:import_cert), _("Do&wnload CA Certificate"))
+          # Left(
+          #   CheckBox(
+          #     Id(:ldap_id_use_start_tls),
+          #     # checkbox label
+          #     _("Use TLS for Identity Resolve"),
+          #     ldap_id_use_start_tls
+          #   )
+          # ),
+              #
+            VSpacing(0.5),
+
+            Frame(
+              _("Certificates"),
+              HBox(
+                HSpacing(0.5),
+                VBox(
+                  VSpacing(0.5),
+                  HBox(
+                    InputField(
+                      Id(:tls_cacertdir),
+                      Opt(:hstretch),
+                      # inputfield label
+                      _("Cer&tificate Directory"),
+                      tls_cacertdir
+                    )
+          #     VBox(
+          #       Bottom(
+          #         # button label
+          #         PushButton(Id(:br_tls_cacertdir), _("B&rowse"))
+          #       )
+          #     )
+          #   ),
+          #   HBox(
+          #     InputField(
+          #       Id(:tls_cacertfile),
+          #       Opt(:hstretch),
+          #       # inputfield label
+          #       _("CA Cert&ificate File"),
+          #       tls_cacertfile
+          #     ),
+          #     VBox(
+          #       Bottom(
+          #         # button label
+          #         PushButton(Id(:br_tls_cacertfile), _("Brows&e"))
+          #       )
+          #     )
+          #   ),
+          #   HBox(
+          #     InputField(
+          #       Id(:url),
+          #       Opt(:hstretch),
+          #       # inputfield label
+          #       _("CA Certificate URL for Download")
+          #     ),
+          #     VBox(
+          #       Bottom(
+          #         # push button label
+          #         PushButton(Id(:import_cert), _("Do&wnload CA Certificate"))
+          #       )
+          #     )
+                  )
                 )
               )
             ),
