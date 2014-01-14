@@ -210,12 +210,35 @@ module Yast
       true
     end
 
+    def switch_ssl_config_widgets mode
+      switch =
+        case mode
+          when :on  then true
+          when :off then false
+        end
+
+      widgets = [
+        :protocols,
+        :tls_cacertdir,
+        :br_tls_cacertdir,
+        :tls_cacertfile,
+        :br_tls_cacertfile,
+        :url,
+        :import_cert
+      ]
+      widgets.each do |widget_id|
+        UI.ChangeWidget(Id(widget_id), :Enabled, switch)
+      end
+      switch
+    end
+
     # Popup for TLS/SSL related stuff
     def SSLConfiguration
       certTmpFile = Builtins.sformat("%1/__LDAPcert.crt", Directory.tmpdir)
       tls_cacertdir = Ldap.tls_cacertdir
       tls_cacertfile = Ldap.tls_cacertfile
-      ldap_id_use_start_tls = Ldap.ldap_tls
+      use_tls = Ldap.ldap_tls
+      use_ldaps = Ldap.ldaps
 
       UI.OpenDialog(
         Opt(:decorated),
@@ -224,11 +247,16 @@ module Yast
             VSpacing(0.6),
             HSpacing(75),
             Frame(
-              _("TLS/SSL Configuration"),
+              _("SSL/TLS Configuration"),
               HBox(
                 VBox(
                   Left(
-                    CheckBox(Id(:test), "Use TLS/SSL", true)
+                    CheckBox(
+                      Id(:secure_ldap),
+                      Opt(:notify),
+                      "Use SSL/TLS",
+                      Ldap.use_secure_connection?
+                    )
                   ),
                   HSpacing(1),
                   VBox(
@@ -245,87 +273,79 @@ module Yast
                             Left(
                               HVSquash(
                                 VBox(
-                                ######## This is the original checkbox for
-                                # Left(
-                                #   CheckBox(
-                                #     Id(:ldap_id_use_start_tls),
-                                #     # checkbox label
-                                #     _("Use TLS for Identity Resolve"),
-                                #     ldap_id_use_start_tls
-                                #   )
-                                # ),
-                                Left(
-                                  RadioButton(
-                                    Id(:tls),
-                                    Opt(:notify),
-                                    _("StartTLS (TLS normally using port 389)"),
-                                    true
-                                  )
-                                ),
-                                Left(
-                                  RadioButton(
-                                    Id(:ssl),
-                                    Opt(:notify),
-                                    _("SSL only (LDAPS normally using port 636)"),
-                                    false
+                                  Left(
+                                    RadioButton(
+                                      Id(:use_tls),
+                                      Opt(:notify),
+                                      _("StartTLS (TLS by default using port 389)"),
+                                      use_tls
+                                    )
+                                  ),
+                                  Left(
+                                    RadioButton(
+                                      Id(:use_ldaps),
+                                      Opt(:notify),
+                                      _("SSL only (LDAPS by default using port 636)"),
+                                      use_ldaps
+                                    )
                                   )
                                 )
                               )
                             )
-                          )
-                        ),
-                        VSpacing(0.4)
+                          ),
+                          VSpacing(0.4)
+                        )
                       )
-                    )
-                  ),
-                  VSpacing(0.5),
-                  Frame(
-                    _("Certificates"),
-                    HBox(
-                      HSpacing(0.5),
-                      VBox(
-                        VSpacing(0.5),
-                        HBox(
-                          InputField(
-                            Id(:tls_cacertdir),
-                            Opt(:hstretch),
-                            # inputfield label
-                            _("Cer&tificate Directory"),
-                            tls_cacertdir
-                          ),
-                          VBox(
-                            Bottom(
-                              # button label
-                              PushButton(Id(:br_tls_cacertdir), _("B&rowse"))
+                    ),
+                    VSpacing(0.5),
+                    Frame(
+                      _("Certificates"),
+                      HBox(
+                        HSpacing(0.5),
+                        VBox(
+                          VSpacing(0.4),
+                          HBox(
+                            InputField(
+                              Id(:tls_cacertdir),
+                              Opt(:hstretch),
+                              # inputfield label
+                              _("Cer&tificate Directory"),
+                              tls_cacertdir
+                            ),
+                            VBox(
+                              Bottom(
+                                # button label
+                                PushButton(Id(:br_tls_cacertdir), _("B&rowse"))
+                              )
                             )
-                          )
-                        ),
-                        HBox(
-                          InputField(
-                            Id(:tls_cacertfile),
-                            Opt(:hstretch),
-                            # inputfield label
-                            _("CA Cert&ificate File"),
-                            tls_cacertfile
                           ),
-                          VBox(
-                            Bottom(
-                              # button label
-                              PushButton(Id(:br_tls_cacertfile), _("Brows&e"))
+                          HBox(
+                            InputField(
+                              Id(:tls_cacertfile),
+                              Opt(:hstretch),
+                              # inputfield label
+                              _("CA Cert&ificate File"),
+                              tls_cacertfile
+                            ),
+                            VBox(
+                              Bottom(
+                                # button label
+                                PushButton(Id(:br_tls_cacertfile), _("Brows&e"))
+                              )
                             )
-                          )
-                        ),
-                        HBox(
-                          InputField(
-                            Id(:url),
-                            Opt(:hstretch),
-                            # inputfield label
-                            _("CA Certificate URL for Download")
                           ),
-                          VBox(
-                            Bottom(
-                              # push button label
-                              PushButton(Id(:import_cert), _("Do&wnload CA Certificate"))
+                          HBox(
+                            InputField(
+                              Id(:url),
+                              Opt(:hstretch),
+                              # inputfield label
+                              _("CA Certificate URL for Download")
+                            ),
+                            VBox(
+                              Bottom(
+                                # push button label
+                                PushButton(Id(:import_cert), _("Do&wnload CA Certificate"))
+                              )
                             )
                           )
                         )
@@ -334,8 +354,7 @@ module Yast
                   )
                 )
               )
-            )
-          ),
+            ),
           ButtonBox(
             PushButton(Id(:ok), Label.OKButton),
             PushButton(Id(:cancel), Label.CancelButton)
@@ -345,10 +364,35 @@ module Yast
         HSpacing(1)
         )
       )
-      ret = :again
+
+      switch_ssl_config_widgets(:off) unless Ldap.use_secure_connection?
+
+      result = :again
+
       begin
-        ret = Convert.to_symbol(UI.UserInput)
-        if ret == :br_tls_cacertdir
+        result = Convert.to_symbol(UI.UserInput)
+
+        case result
+        when :secure_ldap
+          secure_ldap =
+            case UI.QueryWidget(Id(:secure_ldap), :Value)
+            when true
+              switch_ssl_config_widgets(:on)
+            when false
+              switch_ssl_config_widgets(:off)
+              use_ldaps = false
+              use_tls = false
+            end
+
+        when :use_tls
+          use_tls = true
+          use_ldaps = false
+
+        when :use_ldaps
+          use_ldaps = true
+          use_tls = false
+
+        when :br_tls_cacertdir
           dir = UI.AskForExistingDirectory(
             tls_cacertdir,
             # popup label
@@ -358,7 +402,8 @@ module Yast
             tls_cacertdir = dir
             UI.ChangeWidget(Id(:tls_cacertdir), :Value, dir)
           end
-        elsif ret == :br_tls_cacertfile
+
+        when :br_tls_cacertfile
           file = UI.AskForExistingFile(
             tls_cacertfile,
             "*.pem *.crt",
@@ -370,19 +415,8 @@ module Yast
             tls_cacertfile = file
             UI.ChangeWidget(Id(:tls_cacertfile), :Value, file)
           end
-        else
-          tls_cacertdir = Convert.to_string(
-            UI.QueryWidget(Id(:tls_cacertdir), :Value)
-          )
-          tls_cacertfile = Convert.to_string(
-            UI.QueryWidget(Id(:tls_cacertfile), :Value)
-          )
-          ldap_id_use_start_tls = UI.QueryWidget(
-            Id(:ldap_id_use_start_tls),
-            :Value
-          ) == true
-        end
-        if ret == :import_cert
+
+        when :import_cert
           dir = tls_cacertdir
           dir = "/etc/openldap/cacerts/" if dir == ""
 
@@ -450,17 +484,26 @@ module Yast
             Ldap.modified = true
           end
         end
-      end while ret != :ok && ret != :cancel
+
+      end while result != :ok && result != :cancel
 
       UI.CloseDialog
 
-      if ret == :ok
+      if result == :ok
         Ldap.tls_cacertfile = tls_cacertfile
         Ldap.tls_cacertdir = tls_cacertdir
-        Ldap.ldap_tls = ldap_id_use_start_tls
+
+        if secure_ldap && !(use_tls || use_ldaps)
+          Popup.Message(
+            _("Incorrect configuration, at least one security protocol is expected")
+          )
+        else
+          Ldap.ldap_tls = use_tls
+          Ldap.ldaps = use_ldaps
+        end
       end
 
-      ret == :ok
+      result == :ok
     end
 
     # The main dialog for ldap-client configuration

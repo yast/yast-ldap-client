@@ -108,6 +108,7 @@ module Yast
       @base_dn_changed = false
 
       @ldap_tls = true
+      @ldaps = false
 
       # CA certificates for server certificate verification
       # At least one of these are required if tls_checkpeer is "yes"
@@ -321,6 +322,12 @@ module Yast
       }
     end
 
+    def use_secure_connection?
+      @ldap_tls || @ldaps
+    end
+
+    alias_method :use_secure_connection, :use_secure_connection?
+
     #----------------------------------------------------------------
 
     # If the base DN has changed from a nonempty one, it may only be
@@ -408,6 +415,7 @@ module Yast
 
       @start            = settings.fetch("start_ldap", false)
       @ldap_tls         = settings.fetch("ldap_tls", false)
+      @ldaps            = settings.fetch("ldaps", false)
       @login_enabled    = settings.fetch("login_enabled", true)
       @_start_autofs    = settings.fetch("start_autofs", false)
       @file_server      = settings.fetch("file_server", false)
@@ -467,6 +475,7 @@ module Yast
         "ldap_server"      => @server,
         "ldap_domain"      => @base_dn,
         "ldap_tls"         => @ldap_tls,
+        "ldaps"            => @ldaps,
         "bind_dn"          => @bind_dn,
         "file_server"      => @file_server,
         "base_config_dn"   => @base_config_dn,
@@ -535,7 +544,7 @@ module Yast
       # summary (use TLS?)
       summary = Summary.AddLine(
         summary,
-        @ldap_tls ? _("Yes") : Summary.NotConfigured
+        @ldap_tls || @ldaps ? _("Yes") : Summary.NotConfigured
       )
 
       # summary item
@@ -588,9 +597,15 @@ module Yast
         # summary
         summary = Ops.add(
           Ops.add(summary, "<br>"),
-          _("LDAP TLS/SSL Configured")
+          _("LDAP TLS Configured")
         )
       end
+
+      if @ldaps
+        summary << "<br/>"
+        summary + _("LDAP SSL Configured")
+      end
+
       if @start && @sssd
         # summary
         summary = Ops.add(
@@ -746,14 +761,21 @@ module Yast
     # Read values of LDAP hosts from ldap.conf
     # get them from 'uri' or 'host' values
     def ReadLdapHosts
+      Builtins.y2milestone "Reading ldap hosts.."
       ret = ""
       uri = ReadLdapConfEntry("uri", "")
       if uri == ""
         ret = ReadLdapConfEntry("host", "")
       else
+        detect_ldaps(uri)
         ret = uri2servers(uri)
       end
       ret
+    end
+
+    def detect_ldaps uri
+      @ldaps = true if uri.match(/\Aldaps/)
+      Builtins.y2milestone "@ldaps is set to #@ldaps"
     end
 
     # Reads LDAP settings from the SCR
@@ -1881,7 +1903,7 @@ module Yast
       end
 
       if Builtins.contains(ocs, "susegrouptemplate")
-        return ["top", "posixGroup", "groupOfNames"] 
+        return ["top", "posixGroup", "groupOfNames"]
         # TODO sometimes there is groupofuniquenames...
       elsif Builtins.contains(ocs, "suseusertemplate")
         return ["top", "posixAccount", "shadowAccount", "InetOrgPerson"]
@@ -2643,7 +2665,7 @@ module Yast
           if !WriteLDAP({ @base_config_dn => config_object })
             Builtins.y2error("%1 cannot be created", @base_config_dn)
           end
-        end 
+        end
         #TODO fail?
       end
 
@@ -2934,7 +2956,7 @@ module Yast
           "tls_checkpeer",
           @tls_checkpeer == "yes" ? nil : @tls_checkpeer
         )
-        WriteNscdCache(@start && @sssd) unless oes
+        WriteNscdCache(@start && @sssd) unless @oes
       end
       if @start # ldap used for authentication
         # ---------- correct pam_password value for Novell eDirectory
@@ -3368,6 +3390,7 @@ module Yast
     publish :variable => :old_base_dn, :type => "string", :private => true
     publish :variable => :base_dn_changed, :type => "boolean", :private => true
     publish :variable => :ldap_tls, :type => "boolean"
+    publish :variable => :ldaps, :type => "boolean"
     publish :variable => :tls_cacertdir, :type => "string"
     publish :variable => :tls_cacertfile, :type => "string"
     publish :variable => :tls_checkpeer, :type => "string"
@@ -3506,6 +3529,7 @@ module Yast
     publish :function => :SetAnonymous, :type => "void (boolean)"
     publish :function => :SetGUI, :type => "void (boolean)"
     publish :function => :RestartSSHD, :type => "void (boolean)"
+    publish :function => :use_secure_connection, :type => "boolean ()"
   end
 
   Ldap = LdapClass.new
