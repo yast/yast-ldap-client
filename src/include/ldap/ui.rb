@@ -224,7 +224,8 @@ module Yast
         :tls_cacertfile,
         :br_tls_cacertfile,
         :url,
-        :import_cert
+        :import_cert,
+        :request_server_certificate
       ]
       widgets.each do |widget_id|
         UI.ChangeWidget(Id(widget_id), :Enabled, switch)
@@ -238,6 +239,7 @@ module Yast
       tls_cacertfile = Ldap.tls_cacertfile
       use_tls = Ldap.ldap_tls
       use_ldaps = Ldap.ldaps
+      request_server_certificate = Ldap.request_server_certificate
 
       UI.OpenDialog(
         Opt(:decorated),
@@ -276,7 +278,7 @@ module Yast
                                     RadioButton(
                                       Id(:use_tls),
                                       Opt(:notify),
-                                      _("StartTLS (TLS by default using port 389)"),
+                                      _("StartTLS (default port 389)"),
                                       use_tls
                                     )
                                   ),
@@ -284,15 +286,35 @@ module Yast
                                     RadioButton(
                                       Id(:use_ldaps),
                                       Opt(:notify),
-                                      _("SSL only (LDAPS by default using port 636)"),
+                                      _("LDAPS (default port 636)"),
                                       use_ldaps
                                     )
-                                  )
+                                  ),
                                 )
                               )
                             )
                           ),
                           VSpacing(0.4)
+                        )
+                      )
+                    ),
+                    VSpacing(0.5),
+                    Frame(
+                      _("TLS Options"),
+                      HBox(
+                        HSpacing(0.5),
+                        VBox(
+                          VSpacing(0.4),
+                          HBox(
+                            Left(
+                              CheckBox(
+                                Id(:request_server_certificate),
+                                Opt(:notify),
+                                _("Request server certificate"),
+                                request_server_certificate == 'demand'
+                              )
+                            )
+                          )
                         )
                       )
                     ),
@@ -392,6 +414,13 @@ module Yast
           use_ldaps = true
           use_tls = false
           Ldap.modified = true
+
+        when :request_server_certificate
+          request_server_certificate =
+            case UI.QueryWidget(Id(:request_server_certificate), :Value)
+              when true  then 'demand'
+              when false then 'allow'
+            end
 
         when :br_tls_cacertdir
           dir = UI.AskForExistingDirectory(
@@ -493,15 +522,9 @@ module Yast
       if result == :ok
         Ldap.tls_cacertfile = tls_cacertfile
         Ldap.tls_cacertdir = tls_cacertdir
-
-        if secure_ldap && !(use_tls || use_ldaps)
-          Popup.Message(
-            _("Incorrect configuration, at least one security protocol is expected")
-          )
-        else
-          Ldap.ldap_tls = use_tls
-          Ldap.ldaps = use_ldaps
-        end
+        Ldap.request_server_certificate = request_server_certificate
+        Ldap.ldap_tls = use_tls
+        Ldap.ldaps = use_ldaps
       end
 
       result == :ok
