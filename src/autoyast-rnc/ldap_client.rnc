@@ -9,6 +9,7 @@ ldap = element ldap {
     ldap_domain? &
     ldap_server? &
     ldap_tls? &
+    ldaps? &
     create_ldap? &
     start_ldap? &
     member_attribute? &
@@ -43,6 +44,7 @@ tls_cacertfile  = element tls_cacertfile { text }
 login_enabled = element login_enabled { BOOLEAN }
 file_server = element file_server { BOOLEAN }
 ldap_tls = element ldap_tls { BOOLEAN }
+ldaps = element ldaps { BOOLEAN }
 start_ldap = element start_ldap { BOOLEAN }
 create_ldap = element create_ldap { BOOLEAN }
 sssd = element sssd { BOOLEAN }

@@ -229,7 +229,6 @@ module Yast
       widgets.each do |widget_id|
         UI.ChangeWidget(Id(widget_id), :Enabled, switch)
       end
-      switch
     end
 
     # Popup for TLS/SSL related stuff
@@ -374,23 +373,25 @@ module Yast
 
         case result
         when :secure_ldap
-          secure_ldap =
-            case UI.QueryWidget(Id(:secure_ldap), :Value)
-            when true
-              switch_ssl_config_widgets(:on)
-            when false
-              switch_ssl_config_widgets(:off)
-              use_ldaps = false
-              use_tls = false
-            end
+          secure_ldap = UI.QueryWidget(Id(:secure_ldap), :Value)
+          case secure_ldap
+          when true
+            switch_ssl_config_widgets(:on)
+          when false
+            switch_ssl_config_widgets(:off)
+            use_ldaps = false
+            use_tls = false
+          end
 
         when :use_tls
           use_tls = true
           use_ldaps = false
+          Ldap.modified = true
 
         when :use_ldaps
           use_ldaps = true
           use_tls = false
+          Ldap.modified = true
 
         when :br_tls_cacertdir
           dir = UI.AskForExistingDirectory(
@@ -492,7 +493,8 @@ module Yast
       if result == :ok
         Ldap.tls_cacertfile = tls_cacertfile
         Ldap.tls_cacertdir = tls_cacertdir
-
+Builtins.y2milestone use_ldaps.to_s
+Builtins.y2milestone use_tls.to_s
         if secure_ldap && !(use_tls || use_ldaps)
           Popup.Message(
             _("Incorrect configuration, at least one security protocol is expected")

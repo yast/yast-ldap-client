@@ -544,7 +544,13 @@ module Yast
       # summary (use TLS?)
       summary = Summary.AddLine(
         summary,
-        @ldap_tls || @ldaps ? _("Yes") : Summary.NotConfigured
+        @ldap_tls ? _("Yes") : Summary.NotConfigured
+      )
+
+      summary = Summary.AddHeader(summary, _("LDAPS"))
+      summary = Summary.AddLine(
+        summary,
+        @ldaps ? _("Yes") : Summary.NotConfigured
       )
 
       # summary item
@@ -603,7 +609,7 @@ module Yast
 
       if @ldaps
         summary << "<br/>"
-        summary + _("LDAP SSL Configured")
+        summary + _("LDAPS Configured")
       end
 
       if @start && @sssd
@@ -774,8 +780,11 @@ module Yast
     end
 
     def detect_ldaps uri
-      @ldaps = true if uri.match(/\Aldaps/)
-      Builtins.y2milestone "@ldaps is set to #@ldaps"
+      @ldaps = !!(uri.match(/\Aldaps/))
+    end
+
+    def detect_uri_scheme
+      @ldaps ? 'ldaps://' : 'ldap://'
     end
 
     # Reads LDAP settings from the SCR
@@ -2287,7 +2296,7 @@ module Yast
 
         uri = Builtins.mergestring(
           Builtins.maplist(Builtins.splitstring(@server, " \t")) do |u|
-            Ops.add("ldap://", u)
+            detect_uri_scheme + u
           end,
           " "
         )
@@ -2373,7 +2382,7 @@ module Yast
 
       uri = Builtins.mergestring(
         Builtins.maplist(Builtins.splitstring(@server, " \t")) do |s|
-          Builtins.sformat("ldap://%1", s)
+          detect_uri_scheme + s
         end,
         ","
       )
@@ -2890,7 +2899,7 @@ module Yast
         WriteLdapConfEntry("host", nil)
         uri = Builtins.mergestring(
           Builtins.maplist(Builtins.splitstring(@server, " \t")) do |u|
-            Ops.add("ldap://", u)
+            detect_uri_scheme + u
           end,
           " "
         )
@@ -2908,6 +2917,8 @@ module Yast
 
         if @ldap_tls
           WriteLdapConfEntry("ssl", "start_tls")
+        elsif @ldaps
+          WriteLdapConfEntry("ssl", nil)
         else
           WriteLdapConfEntry("ssl", "no")
         end
