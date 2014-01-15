@@ -767,7 +767,6 @@ module Yast
     # Read values of LDAP hosts from ldap.conf
     # get them from 'uri' or 'host' values
     def ReadLdapHosts
-      Builtins.y2milestone "Reading ldap hosts.."
       ret = ""
       uri = ReadLdapConfEntry("uri", "")
       if uri == ""

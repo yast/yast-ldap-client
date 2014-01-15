@@ -493,8 +493,7 @@ module Yast
       if result == :ok
         Ldap.tls_cacertfile = tls_cacertfile
         Ldap.tls_cacertdir = tls_cacertdir
-Builtins.y2milestone use_ldaps.to_s
-Builtins.y2milestone use_tls.to_s
+
         if secure_ldap && !(use_tls || use_ldaps)
           Popup.Message(
             _("Incorrect configuration, at least one security protocol is expected")
