@@ -409,11 +409,13 @@ module Yast
           use_tls = true
           use_ldaps = false
           Ldap.modified = true
+          UI.ChangeWidget(Id(:request_server_certificate), :Value, true)
 
         when :use_ldaps
           use_ldaps = true
           use_tls = false
           Ldap.modified = true
+          UI.ChangeWidget(Id(:request_server_certificate), :Value, true)
 
         when :request_server_certificate
           request_server_certificate =

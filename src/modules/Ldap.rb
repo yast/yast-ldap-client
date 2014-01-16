@@ -2250,18 +2250,8 @@ module Yast
     # @return modified?
     def WriteOpenLdapConf
       return false if !Package.Installed("openldap2-client")
-
-      uri = get_openldap('URI')
-
-      base = get_openldap('BASE')
-
-      uri = Builtins.mergestring(
-        Builtins.maplist(Builtins.splitstring(@server, " \t")) do |u|
-          detect_uri_scheme + u
-        end,
-        " "
-      )
-      set_openldap('URI', uri)
+      uris = @server.split.map {|u| "#{detect_uri_scheme}#{u}" }.join(' ')
+      set_openldap('URI', uris)
       set_openldap('HOST', nil)
       set_openldap('BASE', @base_dn)
 
@@ -2277,12 +2267,6 @@ module Yast
         path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".#{key}"),
         value.nil? ? nil : [value]
       )
-    end
-
-    def get_openldap key
-      result = read_openldap_config(key.upcase)
-      return result unless result.empty?
-      read_openldap_config(key.downcase)
     end
 
     def read_openldap_config entry
