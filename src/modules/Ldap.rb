@@ -611,7 +611,7 @@ module Yast
       end
 
       if @ldaps
-        summary + "<br/>" + _("LDAPS Configured")
+        summary << "<br/>" << _("LDAPS Configured")
       end
 
       if @start && @sssd

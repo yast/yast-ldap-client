@@ -217,7 +217,7 @@ module Yast
           when :off then false
         end
 
-      widgets = [
+      [
         :protocols,
         :tls_cacertdir,
         :br_tls_cacertdir,
@@ -226,10 +226,7 @@ module Yast
         :url,
         :import_cert,
         :request_server_certificate
-      ]
-      widgets.each do |widget_id|
-        UI.ChangeWidget(Id(widget_id), :Enabled, switch)
-      end
+      ].each {|widget_id| UI.ChangeWidget(Id(widget_id), :Enabled, switch) }
     end
 
     # Popup for TLS/SSL related stuff
