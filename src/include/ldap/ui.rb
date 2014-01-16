@@ -278,7 +278,7 @@ module Yast
                                     RadioButton(
                                       Id(:use_tls),
                                       Opt(:notify),
-                                      _("StartTLS (default port 389)"),
+                                      _("StartTLS"),
                                       use_tls
                                     )
                                   ),
@@ -286,7 +286,7 @@ module Yast
                                     RadioButton(
                                       Id(:use_ldaps),
                                       Opt(:notify),
-                                      _("LDAPS (default port 636)"),
+                                      _("LDAPS"),
                                       use_ldaps
                                     )
                                   ),
@@ -574,9 +574,24 @@ module Yast
             "to encrypt your communication with the LDAP server. You may download a CA\n" +
             "certificate file in PEM format from a given URL.</p>\n"
         ) +
+        _(
+          "<p>A TLS session may require special client configuration. One of the config
+           options is TLS_REQCERT which specifies what checks to perform on server certificates.
+           The value is the <b>level</b> that can be specified with keywords <i>never</i>, <i>allow</i>,
+           <i>try</i> and <i>demand</i>. In the <b>SSL/TLS Configuration</b> dialog there is
+           the option <b>Request server certificate</b> which will set the TLS_REQCERT
+           configuration option to <i>demand</i> if it's enabled or to <i>allow</i> if it's disabled.</p>\n"
+        ) +
+        _(
+          "<p>In addition to LDAP URLs and TLS/SSL encryption, LDAP supports LDAPS URLs.
+          LDAPS URLs use SSL connections instead of plain connections. They have a syntax
+          similar to LDAP URLs except the schemes are different and the default port for LDAPS URLs
+          is 636 instead of 389.</p>\n"
+        ) +
         # help text 8/9
         _(
-          "<p>To configure advanced LDAP settings, click\n<b>Advanced Configuration</b>.</p>\n"
+          "<p>To configure advanced LDAP settings, click\n<b>Advanced Configuration</b>.</p>\n" +
+          "<p>To configure security settings, click\n<b>SSL/TLS Configuration</b>.</p>\n"
         )
       # help text 9/9 (additional)
       autofs_help_text = _(
