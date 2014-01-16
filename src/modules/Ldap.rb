@@ -2255,9 +2255,15 @@ module Yast
       set_openldap('HOST', nil)
       set_openldap('BASE', @base_dn)
 
-      set_openldap('TLS_REQCERT', @request_server_certificate)
-      set_openldap('TLS_CACERTDIR', @tls_cacertdir.empty? ? nil : @tls_cacertdir)
-      set_openldap('TLS_CACERT', @tls_cacertfile.empty? ? nil : @tls_cacertfile)
+      if @ldaps || @ldap_tls
+        set_openldap('TLS_REQCERT', @request_server_certificate)
+        set_openldap('TLS_CACERTDIR', @tls_cacertdir.empty? ? nil : @tls_cacertdir)
+        set_openldap('TLS_CACERT', @tls_cacertfile.empty? ? nil : @tls_cacertfile)
+      else
+        set_openldap('TLS_REQCERT', nil)
+        set_openldap('TLS_CACERTDIR', nil)
+        set_openldap('TLS_CACERT', nil)
+      end
 
       Builtins.y2milestone("file /etc/openldap/ldap.conf was modified")
     end
