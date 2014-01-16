@@ -27,6 +27,7 @@
 #
 # $Id$
 require "yast"
+require "uri"
 
 module Yast
   class LdapClass < Module
@@ -610,8 +611,7 @@ module Yast
       end
 
       if @ldaps
-        summary << "<br/>"
-        summary + _("LDAPS Configured")
+        summary + "<br/>" + _("LDAPS Configured")
       end
 
       if @start && @sssd
@@ -781,7 +781,8 @@ module Yast
     end
 
     def detect_ldaps uri
-      @ldaps = !!(uri.match(/\Aldaps/))
+      uri = URI.parse(uri)
+      @ldaps = uri.scheme == 'ldaps'
       @request_server_certificate = read_openldap_config('TLS_REQCERT').first
     end
 
@@ -2250,7 +2251,7 @@ module Yast
     # @return modified?
     def WriteOpenLdapConf
       return false if !Package.Installed("openldap2-client")
-      uris = @server.split.map {|u| "#{detect_uri_scheme}#{u}" }.join(' ')
+      uris = @server.split.map {|u| detect_uri_scheme + u }.join(' ')
       set_openldap('URI', uris)
       set_openldap('HOST', nil)
       set_openldap('BASE', @base_dn)

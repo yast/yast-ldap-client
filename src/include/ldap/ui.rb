@@ -255,7 +255,7 @@ module Yast
                     CheckBox(
                       Id(:secure_ldap),
                       Opt(:notify),
-                      "Use SSL/TLS",
+                      _("Use SSL/TLS"),
                       Ldap.use_secure_connection?
                     )
                   ),
@@ -418,11 +418,8 @@ module Yast
           UI.ChangeWidget(Id(:request_server_certificate), :Value, true)
 
         when :request_server_certificate
-          request_server_certificate =
-            case UI.QueryWidget(Id(:request_server_certificate), :Value)
-              when true  then 'demand'
-              when false then 'allow'
-            end
+          widget_checked = UI.QueryWidget(Id(:request_server_certificate), :Value)
+          request_server_certificate = widget_checked ? 'demand' : 'allow'
 
         when :br_tls_cacertdir
           dir = UI.AskForExistingDirectory(
