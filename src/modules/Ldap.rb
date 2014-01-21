@@ -27,6 +27,7 @@
 #
 # $Id$
 require "yast"
+require "uri"
 
 module Yast
   class LdapClass < Module
@@ -108,6 +109,9 @@ module Yast
       @base_dn_changed = false
 
       @ldap_tls = true
+      @ldaps = false
+      # Openldap configuration option TLS_REQCERT
+      @request_server_certificate = 'demand'
 
       # CA certificates for server certificate verification
       # At least one of these are required if tls_checkpeer is "yes"
@@ -321,6 +325,12 @@ module Yast
       }
     end
 
+    def use_secure_connection?
+      @ldap_tls || @ldaps
+    end
+
+    alias_method :use_secure_connection, :use_secure_connection?
+
     #----------------------------------------------------------------
 
     # If the base DN has changed from a nonempty one, it may only be
@@ -408,6 +418,7 @@ module Yast
 
       @start            = settings.fetch("start_ldap", false)
       @ldap_tls         = settings.fetch("ldap_tls", false)
+      @ldaps            = settings.fetch("ldaps", false)
       @login_enabled    = settings.fetch("login_enabled", true)
       @_start_autofs    = settings.fetch("start_autofs", false)
       @file_server      = settings.fetch("file_server", false)
@@ -467,6 +478,7 @@ module Yast
         "ldap_server"      => @server,
         "ldap_domain"      => @base_dn,
         "ldap_tls"         => @ldap_tls,
+        "ldaps"            => @ldaps,
         "bind_dn"          => @bind_dn,
         "file_server"      => @file_server,
         "base_config_dn"   => @base_config_dn,
@@ -538,6 +550,12 @@ module Yast
         @ldap_tls ? _("Yes") : Summary.NotConfigured
       )
 
+      summary = Summary.AddHeader(summary, _("LDAPS"))
+      summary = Summary.AddLine(
+        summary,
+        @ldaps ? _("Yes") : Summary.NotConfigured
+      )
+
       # summary item
       summary = Summary.AddHeader(
         summary,
@@ -588,9 +606,14 @@ module Yast
         # summary
         summary = Ops.add(
           Ops.add(summary, "<br>"),
-          _("LDAP TLS/SSL Configured")
+          _("LDAP TLS Configured")
         )
       end
+
+      if @ldaps
+        summary << "<br/>" << _("LDAPS Configured")
+      end
+
       if @start && @sssd
         # summary
         summary = Ops.add(
@@ -751,9 +774,20 @@ module Yast
       if uri == ""
         ret = ReadLdapConfEntry("host", "")
       else
+        detect_ldaps(uri)
         ret = uri2servers(uri)
       end
       ret
+    end
+
+    def detect_ldaps uri
+      uri = URI.parse(uri)
+      @ldaps = uri.scheme == 'ldaps'
+      @request_server_certificate = read_openldap_config('TLS_REQCERT').first
+    end
+
+    def detect_uri_scheme
+      @ldaps ? 'ldaps://' : 'ldap://'
     end
 
     # Reads LDAP settings from the SCR
@@ -1881,7 +1915,7 @@ module Yast
       end
 
       if Builtins.contains(ocs, "susegrouptemplate")
-        return ["top", "posixGroup", "groupOfNames"] 
+        return ["top", "posixGroup", "groupOfNames"]
         # TODO sometimes there is groupofuniquenames...
       elsif Builtins.contains(ocs, "suseusertemplate")
         return ["top", "posixAccount", "shadowAccount", "InetOrgPerson"]
@@ -2216,82 +2250,34 @@ module Yast
     # ldap client utilities (like ldapsearch)
     # @return modified?
     def WriteOpenLdapConf
-      write_openldap_conf = @openldap_modified
-
       return false if !Package.Installed("openldap2-client")
+      uris = @server.split.map {|u| detect_uri_scheme + u }.join(' ')
+      set_openldap('URI', uris)
+      set_openldap('HOST', nil)
+      set_openldap('BASE', @base_dn)
 
-      out = Convert.to_map(
-        SCR.Execute(path(".target.bash_output"), "/bin/rpm -V openldap2-client")
-      )
-
-      open_host = []
-      open_uri = Convert.to_list(
-        SCR.Read(path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".uri"))
-      )
-      if open_uri == []
-        open_uri = Convert.to_list(
-          SCR.Read(path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".URI"))
-        )
-      end
-      if open_uri == []
-        open_host = Convert.to_list(
-          SCR.Read(path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".host"))
-        )
+      if @ldaps || @ldap_tls
+        set_openldap('TLS_REQCERT', @request_server_certificate)
+        set_openldap('TLS_CACERTDIR', @tls_cacertdir.empty? ? nil : @tls_cacertdir)
+        set_openldap('TLS_CACERT', @tls_cacertfile.empty? ? nil : @tls_cacertfile)
       else
-        open_host = [uri2servers(Ops.get_string(open_uri, 0, ""))]
+        set_openldap('TLS_REQCERT', nil)
+        set_openldap('TLS_CACERTDIR', nil)
+        set_openldap('TLS_CACERT', nil)
       end
-      open_base = Convert.to_list(
-        SCR.Read(path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".base"))
+
+      Builtins.y2milestone("file /etc/openldap/ldap.conf was modified")
+    end
+
+    def set_openldap key, value
+      SCR.Write(
+        path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".#{key}"),
+        value.nil? ? nil : [value]
       )
+    end
 
-      # if the config file was not modified by user yet
-      if !Builtins.issubstring(
-          Ops.get_string(out, "stdout", ""),
-          "/etc/openldap/ldap.conf"
-        )
-        write_openldap_conf = true
-      # if there are same values as in /etc/ldap.conf
-      elsif @old_server == Ops.get_string(open_host, 0, "") &&
-          @old_base_dn == Ops.get_string(open_base, 0, "")
-        write_openldap_conf = true
-      end
-
-      if write_openldap_conf
-        # update ldap.conf
-        SCR.Write(
-          path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".host"),
-          nil
-        )
-
-        uri = Builtins.mergestring(
-          Builtins.maplist(Builtins.splitstring(@server, " \t")) do |u|
-            Ops.add("ldap://", u)
-          end,
-          " "
-        )
-
-        SCR.Write(
-          path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".uri"),
-          [uri]
-        )
-
-        SCR.Write(
-          path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".base"),
-          [@base_dn]
-        )
-
-        SCR.Write(
-          path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".TLS_CACERTDIR"),
-          @tls_cacertdir == "" ? nil : [@tls_cacertdir]
-        )
-        SCR.Write(
-          path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".TLS_CACERT"),
-          @tls_cacertfile == "" ? nil : [@tls_cacertfile]
-        )
-
-        Builtins.y2milestone("file /etc/openldap/ldap.conf was modified")
-      end
-      write_openldap_conf
+    def read_openldap_config entry
+      SCR.Read(path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".#{entry}"))
     end
 
     # Write updated /etc/sssd/sssd.conf file
@@ -2351,7 +2337,7 @@ module Yast
 
       uri = Builtins.mergestring(
         Builtins.maplist(Builtins.splitstring(@server, " \t")) do |s|
-          Builtins.sformat("ldap://%1", s)
+          detect_uri_scheme + s
         end,
         ","
       )
@@ -2643,7 +2629,7 @@ module Yast
           if !WriteLDAP({ @base_config_dn => config_object })
             Builtins.y2error("%1 cannot be created", @base_config_dn)
           end
-        end 
+        end
         #TODO fail?
       end
 
@@ -2868,7 +2854,7 @@ module Yast
         WriteLdapConfEntry("host", nil)
         uri = Builtins.mergestring(
           Builtins.maplist(Builtins.splitstring(@server, " \t")) do |u|
-            Ops.add("ldap://", u)
+            detect_uri_scheme + u
           end,
           " "
         )
@@ -2886,6 +2872,8 @@ module Yast
 
         if @ldap_tls
           WriteLdapConfEntry("ssl", "start_tls")
+        elsif @ldaps
+          WriteLdapConfEntry("ssl", nil)
         else
           WriteLdapConfEntry("ssl", "no")
         end
@@ -2934,7 +2922,7 @@ module Yast
           "tls_checkpeer",
           @tls_checkpeer == "yes" ? nil : @tls_checkpeer
         )
-        WriteNscdCache(@start && @sssd) unless oes
+        WriteNscdCache(@start && @sssd) unless @oes
       end
       if @start # ldap used for authentication
         # ---------- correct pam_password value for Novell eDirectory
@@ -3368,6 +3356,8 @@ module Yast
     publish :variable => :old_base_dn, :type => "string", :private => true
     publish :variable => :base_dn_changed, :type => "boolean", :private => true
     publish :variable => :ldap_tls, :type => "boolean"
+    publish :variable => :ldaps, :type => "boolean"
+    publish :variable => :request_server_certificate, :type => "string"
     publish :variable => :tls_cacertdir, :type => "string"
     publish :variable => :tls_cacertfile, :type => "string"
     publish :variable => :tls_checkpeer, :type => "string"
@@ -3492,7 +3482,7 @@ module Yast
     publish :function => :CommitTemplates, :type => "boolean (map)"
     publish :function => :WriteToLDAP, :type => "map (map)"
     publish :function => :WriteLDAP, :type => "boolean (map)"
-    publish :function => :WriteOpenLdapConf, :type => "boolean ()"
+    publish :function => :WriteOpenLdapConf, :type => "void ()"
     publish :function => :WriteSSSDConfig, :type => "boolean ()"
     publish :function => :WritePlusLine, :type => "boolean (boolean)"
     publish :function => :CheckOrderOfCreation, :type => "boolean ()"
@@ -3506,6 +3496,7 @@ module Yast
     publish :function => :SetAnonymous, :type => "void (boolean)"
     publish :function => :SetGUI, :type => "void (boolean)"
     publish :function => :RestartSSHD, :type => "void (boolean)"
+    publish :function => :use_secure_connection, :type => "boolean ()"
   end
 
   Ldap = LdapClass.new
