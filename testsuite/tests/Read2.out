@@ -1,4 +1,5 @@
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."uri" "ldap://localhost:333"
+Read	.etc.ldap_conf.v."/etc/openldap/ldap.conf".TLS_REQCERT nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."base" "dc=suse,dc=cz"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."ssl" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."tls_cacertdir" "/etc/openldap/cacerts/"
@@ -31,6 +32,7 @@ Dump	nss: -dc=suse,dc=cz-
 Dump	nss: -ou=group,dc=suse,dc=cz-
 Dump	nss: -dc=suse,dc=cz-
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."uri" "ldap://localhost:333"
+Read	.etc.ldap_conf.v."/etc/openldap/ldap.conf".TLS_REQCERT nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."base" "dc=suse,dc=cz"
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."ssl" nil
 Read	.etc.ldap_conf.v."/etc/ldap.conf"."tls_cacertdir" "/etc/openldap/cacerts/"

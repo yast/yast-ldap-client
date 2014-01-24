@@ -34,6 +34,9 @@ module Yast
                 "tls_cacertfile"  => nil,
                 "tls_checkpeer"   => "no",
                 "uri"             => "ldap://localhost:333"
+              },
+            "/etc/openldap/ldap.conf" => {
+                "TLS_REQCERT" => 'demand'
               }
             }
           },

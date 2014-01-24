@@ -31,6 +31,8 @@ require "uri"
 
 module Yast
   class LdapClass < Module
+    TLS_REQCERT_DEFAULT = 'demand'
+
     def main
       Yast.import "UI"
       textdomain "ldap-client"
@@ -61,7 +63,6 @@ module Yast
 
       # DN of base configuration object
       @base_config_dn = ""
-
 
       Yast.include self, "ldap/routines.rb"
 
@@ -111,7 +112,7 @@ module Yast
       @ldap_tls = true
       @ldaps = false
       # Openldap configuration option TLS_REQCERT
-      @request_server_certificate = 'demand'
+      @request_server_certificate = TLS_REQCERT_DEFAULT
 
       # CA certificates for server certificate verification
       # At least one of these are required if tls_checkpeer is "yes"
@@ -783,7 +784,8 @@ module Yast
     def detect_ldaps uri
       uri = URI.parse(uri)
       @ldaps = uri.scheme == 'ldaps'
-      @request_server_certificate = read_openldap_config('TLS_REQCERT').first
+      current_tls_reqcert = read_openldap_config('TLS_REQCERT')
+      @request_server_certificate = current_tls_reqcert || TLS_REQCERT_DEFAULT
     end
 
     def detect_uri_scheme
@@ -2277,7 +2279,12 @@ module Yast
     end
 
     def read_openldap_config entry
-      SCR.Read(path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".#{entry}"))
+      result = SCR.Read(path(".etc.ldap_conf.v.\"/etc/openldap/ldap.conf\".#{entry}"))
+      case result
+        when Array then result.first
+        when String then result
+        else result
+      end
     end
 
     # Write updated /etc/sssd/sssd.conf file
