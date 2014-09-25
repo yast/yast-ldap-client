@@ -1,9 +1,0 @@
-Return	uid=root
-Return	root
-Return	cn=admin,dc=suse,dc=cz
-Return	uid=root
-Return	root
-Return	cn=admin
-Return	root
-Return	root
-Return	cn=admin

@@ -1,1 +1,0 @@
-Return	$["default_values":$["homeDirectory":"/home/%uid", "loginShell":"/bin/bash", "novalue":"", "testvalue":"first=second"], "suseDefaultValue":["homeDirectory=/home/%uid", "loginShell=/bin/bash", "testvalue=first=second", "novalue"]]
