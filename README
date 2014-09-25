@@ -1,2 +1,2 @@
-yast2-config-ldap_client is part of YaST2
-See the file COPYRIGHT.english for license terms
+The development of this module was stopped. Last SUSE versions usig this module are: openSUSE 13.1 and SLES11 SPXX.
+This module was merged with yast-kerberos-client to yast-auth-client.
