@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Wed Jun 21 16:19:58 CEST 2017 - schubi@suse.de
+
+- AutoYaST configuration mode: Reading default values from
+  /etc/nsswitch.conf before writing settings to system.
+  (bnc#1043915)
+- 2.17.39
+
+-------------------------------------------------------------------
 Fri Nov 22 13:24:03 CET 2013 - jsuchome@suse.cz
 
 - do not change nscd cache value for OES (bnc#848051)
