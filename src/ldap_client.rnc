@@ -18,7 +18,18 @@ ldap = element ldap {
     nss_base_shadow? &
     pam_password? &
     start_autofs? &
-    login_enabled?
+    login_enabled? &
+    mkhomedir? &
+    sssd? &
+    sssd_with_krb? &
+    sssd_ldap_schema? &
+    sssd_enumerate? &
+    sssd_cache_credentials? &
+    tls_checkpeer? &
+    tls_cacertdir? &
+    tls_cacertfile? &
+    krb5_realm? &
+    krb5_kdcip?
 }
 ldap_domain = element ldap_domain { text }
 ldap_server = element ldap_server { text }
@@ -30,6 +41,12 @@ nss_base_passwd = element nss_base_passwd { text }
 nss_base_shadow = element nss_base_shadow { text }
 pam_password    = element pam_password    { text }
 login_enabled = element login_enabled { BOOLEAN }
+mkhomedir = element mkhomedir { BOOLEAN }
+sssd = element sssd { BOOLEAN }
+sssd_with_krb = element sssd_with_krb { BOOLEAN }
+sssd_ldap_schema = element sssd_ldap_schema { text }
+sssd_enumerate = element sssd_enumerate { BOOLEAN }
+sssd_cache_credentials = element sssd_cache_credentials { BOOLEAN }
 
 file_server = element file_server { BOOLEAN }
 ldap_tls = element ldap_tls { BOOLEAN }
@@ -38,3 +55,9 @@ start_ldap = element start_ldap { BOOLEAN }
 create_ldap = element create_ldap { BOOLEAN }
 start_autofs = element start_autofs { BOOLEAN }
 
+tls_checkpeer = element tls_checkpeer { text }
+tls_cacertdir = element tls_cacertdir { text }
+tls_cacertfile = element tls_cacertfile { text }
+
+krb5_realm = element krb5_realm { text }
+krb5_kdcip = element krb5_kdcip { text }
