@@ -2729,9 +2729,12 @@ Select another one.
 	    ypbind_running = (Service::Status ("ypbind") == 0);
 	    Service::Stop ("ypbind");
 	}
-	else if (write_only && Mode::autoinst () )
+	else if (write_only && (Mode::autoinst() || Mode::config()))
 	{
-	    // Read existing nsswitch in autoinstallation mode
+            // Read existing nsswitch in autoinstallation mode or while
+            // configuring this module in the AutoYaST module.
+            // We need default values here. (bnc#1043915)
+            y2milestone ("Reading default values from /etc/nsswitch.conf");
 	    foreach (string db,
 		["passwd","group","passwd_compat","group_compat"],``{
 		nsswitch[db]	= Nsswitch::ReadDb (db);
